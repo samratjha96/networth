@@ -1,5 +1,5 @@
-import { Account } from "@/components/AccountsList";
-import { DatabaseProvider, NetworthHistory } from "@/lib/types";
+import { Account } from "@/components/AccountsList"
+import { DatabaseProvider, NetworthHistory } from "@/lib/types"
 
 const STORAGE_KEYS = {
   ACCOUNTS: "networth_accounts",
@@ -94,11 +94,18 @@ export class MockDatabase implements DatabaseProvider {
 
   // Networth history operations
   async getNetworthHistory(days: number): Promise<NetworthHistory[]> {
+    const history = this.getStoredHistory();
+    
+    // For "ALL", return complete history
+    if (days === 0) {
+      return history;
+    }
+    
+    // For specific ranges, filter by date
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     
-    const history = this.getStoredHistory();
     return history.filter(entry => {
       const entryDate = new Date(entry.date);
       return entryDate >= startDate && entryDate <= endDate;
@@ -117,47 +124,3 @@ export class MockDatabase implements DatabaseProvider {
 
 // Export a singleton instance
 export const db = MockDatabase.getInstance();
-
-/*
-Example SQLite implementation:
-
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
-
-class SQLiteDatabase implements DatabaseProvider {
-  private db: any;
-
-  async initialize(): Promise<void> {
-    this.db = await open({
-      filename: 'networth.db',
-      driver: sqlite3.Database
-    });
-
-    await this.db.exec(`
-      CREATE TABLE IF NOT EXISTS accounts (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        type TEXT NOT NULL,
-        balance REAL NOT NULL,
-        isDebt INTEGER DEFAULT 0,
-        currency TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS networth_history (
-        date TEXT NOT NULL,
-        value REAL NOT NULL
-      );
-    `);
-  }
-
-  async close(): Promise<void> {
-    await this.db.close();
-  }
-
-  async getAllAccounts(): Promise<Account[]> {
-    return this.db.all('SELECT * FROM accounts');
-  }
-
-  // Implement other methods...
-}
-*/
