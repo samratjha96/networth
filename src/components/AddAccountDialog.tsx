@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 interface AddAccountDialogProps {
-  onAddAccount: (account: Omit<Account, 'id'>) => void;
+  onAddAccount: (account: Omit<Account, "id">) => void;
 }
 
 export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
@@ -46,7 +46,13 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
     setIsDebt(false);
   };
 
-  const assetTypes: AccountType[] = ["Checking", "Savings", "Brokerage", "Retirement", "401K"];
+  const assetTypes: AccountType[] = [
+    "Checking",
+    "Savings",
+    "Brokerage",
+    "Retirement",
+    "401K",
+  ];
   const debtTypes: AccountType[] = ["Credit Card", "Loan", "Mortgage"];
 
   return (
@@ -70,7 +76,7 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
             />
             <Label htmlFor="debt-mode">This is a debt</Label>
           </div>
-          
+
           <div className="grid gap-2">
             <Label htmlFor="name">Account Name</Label>
             <Input
@@ -80,34 +86,32 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
               className="col-span-3"
             />
           </div>
-          
+
           <div className="grid gap-2">
             <Label htmlFor="type">Account Type</Label>
-            <Select 
-              value={type} 
+            <Select
+              value={type}
               onValueChange={(value) => setType(value as AccountType)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
               <SelectContent>
-                {isDebt ? (
-                  debtTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))
-                ) : (
-                  assetTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))
-                )}
+                {isDebt
+                  ? debtTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))
+                  : assetTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="grid gap-2">
             <Label htmlFor="balance">Balance</Label>
             <Input
@@ -118,7 +122,7 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
               className="col-span-3"
             />
           </div>
-          
+
           <Button type="submit">Add Account</Button>
         </form>
       </DialogContent>

@@ -3,7 +3,15 @@ import { formatCurrency } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useState } from "react";
 
-export type AccountType = 'Checking' | 'Savings' | 'Brokerage' | 'Retirement' | '401K' | 'Credit Card' | 'Loan' | 'Mortgage';
+export type AccountType =
+  | "Checking"
+  | "Savings"
+  | "Brokerage"
+  | "Retirement"
+  | "401K"
+  | "Credit Card"
+  | "Loan"
+  | "Mortgage";
 
 export interface Account {
   id: string;
@@ -19,27 +27,40 @@ interface AccountsListProps {
   onDeleteAccount: (id: string) => void;
 }
 
-export function AccountsList({ accounts, onEditAccount, onDeleteAccount }: AccountsListProps) {
+export function AccountsList({
+  accounts,
+  onEditAccount,
+  onDeleteAccount,
+}: AccountsListProps) {
   const [view, setView] = useState<"assets" | "debts">("assets");
-  
-  const filteredAccounts = accounts.filter(account => 
-    view === "assets" ? !account.isDebt : account.isDebt
+
+  const filteredAccounts = accounts.filter((account) =>
+    view === "assets" ? !account.isDebt : account.isDebt,
   );
 
-  const groupedAccounts = filteredAccounts.reduce((acc, account) => {
-    if (!acc[account.type]) {
-      acc[account.type] = [];
-    }
-    acc[account.type].push(account);
-    return acc;
-  }, {} as Record<AccountType, Account[]>);
+  const groupedAccounts = filteredAccounts.reduce(
+    (acc, account) => {
+      if (!acc[account.type]) {
+        acc[account.type] = [];
+      }
+      acc[account.type].push(account);
+      return acc;
+    },
+    {} as Record<AccountType, Account[]>,
+  );
 
   return (
     <Card className="bg-background border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Accounts</CardTitle>
-          <ToggleGroup type="single" value={view} onValueChange={(value) => value && setView(value as "assets" | "debts")}>
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(value) =>
+              value && setView(value as "assets" | "debts")
+            }
+          >
             <ToggleGroupItem value="assets" className="text-sm">
               Assets
             </ToggleGroupItem>
@@ -53,7 +74,9 @@ export function AccountsList({ accounts, onEditAccount, onDeleteAccount }: Accou
         <div className="space-y-8">
           {Object.entries(groupedAccounts).map(([type, accounts]) => (
             <div key={type} className="space-y-4">
-              <div className="font-medium text-sm text-muted-foreground">{type}</div>
+              <div className="font-medium text-sm text-muted-foreground">
+                {type}
+              </div>
               <div className="grid gap-4">
                 {accounts.map((account) => (
                   <div
