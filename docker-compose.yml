@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  argos-prod:
+    container_name: argos-prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  argos-dev:
+    container_name: argos-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8090:8080"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
