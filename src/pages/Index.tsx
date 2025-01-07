@@ -84,29 +84,40 @@ const Index = () => {
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
   return (
-    <div className="container mx-auto py-10 space-y-8 dark">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-foreground">Net Worth Tracker</h1>
-        <AddAccountDialog onAddAccount={handleAddAccount} />
-      </div>
-      
-      <div className="grid gap-6">
-        <NetWorthSummary
-          currentNetWorth={currentNetWorth}
-          previousNetWorth={previousNetWorth}
-          changePercentage={changePercentage}
-          period="month"
-          bestPerformingAccount={bestPerformingAccount}
-        />
-        <NetWorthChart data={chartData} />
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-10 space-y-8">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Net Worth Tracker
+          </h1>
+          <AddAccountDialog onAddAccount={handleAddAccount} />
+        </div>
+        
+        <div className="grid gap-6">
+          <div className="p-6 rounded-xl bg-card border border-border/50">
+            <NetWorthSummary
+              currentNetWorth={currentNetWorth}
+              previousNetWorth={previousNetWorth}
+              changePercentage={changePercentage}
+              period="month"
+              bestPerformingAccount={bestPerformingAccount}
+            />
+          </div>
+          
+          <div className="p-6 rounded-xl bg-card border border-border/50">
+            <NetWorthChart data={chartData} />
+          </div>
+        </div>
 
-      <div className="grid gap-6">
-        <AccountsList
-          accounts={accounts}
-          onEditAccount={handleEditAccount}
-          onDeleteAccount={handleDeleteAccount}
-        />
+        <div className="grid gap-6">
+          <div className="rounded-xl bg-card border border-border/50">
+            <AccountsList
+              accounts={accounts}
+              onEditAccount={handleEditAccount}
+              onDeleteAccount={handleDeleteAccount}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
