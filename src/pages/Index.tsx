@@ -1,18 +1,29 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { NetWorthSummary } from "@/components/NetWorthSummary";
 import { NetWorthChart } from "@/components/NetWorthChart";
 import { AccountsList, Account } from "@/components/AccountsList";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 
-const generateMockData = () => {
+const generateDailyData = (accounts: Account[], days: number) => {
   const data = [];
   const today = new Date();
-  for (let i = 365; i >= 0; i--) { // Generate a year's worth of data
+  
+  for (let i = days; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
+    
+    // Generate daily fluctuations for each account
+    const dailyValues = accounts.map(account => {
+      const baseValue = account.balance;
+      const randomFluctuation = (Math.random() - 0.5) * 0.02; // ±1% daily fluctuation
+      return baseValue * (1 + randomFluctuation);
+    });
+
+    const totalValue = dailyValues.reduce((sum, value) => sum + value, 0);
+    
     data.push({
       date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      value: 50000 + Math.random() * 10000,
+      value: totalValue,
     });
   }
   return data;
@@ -21,23 +32,27 @@ const generateMockData = () => {
 const findBestPerformingAccount = (accounts: Account[]) => {
   if (accounts.length === 0) return undefined;
   
-  // In a real app, you'd calculate this based on historical data
-  // For now, we'll use a simple mock calculation
-  const bestAccount = accounts.reduce((prev, current) => {
-    const prevGrowth = Math.random() * 20; // Mock growth rate
-    const currentGrowth = Math.random() * 20;
-    return prevGrowth > currentGrowth ? prev : current;
+  const accountPerformances = accounts.map(account => {
+    const randomGrowth = 5 + Math.random() * 15; // 5-20% growth
+    return {
+      name: account.name,
+      changePercentage: randomGrowth
+    };
   });
 
-  return {
-    name: bestAccount.name,
-    changePercentage: Math.random() * 20, // Mock growth rate
-  };
+  return accountPerformances.reduce((prev, current) => 
+    prev.changePercentage > current.changePercentage ? prev : current
+  );
 };
 
 const Index = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const chartData = generateMockData();
+  
+  // Generate historical data based on current accounts
+  const chartData = useMemo(() => 
+    generateDailyData(accounts, 365), // Generate a year's worth of data
+    [accounts] // Regenerate when accounts change
+  );
 
   const handleAddAccount = (newAccount: Omit<Account, 'id'>) => {
     setAccounts([
@@ -57,9 +72,14 @@ const Index = () => {
     setAccounts(accounts.filter((account) => account.id !== id));
   };
 
+  // Calculate current net worth from accounts
   const currentNetWorth = accounts.reduce((sum, account) => sum + account.balance, 0);
-  const previousNetWorth = currentNetWorth * 0.95; // Mock previous value
+  
+  // Simulate previous net worth (95% of current for demo)
+  const previousNetWorth = currentNetWorth * 0.95;
   const changePercentage = ((currentNetWorth - previousNetWorth) / previousNetWorth) * 100;
+  
+  // Find best performing account
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
   return (
