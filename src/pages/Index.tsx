@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { NetWorthSummary } from "@/components/NetWorthSummary";
 import { NetWorthChart } from "@/components/NetWorthChart";
-import { AccountsList, Account } from "@/components/AccountsList";
+import { AccountsList, Account, CurrencyCode } from "@/components/AccountsList";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
+
+const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const generateDailyData = (accounts: Account[], days: number) => {
   const data = [];
@@ -78,6 +80,7 @@ const Index = () => {
   const calculateNetWorth = () => {
     return accounts.reduce((sum, account) => {
       const value = account.balance;
+      // TODO: Add currency conversion here when needed
       return sum + (account.isDebt ? -value : value);
     }, 0);
   };
@@ -110,13 +113,14 @@ const Index = () => {
               previousNetWorth={previousNetWorth}
               changePercentage={changePercentage}
               period="month"
+              currency={DEFAULT_CURRENCY}
               bestPerformingAccount={bestPerformingAccount}
             />
           </div>
 
           {accounts.length > 0 && (
             <div className="p-6 rounded-xl bg-card border border-border/50">
-              <NetWorthChart data={chartData} />
+              <NetWorthChart data={chartData} hasAccounts={true} currency={DEFAULT_CURRENCY} />
             </div>
           )}
         </div>

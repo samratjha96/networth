@@ -10,7 +10,16 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { CurrencyCode } from "./AccountsList";
+
+const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  JPY: "¥",
+  CAD: "C$",
+  AUD: "A$",
+};
 
 // Generate mock data for the past year with daily entries
 const generateMockData = () => {
@@ -50,6 +59,7 @@ interface NetWorthChartProps {
     value: number;
   }>;
   hasAccounts?: boolean;
+  currency: CurrencyCode;
 }
 
 const TIME_RANGES = [
@@ -60,7 +70,7 @@ const TIME_RANGES = [
   { label: "ALL", days: 0 },
 ] as const;
 
-export function NetWorthChart({ data = MOCK_DATA }: NetWorthChartProps) {
+export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps) {
   const [selectedRange, setSelectedRange] = React.useState<number>(30); // Default to 1M
 
   const filteredData = React.useMemo(() => {
@@ -69,6 +79,11 @@ export function NetWorthChart({ data = MOCK_DATA }: NetWorthChartProps) {
     // Get data from last n days (add 1 to include today)
     return data.slice(-(selectedRange + 1));
   }, [data, selectedRange]);
+
+  const formatWithCurrency = (value: number) => {
+    const symbol = CURRENCY_SYMBOLS[currency];
+    return `${symbol}${formatCurrency(value).replace(/^\$/, '')}`;
+  };
 
   return (
     <Card className="col-span-4">
@@ -150,7 +165,7 @@ export function NetWorthChart({ data = MOCK_DATA }: NetWorthChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `${formatCurrency(value)}`}
+                tickFormatter={(value) => formatWithCurrency(value)}
               />
               <Tooltip
                 content={({ active, payload }) => {
@@ -177,7 +192,7 @@ export function NetWorthChart({ data = MOCK_DATA }: NetWorthChartProps) {
                               Value
                             </span>
                             <span className="font-bold">
-                              {formatCurrency(payload[0].value as number)}
+                              {formatWithCurrency(payload[0].value as number)}
                             </span>
                           </div>
                         </div>

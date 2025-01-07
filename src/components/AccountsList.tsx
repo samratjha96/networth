@@ -1,9 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { AccountsPanel } from "./AccountsPanel";
 
 export type AccountType =
   | "Checking"
@@ -13,7 +11,10 @@ export type AccountType =
   | "401K"
   | "Credit Card"
   | "Loan"
-  | "Mortgage";
+  | "Mortgage"
+  | "Car";
+
+export type CurrencyCode = "USD" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD";
 
 export interface Account {
   id: string;
@@ -21,6 +22,7 @@ export interface Account {
   type: AccountType;
   balance: number;
   isDebt?: boolean;
+  currency: CurrencyCode;
 }
 
 interface AccountsListProps {
@@ -36,96 +38,35 @@ export function AccountsList({
 }: AccountsListProps) {
   const [view, setView] = useState<"assets" | "debts">("assets");
 
-  const filteredAccounts = accounts.filter((account) =>
-    view === "assets" ? !account.isDebt : account.isDebt,
-  );
-
-  const groupedAccounts = filteredAccounts.reduce(
-    (acc, account) => {
-      if (!acc[account.type]) {
-        acc[account.type] = [];
-      }
-      acc[account.type].push(account);
-      return acc;
-    },
-    {} as Record<AccountType, Account[]>,
-  );
-
   return (
     <Card className="bg-background border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Accounts</CardTitle>
-          {accounts.length > 0 && (
-            <ToggleGroup
-              type="single"
-              value={view}
-              onValueChange={(value) =>
-                value && setView(value as "assets" | "debts")
-              }
-            >
-              <ToggleGroupItem value="assets" className="text-sm">
-                Assets
-              </ToggleGroupItem>
-              <ToggleGroupItem value="debts" className="text-sm">
-                Debts
-              </ToggleGroupItem>
-            </ToggleGroup>
-          )}
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(value) =>
+              value && setView(value as "assets" | "debts")
+            }
+          >
+            <ToggleGroupItem value="assets" className="text-sm">
+              Assets
+            </ToggleGroupItem>
+            <ToggleGroupItem value="debts" className="text-sm">
+              Debts
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
-        {accounts.length === 0 && (
-          <Alert variant="default" className="mt-4 bg-muted/50">
-            <PlusCircle className="h-4 w-4 text-muted-foreground" />
-            <AlertDescription>
-              Add your first account to start tracking your assets and debts
-            </AlertDescription>
-          </Alert>
-        )}
       </CardHeader>
-      {accounts.length > 0 && (
-        <CardContent>
-          <div className="space-y-8">
-            {Object.entries(groupedAccounts).map(([type, accounts]) => (
-              <div key={type} className="space-y-4">
-                <div className="font-medium text-sm text-muted-foreground">
-                  {type}
-                </div>
-                <div className="grid gap-4">
-                  {accounts.map((account) => (
-                    <div
-                      key={account.id}
-                      className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium leading-none text-foreground">
-                          {account.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatCurrency(account.balance)}
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => onEditAccount(account)}
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => onDeleteAccount(account.id)}
-                          className="text-sm text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      )}
+      <CardContent>
+        <AccountsPanel
+          accounts={accounts}
+          type={view}
+          onEditAccount={onEditAccount}
+          onDeleteAccount={onDeleteAccount}
+        />
+      </CardContent>
     </Card>
   );
 }
