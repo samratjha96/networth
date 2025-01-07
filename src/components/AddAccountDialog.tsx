@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -16,6 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Account, AccountType } from "./AccountsList";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface AddAccountDialogProps {
   onAddAccount: (account: Omit<Account, 'id'>) => void;
@@ -26,6 +29,7 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("Checking");
   const [balance, setBalance] = useState("");
+  const [isDebt, setIsDebt] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,27 +37,42 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
       name,
       type,
       balance: parseFloat(balance) || 0,
+      isDebt,
     });
     setOpen(false);
     setName("");
     setType("Checking");
     setBalance("");
+    setIsDebt(false);
   };
+
+  const assetTypes: AccountType[] = ["Checking", "Savings", "Brokerage", "Retirement", "401K"];
+  const debtTypes: AccountType[] = ["Credit Card", "Loan", "Mortgage"];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Add Account</Button>
+        <Button variant="outline">Add Account</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Account</DialogTitle>
+          <DialogDescription>
+            Add a new asset or debt account to track your net worth.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="debt-mode"
+              checked={isDebt}
+              onCheckedChange={setIsDebt}
+            />
+            <Label htmlFor="debt-mode">This is a debt</Label>
+          </div>
+          
           <div className="grid gap-2">
-            <label htmlFor="name" className="text-sm font-medium">
-              Account Name
-            </label>
+            <Label htmlFor="name">Account Name</Label>
             <Input
               id="name"
               value={name}
@@ -61,27 +80,36 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
               className="col-span-3"
             />
           </div>
+          
           <div className="grid gap-2">
-            <label htmlFor="type" className="text-sm font-medium">
-              Account Type
-            </label>
-            <Select value={type} onValueChange={(value) => setType(value as AccountType)}>
+            <Label htmlFor="type">Account Type</Label>
+            <Select 
+              value={type} 
+              onValueChange={(value) => setType(value as AccountType)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Checking">Checking</SelectItem>
-                <SelectItem value="Savings">Savings</SelectItem>
-                <SelectItem value="Brokerage">Brokerage</SelectItem>
-                <SelectItem value="Retirement">Retirement</SelectItem>
-                <SelectItem value="401K">401K</SelectItem>
+                {isDebt ? (
+                  debtTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))
+                ) : (
+                  assetTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
+          
           <div className="grid gap-2">
-            <label htmlFor="balance" className="text-sm font-medium">
-              Balance
-            </label>
+            <Label htmlFor="balance">Balance</Label>
             <Input
               id="balance"
               type="number"
@@ -90,6 +118,7 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
               className="col-span-3"
             />
           </div>
+          
           <Button type="submit">Add Account</Button>
         </form>
       </DialogContent>

@@ -48,10 +48,9 @@ const findBestPerformingAccount = (accounts: Account[]) => {
 const Index = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   
-  // Generate historical data based on current accounts
   const chartData = useMemo(() => 
-    generateDailyData(accounts, 365), // Generate a year's worth of data
-    [accounts] // Regenerate when accounts change
+    generateDailyData(accounts, 365),
+    [accounts]
   );
 
   const handleAddAccount = (newAccount: Omit<Account, 'id'>) => {
@@ -72,20 +71,22 @@ const Index = () => {
     setAccounts(accounts.filter((account) => account.id !== id));
   };
 
-  // Calculate current net worth from accounts
-  const currentNetWorth = accounts.reduce((sum, account) => sum + account.balance, 0);
-  
-  // Simulate previous net worth (95% of current for demo)
+  const calculateNetWorth = () => {
+    return accounts.reduce((sum, account) => {
+      const value = account.balance;
+      return sum + (account.isDebt ? -value : value);
+    }, 0);
+  };
+
+  const currentNetWorth = calculateNetWorth();
   const previousNetWorth = currentNetWorth * 0.95;
   const changePercentage = ((currentNetWorth - previousNetWorth) / previousNetWorth) * 100;
-  
-  // Find best performing account
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
+    <div className="container mx-auto py-10 space-y-8 dark">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Net Worth Tracker</h1>
+        <h1 className="text-3xl font-bold text-foreground">Net Worth Tracker</h1>
         <AddAccountDialog onAddAccount={handleAddAccount} />
       </div>
       
