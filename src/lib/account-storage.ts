@@ -1,9 +1,11 @@
-import { Account } from "@components/AccountsList";
-import { AccountStorage } from "./types";
+import { Account } from "@/components/AccountsList";
+import { AccountStorage, SyncAccountStorage } from "./types";
+import { DatabaseService } from "./database";
 
 const STORAGE_KEY = "networth_accounts";
 
-export class LocalAccountStorage implements AccountStorage {
+// Legacy synchronous implementation
+export class LocalAccountStorage implements SyncAccountStorage {
   private getStoredAccounts(): Account[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
@@ -22,7 +24,6 @@ export class LocalAccountStorage implements AccountStorage {
     const newAccount: Account = {
       ...accountData,
       id: crypto.randomUUID(),
-      // Ensure debt accounts have negative balance
       balance: accountData.isDebt ? -Math.abs(accountData.balance) : Math.abs(accountData.balance),
     };
     
@@ -40,7 +41,6 @@ export class LocalAccountStorage implements AccountStorage {
 
     accounts[index] = {
       ...account,
-      // Ensure debt accounts have negative balance
       balance: account.isDebt ? -Math.abs(account.balance) : Math.abs(account.balance),
     };
     
@@ -51,4 +51,58 @@ export class LocalAccountStorage implements AccountStorage {
     const accounts = this.getStoredAccounts();
     this.setStoredAccounts(accounts.filter((account) => account.id !== id));
   }
+}
+
+// New asynchronous implementation using database
+export class DatabaseAccountStorage implements AccountStorage {
+  private dbService: DatabaseService | null = null;
+
+  private async getDb(): Promise<DatabaseService> {
+    if (!this.dbService) {
+      this.dbService = await DatabaseService.getInstance();
+    }
+    return this.dbService;
+  }
+
+  async getAccounts(): Promise<Account[]> {
+    const db = await this.getDb();
+    return db.getAllAccounts();
+  }
+
+  async addAccount(accountData: Omit<Account, "id">): Promise<Account> {
+    const db = await this.getDb();
+    const newAccount: Account = {
+      ...accountData,
+      id: crypto.randomUUID(),
+      balance: accountData.isDebt ? -Math.abs(accountData.balance) : Math.abs(accountData.balance),
+    };
+    
+    await db.insertAccount(newAccount);
+    return newAccount;
+  }
+
+  async updateAccount(account: Account): Promise<void> {
+    const db = await this.getDb();
+    const updatedAccount = {
+      ...account,
+      balance: account.isDebt ? -Math.abs(account.balance) : Math.abs(account.balance),
+    };
+    
+    await db.updateAccount(updatedAccount);
+  }
+
+  async deleteAccount(id: string): Promise<void> {
+    const db = await this.getDb();
+    await db.deleteAccount(id);
+  }
+}
+
+// Initialize database service
+let dbServiceInstance: Promise<DatabaseService>;
+
+export function getDatabaseService(): Promise<DatabaseService> {
+  if (!dbServiceInstance) {
+    dbServiceInstance = DatabaseService.getInstance();
+  }
+  return dbServiceInstance;
 }

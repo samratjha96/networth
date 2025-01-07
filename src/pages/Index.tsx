@@ -7,32 +7,6 @@ import { AddAccountDialog } from "@/components/AddAccountDialog";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
-const generateDailyData = (accounts: Account[], days: number) => {
-  const data = [];
-  const today = new Date();
-
-  for (let i = days; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-
-    // Generate daily fluctuations for each account
-    const dailyValues = accounts.map((account) => {
-      const baseValue = account.balance;
-      const randomFluctuation = (Math.random() - 0.5) * 0.02; // ±1% daily fluctuation
-      const value = baseValue * (1 + randomFluctuation);
-      return value
-    });
-
-    const totalValue = dailyValues.reduce((sum, value) => sum + value, 0);
-
-    data.push({
-      date: date.toISOString().split("T")[0], // Use ISO format for consistent date handling
-      value: totalValue,
-    });
-  }
-  return data;
-};
-
 const findBestPerformingAccount = (accounts: Account[]) => {
   if (accounts.length === 0) return undefined;
 
@@ -59,8 +33,6 @@ const Index = () => {
   }, []);
 
   const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts();
-
-  const chartData = useMemo(() => generateDailyData(accounts, 365), [accounts]);
 
   const handleAddAccount = (newAccount: Omit<Account, "id">) => {
     addAccount(newAccount);
@@ -101,7 +73,7 @@ const Index = () => {
   // For negative values, a more negative number means it's getting worse
   const changePercentage =
     previousNetWorth !== 0
-      ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) *
+      ? (netWorthChange / Math.abs(previousNetWorth)) *
         100
       : 0;
 
@@ -137,7 +109,6 @@ const Index = () => {
           {accounts.length > 0 && (
             <div className="p-6 rounded-xl bg-card border border-border/50">
               <NetWorthChart
-                data={chartData}
                 hasAccounts={true}
                 currency={DEFAULT_CURRENCY}
                 currentNetWorth={currentNetWorth}
