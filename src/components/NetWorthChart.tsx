@@ -147,7 +147,9 @@ export function NetWorthChart({
 
                     // For 1Y and ALL views, show Month YY
                     if (selectedRange === 365 || selectedRange === 0) {
-                      return isMobile ? `${month} ${year}` : `${month}\n${year}`;
+                      return isMobile
+                        ? `${month} ${year}`
+                        : `${month}\n${year}`;
                     }
 
                     // For shorter ranges, show DD Month
@@ -207,7 +209,9 @@ export function NetWorthChart({
                   type="monotone"
                   dataKey="value"
                   stroke={
-                    isNegative ? "hsl(var(--destructive))" : "hsl(var(--primary))"
+                    isNegative
+                      ? "hsl(var(--destructive))"
+                      : "hsl(var(--primary))"
                   }
                   fillOpacity={1}
                   fill="url(#colorValue)"

@@ -57,17 +57,20 @@ const Index = () => {
 
   // Get last month's net worth from history
   const { data: networthHistory = [] } = useNetworthHistory(30); // Get last 30 days of history
-  
+
   // Get the oldest entry from last month (if available)
-  const previousNetWorth = networthHistory.length > 0 ? networthHistory[0].value : currentNetWorth;
-  
+  const previousNetWorth =
+    networthHistory.length > 0 ? networthHistory[0].value : currentNetWorth;
+
   // Calculate net worth change
   const netWorthChange = currentNetWorth - previousNetWorth;
 
   // Calculate change percentage (0 if there's no previous data)
-  const changePercentage = previousNetWorth !== currentNetWorth
-    ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) * 100
-    : 0;
+  const changePercentage =
+    previousNetWorth !== currentNetWorth
+      ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) *
+        100
+      : 0;
 
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
