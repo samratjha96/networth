@@ -33,7 +33,7 @@ const CURRENCIES = [
   { code: "AUD", symbol: "A$", name: "Australian Dollar" },
 ] as const;
 
-type Currency = typeof CURRENCIES[number]["code"];
+type Currency = (typeof CURRENCIES)[number]["code"];
 
 export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
   const [open, setOpen] = useState(false);
@@ -116,7 +116,7 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
+              onBlur={() => setTouched((prev) => ({ ...prev, name: true }))}
               className={`col-span-3 bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] focus-visible:shadow-[0_0_0_1px_hsl(var(--primary))] ${
                 isNameError ? "shadow-[0_0_0_1px_hsl(var(--destructive))]" : ""
               }`}
@@ -181,9 +181,11 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
               type="number"
               value={balance}
               onChange={(e) => setBalance(e.target.value)}
-              onBlur={() => setTouched(prev => ({ ...prev, balance: true }))}
+              onBlur={() => setTouched((prev) => ({ ...prev, balance: true }))}
               className={`col-span-3 bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] focus-visible:shadow-[0_0_0_1px_hsl(var(--primary))] ${
-                isBalanceError ? "shadow-[0_0_0_1px_hsl(var(--destructive))]" : ""
+                isBalanceError
+                  ? "shadow-[0_0_0_1px_hsl(var(--destructive))]"
+                  : ""
               }`}
               aria-invalid={isBalanceError}
             />
@@ -192,7 +194,9 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
             )}
           </div>
 
-          <Button type="submit" disabled={!isValid}>Add Account</Button>
+          <Button type="submit" disabled={!isValid}>
+            Add Account
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

@@ -26,7 +26,7 @@ export function AccountsPanel({
   onDeleteAccount,
 }: AccountsPanelProps) {
   const filteredAccounts = accounts.filter((account) =>
-    type === "assets" ? !account.isDebt : account.isDebt
+    type === "assets" ? !account.isDebt : account.isDebt,
   );
 
   const groupedAccounts = filteredAccounts.reduce(
@@ -37,12 +37,12 @@ export function AccountsPanel({
       acc[account.type].push(account);
       return acc;
     },
-    {} as Record<AccountType, Account[]>
+    {} as Record<AccountType, Account[]>,
   );
 
   const formatAccountBalance = (account: Account) => {
     const symbol = CURRENCY_SYMBOLS[account.currency];
-    return `${symbol}${formatCurrency(account.balance).replace(/^\$/, '')}`;
+    return `${symbol}${formatCurrency(account.balance).replace(/^\$/, "")}`;
   };
 
   if (filteredAccounts.length === 0) {
@@ -50,7 +50,8 @@ export function AccountsPanel({
       <Alert variant="default" className="mt-4 bg-muted/50">
         <PlusCircle className="h-4 w-4 text-muted-foreground" />
         <AlertDescription>
-          Add your first {type === "assets" ? "asset" : "debt"} account to start tracking
+          Add your first {type === "assets" ? "asset" : "debt"} account to start
+          tracking
         </AlertDescription>
       </Alert>
     );

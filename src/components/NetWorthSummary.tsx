@@ -33,11 +33,14 @@ export function NetWorthSummary({
   bestPerformingAccount,
 }: NetWorthSummaryProps) {
   const isPositiveChange = changePercentage >= 0;
+  const isPositiveNetWorth = currentNetWorth >= 0;
   const formattedChangePercentage = Math.abs(changePercentage).toFixed(2);
+  const netWorthChange = currentNetWorth - previousNetWorth;
 
   const formatWithCurrency = (value: number) => {
     const symbol = CURRENCY_SYMBOLS[currency];
-    return `${symbol}${formatCurrency(value).replace(/^\$/, '')}`;
+    const formatted = formatCurrency(Math.abs(value)).replace(/^\$/, "");
+    return value < 0 ? `-${symbol}${formatted}` : `${symbol}${formatted}`;
   };
 
   return (
@@ -57,13 +60,14 @@ export function NetWorthSummary({
           </span>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
+          <div
+            className={`text-2xl font-bold ${!isPositiveNetWorth ? "text-destructive" : ""}`}
+          >
             {formatWithCurrency(currentNetWorth)}
           </div>
           <p className="text-xs text-muted-foreground">
-            {isPositiveChange ? "+" : "-"}{" "}
-            {formatWithCurrency(Math.abs(currentNetWorth - previousNetWorth))} from
-            last {period}
+            {netWorthChange >= 0 ? "+" : ""}
+            {formatWithCurrency(netWorthChange)} from last {period}
           </p>
         </CardContent>
       </Card>

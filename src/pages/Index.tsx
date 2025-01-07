@@ -18,16 +18,15 @@ const generateDailyData = (accounts: Account[], days: number) => {
     const dailyValues = accounts.map((account) => {
       const baseValue = account.balance;
       const randomFluctuation = (Math.random() - 0.5) * 0.02; // ±1% daily fluctuation
-      return baseValue * (1 + randomFluctuation);
+      const value = baseValue * (1 + randomFluctuation);
+      // Subtract debt values from total
+      return account.isDebt ? -value : value;
     });
 
     const totalValue = dailyValues.reduce((sum, value) => sum + value, 0);
 
     data.push({
-      date: date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
+      date: date.toISOString().split("T")[0], // Use ISO format for consistent date handling
       value: totalValue,
     });
   }
@@ -37,7 +36,11 @@ const generateDailyData = (accounts: Account[], days: number) => {
 const findBestPerformingAccount = (accounts: Account[]) => {
   if (accounts.length === 0) return undefined;
 
-  const accountPerformances = accounts.map((account) => {
+  // Only consider asset accounts (not debts)
+  const assetAccounts = accounts.filter((account) => !account.isDebt);
+  if (assetAccounts.length === 0) return undefined;
+
+  const accountPerformances = assetAccounts.map((account) => {
     const randomGrowth = 5 + Math.random() * 15; // 5-20% growth
     return {
       name: account.name,
@@ -86,9 +89,14 @@ const Index = () => {
   };
 
   const currentNetWorth = calculateNetWorth();
-  const previousNetWorth = currentNetWorth * 0.95;
+  // Use a fixed percentage for simulating previous value
+  const previousNetWorth =
+    currentNetWorth * (currentNetWorth < 0 ? 1.05 : 0.95);
   const changePercentage =
-    ((currentNetWorth - previousNetWorth) / previousNetWorth) * 100 || 0;
+    previousNetWorth !== 0
+      ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) *
+        100
+      : 0;
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
   return (
@@ -120,7 +128,11 @@ const Index = () => {
 
           {accounts.length > 0 && (
             <div className="p-6 rounded-xl bg-card border border-border/50">
-              <NetWorthChart data={chartData} hasAccounts={true} currency={DEFAULT_CURRENCY} />
+              <NetWorthChart
+                data={chartData}
+                hasAccounts={true}
+                currency={DEFAULT_CURRENCY}
+              />
             </div>
           )}
         </div>

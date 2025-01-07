@@ -11,6 +11,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CurrencyCode } from "./AccountsList";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",
@@ -20,38 +21,6 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   CAD: "C$",
   AUD: "A$",
 };
-
-// Generate mock data for the past year with daily entries
-const generateMockData = () => {
-  const data = [];
-  const endDate = new Date(); // Today
-  const startDate = new Date();
-  startDate.setFullYear(endDate.getFullYear() - 1); // One year ago from today
-
-  // Start from one year ago and generate forward
-  let currentDate = new Date(startDate);
-  let currentValue = 100000; // Starting net worth
-
-  while (currentDate <= endDate) {
-    // Add some random variation with an upward trend
-    const trendFactor = 0.6; // 60% chance of increase
-    const randomChange =
-      (Math.random() > trendFactor ? -1 : 1) * (Math.random() * 500 + 100);
-    currentValue = Math.max(50000, Math.round(currentValue + randomChange)); // Ensure minimum value of 50k
-
-    data.push({
-      date: currentDate.toISOString().split("T")[0], // YYYY-MM-DD format
-      value: currentValue,
-    });
-
-    // Move to next day
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  return data;
-};
-
-const MOCK_DATA = generateMockData();
 
 interface NetWorthChartProps {
   data?: Array<{
@@ -70,19 +39,39 @@ const TIME_RANGES = [
   { label: "ALL", days: 0 },
 ] as const;
 
-export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps) {
+export function NetWorthChart({ data = [], currency }: NetWorthChartProps) {
   const [selectedRange, setSelectedRange] = React.useState<number>(30); // Default to 1M
+  const isMobile = useIsMobile();
 
   const filteredData = React.useMemo(() => {
     if (selectedRange === 0) return data; // ALL
-
-    // Get data from last n days (add 1 to include today)
     return data.slice(-(selectedRange + 1));
   }, [data, selectedRange]);
 
+  // Check if current value (last data point) is negative
+  const isNegative = React.useMemo(() => {
+    if (filteredData.length === 0) return false;
+    return filteredData[filteredData.length - 1].value < 0;
+  }, [filteredData]);
+
   const formatWithCurrency = (value: number) => {
     const symbol = CURRENCY_SYMBOLS[currency];
-    return `${symbol}${formatCurrency(value).replace(/^\$/, '')}`;
+    const formatted = formatCurrency(Math.abs(value)).replace(/^\$/, "");
+    return value < 0 ? `-${symbol}${formatted}` : `${symbol}${formatted}`;
+  };
+
+  // Calculate interval based on range and screen size
+  const getInterval = () => {
+    if (selectedRange === 365 || selectedRange === 0) {
+      return isMobile ? 90 : 30; // Show quarterly/monthly ticks
+    }
+    if (selectedRange === 30) {
+      return isMobile ? 7 : 3; // Show weekly/tri-daily ticks
+    }
+    if (selectedRange === 7) {
+      return isMobile ? 3 : 1; // Show every third/every day
+    }
+    return "preserveStartEnd"; // For 1D, just show start and end
   };
 
   return (
@@ -90,12 +79,13 @@ export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Net Worth Over Time</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             {TIME_RANGES.map((range) => (
               <Button
                 key={range.label}
                 variant={selectedRange === range.days ? "default" : "outline"}
                 size="sm"
+                className="px-2 sm:px-4"
                 onClick={() => setSelectedRange(range.days)}
               >
                 {range.label}
@@ -104,15 +94,15 @@ export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pl-2">
+      <CardContent className="pl-0 sm:pl-2">
         <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={filteredData}
               margin={{
                 top: 5,
-                right: 30,
-                left: 20,
+                right: isMobile ? 10 : 30,
+                left: isMobile ? 10 : 20,
                 bottom: 5,
               }}
             >
@@ -120,12 +110,20 @@ export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                   <stop
                     offset="5%"
-                    stopColor="hsl(var(--primary))"
+                    stopColor={
+                      isNegative
+                        ? "hsl(var(--destructive))"
+                        : "hsl(var(--primary))"
+                    }
                     stopOpacity={0.8}
                   />
                   <stop
                     offset="95%"
-                    stopColor="hsl(var(--primary))"
+                    stopColor={
+                      isNegative
+                        ? "hsl(var(--destructive))"
+                        : "hsl(var(--primary))"
+                    }
                     stopOpacity={0}
                   />
                 </linearGradient>
@@ -133,7 +131,7 @@ export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps
               <XAxis
                 dataKey="date"
                 stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                fontSize={isMobile ? 10 : 12}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(dateStr) => {
@@ -142,34 +140,32 @@ export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps
                     month: "short",
                   });
                   const day = date.getDate();
-                  const year = date.getFullYear().toString().slice(-2); // Get last 2 digits of year
+                  const year = date.getFullYear().toString().slice(-2);
 
                   // For 1Y and ALL views, show Month YY
                   if (selectedRange === 365 || selectedRange === 0) {
-                    return `${month} ${year}`;
+                    return isMobile ? `${month} ${year}` : `${month}\n${year}`;
                   }
 
                   // For shorter ranges, show DD Month
-                  return `${day} ${month}`;
+                  return isMobile ? `${day} ${month}` : `${day}\n${month}`;
                 }}
                 height={40}
-                interval={
-                  selectedRange === 365 || selectedRange === 0
-                    ? 30
-                    : "preserveStartEnd"
-                }
-                minTickGap={50}
+                interval={getInterval()}
+                minTickGap={isMobile ? 30 : 50}
               />
               <YAxis
                 stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                fontSize={isMobile ? 10 : 12}
                 tickLine={false}
                 axisLine={false}
+                width={isMobile ? 60 : 80}
                 tickFormatter={(value) => formatWithCurrency(value)}
               />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
+                    const value = payload[0].value as number;
                     return (
                       <div className="rounded-lg border bg-background p-2 shadow-sm">
                         <div className="grid grid-cols-2 gap-2">
@@ -191,8 +187,10 @@ export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps
                             <span className="text-[0.70rem] uppercase text-muted-foreground">
                               Value
                             </span>
-                            <span className="font-bold">
-                              {formatWithCurrency(payload[0].value as number)}
+                            <span
+                              className={`font-bold ${value < 0 ? "text-destructive" : ""}`}
+                            >
+                              {formatWithCurrency(value)}
                             </span>
                           </div>
                         </div>
@@ -205,7 +203,9 @@ export function NetWorthChart({ data = MOCK_DATA, currency }: NetWorthChartProps
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="hsl(var(--primary))"
+                stroke={
+                  isNegative ? "hsl(var(--destructive))" : "hsl(var(--primary))"
+                }
                 fillOpacity={1}
                 fill="url(#colorValue)"
               />
