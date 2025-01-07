@@ -37,7 +37,7 @@ const findBestPerformingAccount = (accounts: Account[]) => {
   if (accounts.length === 0) return undefined;
 
   // Only consider asset accounts (not debts)
-  const assetAccounts = accounts.filter((account) => !account.isDebt);
+  const assetAccounts = accounts.filter(account => !account.isDebt);
   if (assetAccounts.length === 0) return undefined;
 
   const accountPerformances = assetAccounts.map((account) => {
@@ -69,9 +69,7 @@ const Index = () => {
         ...newAccount,
         id: Math.random().toString(36).substr(2, 9),
         // Make debt accounts have negative balance
-        balance: newAccount.isDebt
-          ? -Math.abs(newAccount.balance)
-          : Math.abs(newAccount.balance),
+        balance: newAccount.isDebt ? -Math.abs(newAccount.balance) : Math.abs(newAccount.balance),
       },
     ]);
   };
@@ -92,14 +90,12 @@ const Index = () => {
   };
 
   const currentNetWorth = calculateNetWorth();
-  // Use a fixed percentage for simulating previous value
-  const previousNetWorth =
-    currentNetWorth * (currentNetWorth < 0 ? 1.05 : 0.95);
-  const changePercentage =
-    previousNetWorth !== 0
-      ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) *
-        100
-      : 0;
+  // For negative net worth, if it's getting more negative, that's worse (negative change)
+  const previousNetWorth = currentNetWorth * (currentNetWorth < 0 ? 0.95 : 1.05);
+  const netWorthChange = currentNetWorth - previousNetWorth;
+  const changePercentage = previousNetWorth !== 0 
+    ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) * 100 
+    : 0;
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
   return (
@@ -131,11 +127,7 @@ const Index = () => {
 
           {accounts.length > 0 && (
             <div className="p-6 rounded-xl bg-card border border-border/50">
-              <NetWorthChart
-                data={chartData}
-                hasAccounts={true}
-                currency={DEFAULT_CURRENCY}
-              />
+              <NetWorthChart data={chartData} hasAccounts={true} currency={DEFAULT_CURRENCY} />
             </div>
           )}
         </div>
