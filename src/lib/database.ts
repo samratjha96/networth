@@ -1,49 +1,95 @@
 import { Account } from "@/components/AccountsList";
 import { DatabaseProvider, NetworthHistory } from "@/lib/types";
 
-// Mock database implementation
-class MockDatabase implements DatabaseProvider {
-  private accounts: Map<string, Account> = new Map();
-  private networthHistory: NetworthHistory[] = [];
+const STORAGE_KEYS = {
+  ACCOUNTS: "networth_accounts",
+  HISTORY: "networth_history"
+};
+
+// Mock database implementation using localStorage
+export class MockDatabase implements DatabaseProvider {
+  private static instance: MockDatabase | null = null;
+
+  static async getInstance(): Promise<MockDatabase> {
+    if (!MockDatabase.instance) {
+      MockDatabase.instance = new MockDatabase();
+      await MockDatabase.instance.initialize();
+    }
+    return MockDatabase.instance;
+  }
+
+  private getStoredAccounts(): Account[] {
+    const stored = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  private setStoredAccounts(accounts: Account[]): void {
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+  }
+
+  private getStoredHistory(): NetworthHistory[] {
+    const stored = localStorage.getItem(STORAGE_KEYS.HISTORY);
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  private setStoredHistory(history: NetworthHistory[]): void {
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+  }
 
   async initialize(): Promise<void> {
-    // In a real implementation, this would:
-    // - Create/connect to SQLite database
-    // - Create tables if they don't exist
-    // - Set up indexes
-    // - Initialize connection pool
+    // Initialize storage if empty
+    if (!localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) {
+      this.setStoredAccounts([]);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.HISTORY)) {
+      this.setStoredHistory([]);
+    }
     console.log("Mock database initialized");
   }
 
   async close(): Promise<void> {
-    // In a real implementation, this would:
-    // - Close database connections
-    // - Clean up resources
     console.log("Mock database closed");
   }
 
   // Account operations
   async getAllAccounts(): Promise<Account[]> {
-    return Array.from(this.accounts.values());
+    return this.getStoredAccounts();
   }
 
   async getAccount(id: string): Promise<Account | undefined> {
-    return this.accounts.get(id);
+    const accounts = this.getStoredAccounts();
+    return accounts.find(account => account.id === id);
   }
 
   async insertAccount(account: Account): Promise<void> {
-    this.accounts.set(account.id, account);
+    const accounts = this.getStoredAccounts();
+    this.setStoredAccounts([...accounts, account]);
+    await this.updateNetworthSnapshot();
   }
 
   async updateAccount(account: Account): Promise<void> {
-    if (!this.accounts.has(account.id)) {
+    const accounts = this.getStoredAccounts();
+    const index = accounts.findIndex(a => a.id === account.id);
+    
+    if (index === -1) {
       throw new Error(`Account with id ${account.id} not found`);
     }
-    this.accounts.set(account.id, account);
+
+    accounts[index] = account;
+    this.setStoredAccounts(accounts);
+    await this.updateNetworthSnapshot();
   }
 
   async deleteAccount(id: string): Promise<void> {
-    this.accounts.delete(id);
+    const accounts = this.getStoredAccounts();
+    this.setStoredAccounts(accounts.filter(account => account.id !== id));
+    await this.updateNetworthSnapshot();
+  }
+
+  private async updateNetworthSnapshot(): Promise<void> {
+    const accounts = await this.getAllAccounts();
+    const totalNetworth = accounts.reduce((sum, account) => sum + account.balance, 0);
+    await this.addNetworthSnapshot(totalNetworth);
   }
 
   // Networth history operations
@@ -52,81 +98,25 @@ class MockDatabase implements DatabaseProvider {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     
-    return this.networthHistory.filter(entry => {
+    const history = this.getStoredHistory();
+    return history.filter(entry => {
       const entryDate = new Date(entry.date);
       return entryDate >= startDate && entryDate <= endDate;
     });
   }
 
   async addNetworthSnapshot(value: number): Promise<void> {
-    this.networthHistory.push({
+    const history = this.getStoredHistory();
+    const newEntry = {
       date: new Date().toISOString(),
       value
-    });
+    };
+    this.setStoredHistory([...history, newEntry]);
   }
 }
 
-// Database service that will be used throughout the application
-export class DatabaseService {
-  private static instance: DatabaseService;
-  private db: DatabaseProvider;
-
-  private constructor() {
-    // When implementing SQLite, replace MockDatabase with SQLiteDatabase
-    this.db = new MockDatabase();
-  }
-
-  static async getInstance(): Promise<DatabaseService> {
-    if (!DatabaseService.instance) {
-      DatabaseService.instance = new DatabaseService();
-      await DatabaseService.instance.initialize();
-    }
-    return DatabaseService.instance;
-  }
-
-  private async initialize(): Promise<void> {
-    await this.db.initialize();
-  }
-
-  async close(): Promise<void> {
-    await this.db.close();
-  }
-
-  // Account operations
-  async getAllAccounts(): Promise<Account[]> {
-    return this.db.getAllAccounts();
-  }
-
-  async getAccount(id: string): Promise<Account | undefined> {
-    return this.db.getAccount(id);
-  }
-
-  async insertAccount(account: Account): Promise<void> {
-    await this.db.insertAccount(account);
-    await this.updateNetworthSnapshot();
-  }
-
-  async updateAccount(account: Account): Promise<void> {
-    await this.db.updateAccount(account);
-    await this.updateNetworthSnapshot();
-  }
-
-  async deleteAccount(id: string): Promise<void> {
-    await this.db.deleteAccount(id);
-    await this.updateNetworthSnapshot();
-  }
-
-  // Networth history operations
-  async getNetworthHistory(days: number): Promise<NetworthHistory[]> {
-    return this.db.getNetworthHistory(days);
-  }
-
-  private async updateNetworthSnapshot(): Promise<void> {
-    const accounts = await this.getAllAccounts();
-    const totalNetworth = accounts.reduce((sum, account) => sum + account.balance, 0);
-    await this.db.addNetworthSnapshot(totalNetworth);
-  }
-}
+// Export a singleton instance
+export const db = MockDatabase.getInstance();
 
 /*
 Example SQLite implementation:

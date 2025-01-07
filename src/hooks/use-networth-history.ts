@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getDatabaseService } from "@/lib/account-storage";
+import { db } from "@/lib/database";
 import { NetworthHistory } from "@/lib/types";
 
 export function useNetworthHistory(days: number) {
@@ -10,8 +10,8 @@ export function useNetworthHistory(days: number) {
   const fetchHistory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const db = await getDatabaseService();
-      const history = await db.getNetworthHistory(days);
+      const database = await db;
+      const history = await database.getNetworthHistory(days);
       setData(history);
       setError(null);
     } catch (err) {

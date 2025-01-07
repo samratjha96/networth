@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from "react";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useNetworthHistory } from "@/hooks/use-networth-history";
 import { NetWorthSummary } from "@/components/NetWorthSummary";
 import { NetWorthChart } from "@/components/NetWorthChart";
 import { AccountsList, Account, CurrencyCode } from "@/components/AccountsList";
@@ -54,28 +55,19 @@ const Index = () => {
 
   const currentNetWorth = calculateNetWorth();
 
-  // Calculate previous net worth:
-  // For negative net worth:
-  // - To show getting worse: previous = -90, current = -100 (change = -10, -11.11%)
-  // - To show getting better: previous = -100, current = -90 (change = +10, +10%)
-  // For positive net worth:
-  // - To show growth: previous = 90, current = 100 (change = +10, +11.11%)
-  // - To show decline: previous = 100, current = 90 (change = -10, -10%)
-  const previousNetWorth =
-    currentNetWorth < 0
-      ? currentNetWorth * 0.9 // Previous was 10% less negative
-      : currentNetWorth * 0.9; // Previous was 10% lower
-
+  // Get last month's net worth from history
+  const { data: networthHistory = [] } = useNetworthHistory(30); // Get last 30 days of history
+  
+  // Get the oldest entry from last month (if available)
+  const previousNetWorth = networthHistory.length > 0 ? networthHistory[0].value : currentNetWorth;
+  
   // Calculate net worth change
   const netWorthChange = currentNetWorth - previousNetWorth;
 
-  // Calculate change percentage
-  // For negative values, a more negative number means it's getting worse
-  const changePercentage =
-    previousNetWorth !== 0
-      ? (netWorthChange / Math.abs(previousNetWorth)) *
-        100
-      : 0;
+  // Calculate change percentage (0 if there's no previous data)
+  const changePercentage = previousNetWorth !== currentNetWorth
+    ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) * 100
+    : 0;
 
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
