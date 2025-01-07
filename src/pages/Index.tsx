@@ -7,7 +7,7 @@ import { AddAccountDialog } from "@/components/AddAccountDialog";
 const generateMockData = () => {
   const data = [];
   const today = new Date();
-  for (let i = 30; i >= 0; i--) {
+  for (let i = 365; i >= 0; i--) { // Generate a year's worth of data
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     data.push({
@@ -16,6 +16,23 @@ const generateMockData = () => {
     });
   }
   return data;
+};
+
+const findBestPerformingAccount = (accounts: Account[]) => {
+  if (accounts.length === 0) return undefined;
+  
+  // In a real app, you'd calculate this based on historical data
+  // For now, we'll use a simple mock calculation
+  const bestAccount = accounts.reduce((prev, current) => {
+    const prevGrowth = Math.random() * 20; // Mock growth rate
+    const currentGrowth = Math.random() * 20;
+    return prevGrowth > currentGrowth ? prev : current;
+  });
+
+  return {
+    name: bestAccount.name,
+    changePercentage: Math.random() * 20, // Mock growth rate
+  };
 };
 
 const Index = () => {
@@ -33,7 +50,6 @@ const Index = () => {
   };
 
   const handleEditAccount = (account: Account) => {
-    // To be implemented
     console.log('Edit account:', account);
   };
 
@@ -44,6 +60,7 @@ const Index = () => {
   const currentNetWorth = accounts.reduce((sum, account) => sum + account.balance, 0);
   const previousNetWorth = currentNetWorth * 0.95; // Mock previous value
   const changePercentage = ((currentNetWorth - previousNetWorth) / previousNetWorth) * 100;
+  const bestPerformingAccount = findBestPerformingAccount(accounts);
 
   return (
     <div className="container mx-auto py-10 space-y-8">
@@ -58,6 +75,7 @@ const Index = () => {
           previousNetWorth={previousNetWorth}
           changePercentage={changePercentage}
           period="month"
+          bestPerformingAccount={bestPerformingAccount}
         />
         <NetWorthChart data={chartData} />
       </div>

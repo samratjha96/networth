@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface NetWorthChartProps {
   data: Array<{
@@ -9,17 +10,48 @@ interface NetWorthChartProps {
   }>;
 }
 
+const TIME_RANGES = [
+  { label: '1D', days: 1 },
+  { label: '1W', days: 7 },
+  { label: '1M', days: 30 },
+  { label: '1Y', days: 365 },
+  { label: 'ALL', days: 0 },
+] as const;
+
 export function NetWorthChart({ data }: NetWorthChartProps) {
+  const [selectedRange, setSelectedRange] = React.useState<number>(30); // Default to 1M
+
+  const filteredData = React.useMemo(() => {
+    if (selectedRange === 0) return data; // ALL
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - selectedRange);
+    return data.filter(item => new Date(item.date) >= cutoffDate);
+  }, [data, selectedRange]);
+
   return (
     <Card className="col-span-4">
       <CardHeader>
-        <CardTitle>Net Worth Over Time</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>Net Worth Over Time</CardTitle>
+          <div className="flex gap-2">
+            {TIME_RANGES.map((range) => (
+              <Button
+                key={range.label}
+                variant={selectedRange === range.days ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedRange(range.days)}
+              >
+                {range.label}
+              </Button>
+            ))}
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="pl-2">
         <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={data}
+              data={filteredData}
               margin={{
                 top: 5,
                 right: 30,
