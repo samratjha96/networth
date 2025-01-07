@@ -29,6 +29,7 @@ interface NetWorthChartProps {
   }>;
   hasAccounts?: boolean;
   currency: CurrencyCode;
+  currentNetWorth: number;
 }
 
 const TIME_RANGES = [
@@ -39,7 +40,11 @@ const TIME_RANGES = [
   { label: "ALL", days: 0 },
 ] as const;
 
-export function NetWorthChart({ data = [], currency }: NetWorthChartProps) {
+export function NetWorthChart({
+  data = [],
+  currency,
+  currentNetWorth,
+}: NetWorthChartProps) {
   const [selectedRange, setSelectedRange] = React.useState<number>(30); // Default to 1M
   const isMobile = useIsMobile();
 
@@ -48,11 +53,7 @@ export function NetWorthChart({ data = [], currency }: NetWorthChartProps) {
     return data.slice(-(selectedRange + 1));
   }, [data, selectedRange]);
 
-  // Check if current value (last data point) is negative
-  const isNegative = React.useMemo(() => {
-    if (filteredData.length === 0) return false;
-    return filteredData[filteredData.length - 1].value < 0;
-  }, [filteredData]);
+  const isNegative = currentNetWorth < 0;
 
   const formatWithCurrency = (value: number) => {
     const symbol = CURRENCY_SYMBOLS[currency];

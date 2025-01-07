@@ -37,7 +37,7 @@ const findBestPerformingAccount = (accounts: Account[]) => {
   if (accounts.length === 0) return undefined;
 
   // Only consider asset accounts (not debts)
-  const assetAccounts = accounts.filter(account => !account.isDebt);
+  const assetAccounts = accounts.filter((account) => !account.isDebt);
   if (assetAccounts.length === 0) return undefined;
 
   const accountPerformances = assetAccounts.map((account) => {
@@ -69,7 +69,9 @@ const Index = () => {
         ...newAccount,
         id: Math.random().toString(36).substr(2, 9),
         // Make debt accounts have negative balance
-        balance: newAccount.isDebt ? -Math.abs(newAccount.balance) : Math.abs(newAccount.balance),
+        balance: newAccount.isDebt
+          ? -Math.abs(newAccount.balance)
+          : Math.abs(newAccount.balance),
       },
     ]);
   };
@@ -90,12 +92,30 @@ const Index = () => {
   };
 
   const currentNetWorth = calculateNetWorth();
-  // For negative net worth, if it's getting more negative, that's worse (negative change)
-  const previousNetWorth = currentNetWorth * (currentNetWorth < 0 ? 0.95 : 1.05);
+
+  // Calculate previous net worth:
+  // For negative net worth:
+  // - To show getting worse: previous = -90, current = -100 (change = -10, -11.11%)
+  // - To show getting better: previous = -100, current = -90 (change = +10, +10%)
+  // For positive net worth:
+  // - To show growth: previous = 90, current = 100 (change = +10, +11.11%)
+  // - To show decline: previous = 100, current = 90 (change = -10, -10%)
+  const previousNetWorth =
+    currentNetWorth < 0
+      ? currentNetWorth * 0.9 // Previous was 10% less negative
+      : currentNetWorth * 0.9; // Previous was 10% lower
+
+  // Calculate net worth change
   const netWorthChange = currentNetWorth - previousNetWorth;
-  const changePercentage = previousNetWorth !== 0 
-    ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) * 100 
-    : 0;
+
+  // Calculate change percentage
+  // For negative values, a more negative number means it's getting worse
+  const changePercentage =
+    previousNetWorth !== 0
+      ? ((currentNetWorth - previousNetWorth) / Math.abs(previousNetWorth)) *
+        100
+      : 0;
+
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
   return (
@@ -127,7 +147,12 @@ const Index = () => {
 
           {accounts.length > 0 && (
             <div className="p-6 rounded-xl bg-card border border-border/50">
-              <NetWorthChart data={chartData} hasAccounts={true} currency={DEFAULT_CURRENCY} />
+              <NetWorthChart
+                data={chartData}
+                hasAccounts={true}
+                currency={DEFAULT_CURRENCY}
+                currentNetWorth={currentNetWorth}
+              />
             </div>
           )}
         </div>

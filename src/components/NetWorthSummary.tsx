@@ -32,10 +32,15 @@ export function NetWorthSummary({
   currency,
   bestPerformingAccount,
 }: NetWorthSummaryProps) {
-  const isPositiveChange = changePercentage >= 0;
   const isPositiveNetWorth = currentNetWorth >= 0;
-  const formattedChangePercentage = Math.abs(changePercentage).toFixed(2);
   const netWorthChange = currentNetWorth - previousNetWorth;
+
+  // For negative net worth:
+  // - If current is more negative than previous (e.g., -100 vs -90), it's getting worse
+  // - If current is less negative than previous (e.g., -90 vs -100), it's getting better
+  const isPositiveChange = isPositiveNetWorth
+    ? currentNetWorth > previousNetWorth // For positive net worth, higher is better
+    : currentNetWorth > previousNetWorth; // For negative net worth, less negative is better
 
   const formatWithCurrency = (value: number) => {
     const symbol = CURRENCY_SYMBOLS[currency];
@@ -56,7 +61,7 @@ export function NetWorthSummary({
             ) : (
               <ArrowDownRight className="h-4 w-4" />
             )}
-            {formattedChangePercentage}%
+            {Math.abs(changePercentage).toFixed(2)}%
           </span>
         </CardHeader>
         <CardContent>
@@ -66,7 +71,6 @@ export function NetWorthSummary({
             {formatWithCurrency(currentNetWorth)}
           </div>
           <p className="text-xs text-muted-foreground">
-            {netWorthChange >= 0 ? "+" : ""}
             {formatWithCurrency(netWorthChange)} from last {period}
           </p>
         </CardContent>
