@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useEffect } from "react";
+import { useAccounts } from "@/hooks/use-accounts";
 import { NetWorthSummary } from "@/components/NetWorthSummary";
 import { NetWorthChart } from "@/components/NetWorthChart";
 import { AccountsList, Account, CurrencyCode } from "@/components/AccountsList";
@@ -58,30 +59,20 @@ const Index = () => {
     document.title = "Argos | Your Net Worth Guardian";
   }, []);
 
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts();
 
   const chartData = useMemo(() => generateDailyData(accounts, 365), [accounts]);
 
   const handleAddAccount = (newAccount: Omit<Account, "id">) => {
-    setAccounts([
-      ...accounts,
-      {
-        ...newAccount,
-        id: Math.random().toString(36).substr(2, 9),
-        // Make debt accounts have negative balance
-        balance: newAccount.isDebt
-          ? -Math.abs(newAccount.balance)
-          : Math.abs(newAccount.balance),
-      },
-    ]);
+    addAccount(newAccount);
   };
 
   const handleEditAccount = (account: Account) => {
-    console.log("Edit account:", account);
+    updateAccount(account);
   };
 
   const handleDeleteAccount = (id: string) => {
-    setAccounts(accounts.filter((account) => account.id !== id));
+    deleteAccount(id);
   };
 
   const calculateNetWorth = () => {
