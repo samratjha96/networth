@@ -35,6 +35,16 @@ const CURRENCIES = [
 
 type Currency = (typeof CURRENCIES)[number]["code"];
 
+const assetTypes: AccountType[] = [
+  "Checking",
+  "Savings",
+  "Brokerage",
+  "Retirement",
+  "401K",
+];
+
+const debtTypes: AccountType[] = ["Credit Card", "Loan", "Mortgage"];
+
 export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -56,13 +66,17 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
       return;
     }
 
+    // Convert balance to number and handle debt accounts
+    const numericBalance = parseFloat(balance) || 0;
+
     onAddAccount({
-      name,
+      name: name.trim(),
       type,
-      balance: parseFloat(balance) || 0,
+      balance: numericBalance,
       isDebt,
       currency,
     });
+
     setOpen(false);
     setName("");
     setType("Checking");
@@ -72,14 +86,11 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
     setTouched({ name: false, balance: false });
   };
 
-  const assetTypes: AccountType[] = [
-    "Checking",
-    "Savings",
-    "Brokerage",
-    "Retirement",
-    "401K",
-  ];
-  const debtTypes: AccountType[] = ["Credit Card", "Loan", "Mortgage", "Car"];
+  const handleDebtToggle = (checked: boolean) => {
+    setIsDebt(checked);
+    // Reset type when switching between asset/debt
+    setType(checked ? debtTypes[0] : assetTypes[0]);
+  };
 
   const isNameError = touched.name && !name.trim();
   const isBalanceError = touched.balance && !balance.trim();
@@ -94,7 +105,8 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New Account</DialogTitle>
           <DialogDescription>
-            Add a new asset or debt account to track your net worth.
+            Add a new {isDebt ? "debt" : "asset"} account to track your net
+            worth.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
@@ -102,7 +114,7 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
             <Switch
               id="debt-mode"
               checked={isDebt}
-              onCheckedChange={setIsDebt}
+              onCheckedChange={handleDebtToggle}
             />
             <Label htmlFor="debt-mode">This is a debt</Label>
           </div>
@@ -137,17 +149,11 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
               <SelectContent>
-                {isDebt
-                  ? debtTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))
-                  : assetTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
+                {(isDebt ? debtTypes : assetTypes).map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

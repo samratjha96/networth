@@ -42,7 +42,14 @@ export function AccountsPanel({
 
   const formatAccountBalance = (account: Account) => {
     const symbol = CURRENCY_SYMBOLS[account.currency];
-    return `${symbol}${formatCurrency(account.balance).replace(/^\$/, "")}`;
+    const formatted = formatCurrency(Math.abs(account.balance)).replace(
+      /^\$/,
+      "",
+    );
+    // Balance is already negative for debts, so just format accordingly
+    return account.balance < 0
+      ? `-${symbol}${formatted}`
+      : `${symbol}${formatted}`;
   };
 
   if (filteredAccounts.length === 0) {
@@ -74,7 +81,9 @@ export function AccountsPanel({
                   <p className="text-sm font-medium leading-none text-foreground">
                     {account.name}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p
+                    className={`text-sm ${account.balance < 0 ? "text-destructive" : "text-muted-foreground"}`}
+                  >
                     {formatAccountBalance(account)}
                   </p>
                 </div>

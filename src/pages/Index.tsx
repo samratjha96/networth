@@ -19,8 +19,8 @@ const generateDailyData = (accounts: Account[], days: number) => {
       const baseValue = account.balance;
       const randomFluctuation = (Math.random() - 0.5) * 0.02; // ±1% daily fluctuation
       const value = baseValue * (1 + randomFluctuation);
-      // Subtract debt values from total
-      return account.isDebt ? -value : value;
+      // Debt accounts are already negative in the balance
+      return value;
     });
 
     const totalValue = dailyValues.reduce((sum, value) => sum + value, 0);
@@ -68,6 +68,10 @@ const Index = () => {
       {
         ...newAccount,
         id: Math.random().toString(36).substr(2, 9),
+        // Make debt accounts have negative balance
+        balance: newAccount.isDebt
+          ? -Math.abs(newAccount.balance)
+          : Math.abs(newAccount.balance),
       },
     ]);
   };
@@ -82,9 +86,8 @@ const Index = () => {
 
   const calculateNetWorth = () => {
     return accounts.reduce((sum, account) => {
-      const value = account.balance;
-      // TODO: Add currency conversion here when needed
-      return sum + (account.isDebt ? -value : value);
+      // No need to check isDebt since balance is already negative for debts
+      return sum + account.balance;
     }, 0);
   };
 
