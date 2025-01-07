@@ -85,7 +85,7 @@ const Index = () => {
   const currentNetWorth = calculateNetWorth();
   const previousNetWorth = currentNetWorth * 0.95;
   const changePercentage =
-    ((currentNetWorth - previousNetWorth) / previousNetWorth) * 100;
+    ((currentNetWorth - previousNetWorth) / previousNetWorth) * 100 || 0;
   const bestPerformingAccount = findBestPerformingAccount(accounts);
 
   return (
@@ -114,9 +114,11 @@ const Index = () => {
             />
           </div>
 
-          <div className="p-6 rounded-xl bg-card border border-border/50">
-            <NetWorthChart data={chartData} hasAccounts={accounts.length > 0} />
-          </div>
+          {accounts.length > 0 && (
+            <div className="p-6 rounded-xl bg-card border border-border/50">
+              <NetWorthChart data={chartData} />
+            </div>
+          )}
         </div>
 
         <div className="grid gap-6">
