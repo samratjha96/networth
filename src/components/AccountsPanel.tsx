@@ -1,7 +1,7 @@
 import { Account, AccountType, CurrencyCode } from "@/components/AccountsList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlusCircle } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, accountTypeEmojis } from "@/lib/utils";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
@@ -70,7 +70,7 @@ export function AccountsPanel({
       {Object.entries(groupedAccounts).map(([type, accounts]) => (
         <div key={type} className="space-y-4">
           <div className="font-medium text-sm text-muted-foreground">
-            {type}
+            {accountTypeEmojis[type as AccountType]} {type}
           </div>
           <div className="grid gap-4">
             {accounts.map((account) => (

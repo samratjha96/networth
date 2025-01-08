@@ -77,15 +77,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-10 space-y-8">
-        <div className="flex justify-between items-center">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Argos
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Your all-seeing financial guardian
-            </p>
-          </div>
+        <div className="flex flex-col items-center text-center mb-12">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-2">
+            Argos
+          </h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Your all-seeing financial guardian
+          </p>
           <AddAccountDialog onAddAccount={handleAddAccount} />
         </div>
 
