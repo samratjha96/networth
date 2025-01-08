@@ -15,13 +15,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Account, AccountType } from "./AccountsList";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 interface AddAccountDialogProps {
   onAddAccount: (account: Omit<Account, "id">) => void;
+  onEditAccount?: (account: Account) => void;
+  account?: Account;
+  trigger?: React.ReactNode;
 }
 
 const CURRENCIES = [
@@ -41,17 +44,45 @@ const assetTypes: AccountType[] = [
   "Brokerage",
   "Retirement",
   "401K",
+  "Car",
+  "Real Estate",
 ];
 
 const debtTypes: AccountType[] = ["Credit Card", "Loan", "Mortgage"];
 
-export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
+export function AddAccountDialog({
+  onAddAccount,
+  onEditAccount,
+  account,
+  trigger,
+}: AddAccountDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("Checking");
   const [balance, setBalance] = useState("");
   const [currency, setCurrency] = useState<Currency>("USD");
   const [isDebt, setIsDebt] = useState(false);
+
+  // Reset form when dialog opens and when account changes
+  useEffect(() => {
+    if (open) {
+      if (account) {
+        setName(account.name);
+        setType(account.type);
+        setBalance(Math.abs(account.balance).toString());
+        setCurrency(account.currency);
+        setIsDebt(account.isDebt ?? false);
+      } else {
+        setName("");
+        setType("Checking");
+        setBalance("");
+        setCurrency("USD");
+        setIsDebt(false);
+      }
+      setTouched({ name: false, balance: false });
+    }
+  }, [open, account]);
+
   const [touched, setTouched] = useState({
     name: false,
     balance: false,
@@ -66,47 +97,65 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
       return;
     }
 
-    // Convert balance to number and handle debt accounts
-    const numericBalance = parseFloat(balance) || 0;
+    // Convert balance to number
+    let numericBalance = parseFloat(balance) || 0;
 
-    onAddAccount({
+    // For liability accounts, ensure the balance is negative
+    if (isDebt && numericBalance > 0) {
+      numericBalance = -numericBalance;
+    }
+
+    const accountData = {
       name: name.trim(),
       type,
       balance: numericBalance,
       isDebt,
       currency,
-    });
+    };
+
+    if (account && onEditAccount) {
+      onEditAccount({ ...accountData, id: account.id });
+    } else {
+      onAddAccount(accountData);
+    }
 
     setOpen(false);
     setName("");
     setType("Checking");
-    setBalance("");
+    setBalance("0");
     setCurrency("USD");
     setIsDebt(false);
     setTouched({ name: false, balance: false });
   };
 
   const handleDebtToggle = (checked: boolean) => {
-    setIsDebt(checked);
-    // Reset type when switching between asset/debt
-    setType(checked ? debtTypes[0] : assetTypes[0]);
+    if (!account) {
+      setIsDebt(checked);
+      setType(checked ? debtTypes[0] : assetTypes[0]);
+    }
   };
 
   const isNameError = touched.name && !name.trim();
   const isBalanceError = touched.balance && !balance.trim();
   const isValid = name.trim() && balance.trim();
 
+  // Get available account types based on whether it's an asset or liability
+  // When editing, only show types valid for the account's current status
+  const availableTypes = account?.isDebt ? debtTypes : assetTypes;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Add Account</Button>
+        {trigger ?? <Button variant="outline">Add Account</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Account</DialogTitle>
+          <DialogTitle>
+            {account ? "Edit Account" : "Add New Account"}
+          </DialogTitle>
           <DialogDescription>
-            Add a new {isDebt ? "debt" : "asset"} account to track your net
-            worth.
+            {account ? "Edit" : "Add a new"} {isDebt ? "liability" : "asset"}{" "}
+            account to track your net worth.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
@@ -115,8 +164,9 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
               id="debt-mode"
               checked={isDebt}
               onCheckedChange={handleDebtToggle}
+              disabled={!!account}
             />
-            <Label htmlFor="debt-mode">This is a debt</Label>
+            <Label htmlFor="debt-mode">This is a liability</Label>
           </div>
 
           <div className="grid gap-2">
@@ -149,7 +199,7 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
               <SelectContent>
-                {(isDebt ? debtTypes : assetTypes).map((type) => (
+                {availableTypes.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
                   </SelectItem>
@@ -201,7 +251,7 @@ export function AddAccountDialog({ onAddAccount }: AddAccountDialogProps) {
           </div>
 
           <Button type="submit" disabled={!isValid}>
-            Add Account
+            {account ? "Save Changes" : "Add Account"}
           </Button>
         </form>
       </DialogContent>

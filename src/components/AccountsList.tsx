@@ -12,7 +12,8 @@ export type AccountType =
   | "Credit Card"
   | "Loan"
   | "Mortgage"
-  | "Car";
+  | "Car"
+  | "Real Estate";
 
 export type CurrencyCode = "USD" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD";
 
@@ -36,7 +37,7 @@ export function AccountsList({
   onEditAccount,
   onDeleteAccount,
 }: AccountsListProps) {
-  const [view, setView] = useState<"assets" | "debts">("assets");
+  const [view, setView] = useState<"assets" | "liabilities">("assets");
 
   return (
     <Card className="bg-background border-border">
@@ -47,14 +48,14 @@ export function AccountsList({
             type="single"
             value={view}
             onValueChange={(value) =>
-              value && setView(value as "assets" | "debts")
+              value && setView(value as "assets" | "liabilities")
             }
           >
             <ToggleGroupItem value="assets" className="text-sm">
               Assets
             </ToggleGroupItem>
-            <ToggleGroupItem value="debts" className="text-sm">
-              Debts
+            <ToggleGroupItem value="liabilities" className="text-sm">
+              Liabilities
             </ToggleGroupItem>
           </ToggleGroup>
         </div>

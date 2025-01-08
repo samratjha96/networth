@@ -1,7 +1,8 @@
-import { Account, AccountType, CurrencyCode } from "./AccountsList";
+import { Account, AccountType, CurrencyCode } from "@/components/AccountsList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlusCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { AddAccountDialog } from "@/components/AddAccountDialog";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",
@@ -14,7 +15,7 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
 
 interface AccountsPanelProps {
   accounts: Account[];
-  type: "assets" | "debts";
+  type: "assets" | "liabilities";
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (id: string) => void;
 }
@@ -57,8 +58,8 @@ export function AccountsPanel({
       <Alert variant="default" className="mt-4 bg-muted/50">
         <PlusCircle className="h-4 w-4 text-muted-foreground" />
         <AlertDescription>
-          Add your first {type === "assets" ? "asset" : "debt"} account to start
-          tracking
+          Add your first {type === "assets" ? "asset" : "liability"} account to
+          start tracking
         </AlertDescription>
       </Alert>
     );
@@ -88,12 +89,16 @@ export function AccountsPanel({
                   </p>
                 </div>
                 <div className="flex space-x-2">
-                  <button
-                    onClick={() => onEditAccount(account)}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    Edit
-                  </button>
+                  <AddAccountDialog
+                    onAddAccount={() => {}} // Not used in edit mode
+                    onEditAccount={onEditAccount}
+                    account={account}
+                    trigger={
+                      <button className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                        Edit
+                      </button>
+                    }
+                  />
                   <button
                     onClick={() => onDeleteAccount(account.id)}
                     className="text-sm text-muted-foreground hover:text-destructive transition-colors"
