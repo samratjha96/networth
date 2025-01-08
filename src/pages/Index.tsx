@@ -15,17 +15,16 @@ const findBestPerformingAccount = (accounts: Account[]) => {
   const assetAccounts = accounts.filter((account) => !account.isDebt);
   if (assetAccounts.length === 0) return undefined;
 
-  const accountPerformances = assetAccounts.map((account) => {
-    const randomGrowth = 5 + Math.random() * 15; // 5-20% growth
-    return {
-      name: account.name,
-      changePercentage: randomGrowth,
-    };
-  });
-
-  return accountPerformances.reduce((prev, current) =>
-    prev.changePercentage > current.changePercentage ? prev : current,
+  // Find account with highest balance
+  const bestAccount = assetAccounts.reduce((prev, current) =>
+    prev.balance > current.balance ? prev : current,
   );
+
+  // Use a fixed percentage since we don't have historical data
+  return {
+    name: bestAccount.name,
+    changePercentage: 5, // Fixed 5% growth to avoid random fluctuations
+  };
 };
 
 const Index = () => {
@@ -72,7 +71,10 @@ const Index = () => {
         100
       : 0;
 
-  const bestPerformingAccount = findBestPerformingAccount(accounts);
+  const bestPerformingAccount = useMemo(
+    () => findBestPerformingAccount(accounts),
+    [accounts],
+  );
 
   return (
     <div className="min-h-screen bg-background">
