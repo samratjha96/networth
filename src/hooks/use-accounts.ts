@@ -9,19 +9,20 @@ export function useAccounts() {
 
   // Load accounts on mount
   useEffect(() => {
-    async function loadAccounts() {
-      try {
-        const loadedAccounts = await db.getAllAccounts();
-        setAccounts(loadedAccounts);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load accounts'));
-      } finally {
-        setIsLoading(false);
-      }
-    }
     loadAccounts();
   }, []);
+
+  const loadAccounts = async () => {
+    try {
+      const loadedAccounts = await db.getAllAccounts();
+      setAccounts(loadedAccounts);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to load accounts'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const addAccount = useCallback(async (newAccount: Omit<Account, "id">) => {
     try {

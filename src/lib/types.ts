@@ -1,4 +1,4 @@
-import { Account } from "@/components/AccountsList";
+import { Account } from "@/components/AccountsList"
 
 export interface AccountStorage {
   getAccounts(): Promise<Account[]>;
@@ -24,7 +24,7 @@ export interface DatabaseOperations {
   // Account operations
   getAllAccounts(): Promise<Account[]>;
   getAccount(id: string): Promise<Account | undefined>;
-  insertAccount(account: Account): Promise<void>;
+  insertAccount(accountData: Omit<Account, "id">): Promise<Account>;
   updateAccount(account: Account): Promise<void>;
   deleteAccount(id: string): Promise<void>;
 

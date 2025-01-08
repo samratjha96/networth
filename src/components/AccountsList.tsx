@@ -1,19 +1,20 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useState } from "react";
 import { AccountsPanel } from "./AccountsPanel";
 
-export type AccountType =
+export type AssetType =
   | "Checking"
   | "Savings"
   | "Brokerage"
   | "Retirement"
   | "401K"
-  | "Credit Card"
-  | "Loan"
-  | "Mortgage"
   | "Car"
   | "Real Estate";
+
+export type DebtType = "Credit Card" | "Loan" | "Mortgage";
+
+export type AccountType = AssetType | DebtType;
 
 export type CurrencyCode = "USD" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD";
 

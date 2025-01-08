@@ -10,10 +10,17 @@ const STORAGE_KEYS = {
 export class MockDatabase implements DatabaseProvider {
   private static instance: MockDatabase | null = null;
 
-  static async getInstance(): Promise<MockDatabase> {
+  static getInstance(): MockDatabase {
     if (!MockDatabase.instance) {
       MockDatabase.instance = new MockDatabase();
-      await MockDatabase.instance.initialize();
+      // Initialize storage if empty
+      if (!localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) {
+        localStorage.setItem(STORAGE_KEYS.ACCOUNTS, '[]');
+      }
+      if (!localStorage.getItem(STORAGE_KEYS.HISTORY)) {
+        localStorage.setItem(STORAGE_KEYS.HISTORY, '[]');
+      }
+      console.log("Mock database initialized");
     }
     return MockDatabase.instance;
   }
@@ -36,15 +43,9 @@ export class MockDatabase implements DatabaseProvider {
     localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
   }
 
+  // For interface compatibility
   async initialize(): Promise<void> {
-    // Initialize storage if empty
-    if (!localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) {
-      this.setStoredAccounts([]);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.HISTORY)) {
-      this.setStoredHistory([]);
-    }
-    console.log("Mock database initialized");
+    console.log("Mock database already initialized");
   }
 
   async close(): Promise<void> {
@@ -133,5 +134,5 @@ export class MockDatabase implements DatabaseProvider {
   }
 }
 
-// Export a singleton instance
+// Export initialized instance
 export const db = MockDatabase.getInstance();

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -6,19 +6,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react";
-import { Account, AccountType } from "./AccountsList";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Account, AssetType, DebtType } from "./AccountsList";
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 interface AddAccountDialogProps {
   onAddAccount: (account: Omit<Account, "id">) => void;
@@ -38,7 +38,7 @@ const CURRENCIES = [
 
 type Currency = (typeof CURRENCIES)[number]["code"];
 
-const assetTypes: AccountType[] = [
+const assetTypes: AssetType[] = [
   "Checking",
   "Savings",
   "Brokerage",
@@ -48,7 +48,7 @@ const assetTypes: AccountType[] = [
   "Real Estate",
 ];
 
-const debtTypes: AccountType[] = ["Credit Card", "Loan", "Mortgage"];
+const debtTypes: DebtType[] = ["Credit Card", "Loan", "Mortgage"];
 
 export function AddAccountDialog({
   onAddAccount,
@@ -58,7 +58,7 @@ export function AddAccountDialog({
 }: AddAccountDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [type, setType] = useState<AccountType>("Checking");
+  const [type, setType] = useState<AssetType | DebtType>("Checking");
   const [balance, setBalance] = useState("");
   const [currency, setCurrency] = useState<Currency>("USD");
   const [isDebt, setIsDebt] = useState(false);
@@ -140,8 +140,7 @@ export function AddAccountDialog({
   const isValid = name.trim() && balance.trim();
 
   // Get available account types based on whether it's an asset or liability
-  // When editing, only show types valid for the account's current status
-  const availableTypes = account?.isDebt ? debtTypes : assetTypes;
+  const availableTypes = isDebt ? debtTypes : assetTypes;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -193,7 +192,7 @@ export function AddAccountDialog({
             <Label htmlFor="type">Account Type</Label>
             <Select
               value={type}
-              onValueChange={(value) => setType(value as AccountType)}
+              onValueChange={(value) => setType(value as AssetType | DebtType)}
             >
               <SelectTrigger className="bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] focus-visible:shadow-[0_0_0_1px_hsl(var(--primary))]">
                 <SelectValue placeholder="Select account type" />
