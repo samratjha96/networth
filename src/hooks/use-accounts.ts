@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Account } from "@/components/AccountsList";
-import { DatabaseAccountStorage } from "@/lib/account-storage";
-
-const storage = new DatabaseAccountStorage();
+import { db } from "@/lib/database";
 
 export function useAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -13,7 +11,7 @@ export function useAccounts() {
   useEffect(() => {
     async function loadAccounts() {
       try {
-        const loadedAccounts = await storage.getAccounts();
+        const loadedAccounts = await db.getAllAccounts();
         setAccounts(loadedAccounts);
         setError(null);
       } catch (err) {
@@ -27,7 +25,7 @@ export function useAccounts() {
 
   const addAccount = useCallback(async (newAccount: Omit<Account, "id">) => {
     try {
-      const account = await storage.addAccount(newAccount);
+      const account = await db.insertAccount(newAccount);
       setAccounts((prev) => [...prev, account]);
       setError(null);
       return account;
@@ -40,7 +38,7 @@ export function useAccounts() {
 
   const updateAccount = useCallback(async (account: Account) => {
     try {
-      await storage.updateAccount(account);
+      await db.updateAccount(account);
       setAccounts((prev) =>
         prev.map((a) => (a.id === account.id ? account : a))
       );
@@ -54,7 +52,7 @@ export function useAccounts() {
 
   const deleteAccount = useCallback(async (id: string) => {
     try {
-      await storage.deleteAccount(id);
+      await db.deleteAccount(id);
       setAccounts((prev) => prev.filter((a) => a.id !== id));
       setError(null);
     } catch (err) {

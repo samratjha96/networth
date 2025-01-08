@@ -61,10 +61,17 @@ export class MockDatabase implements DatabaseProvider {
     return accounts.find(account => account.id === id);
   }
 
-  async insertAccount(account: Account): Promise<void> {
+  async insertAccount(accountData: Omit<Account, "id">): Promise<Account> {
+    const newAccount: Account = {
+      ...accountData,
+      id: crypto.randomUUID(),
+      balance: accountData.isDebt ? -Math.abs(accountData.balance) : Math.abs(accountData.balance),
+    };
+    
     const accounts = this.getStoredAccounts();
-    this.setStoredAccounts([...accounts, account]);
+    this.setStoredAccounts([...accounts, newAccount]);
     await this.updateNetworthSnapshot();
+    return newAccount;
   }
 
   async updateAccount(account: Account): Promise<void> {
@@ -75,7 +82,11 @@ export class MockDatabase implements DatabaseProvider {
       throw new Error(`Account with id ${account.id} not found`);
     }
 
-    accounts[index] = account;
+    const updatedAccount = {
+      ...account,
+      balance: account.isDebt ? -Math.abs(account.balance) : Math.abs(account.balance),
+    };
+    accounts[index] = updatedAccount;
     this.setStoredAccounts(accounts);
     await this.updateNetworthSnapshot();
   }
