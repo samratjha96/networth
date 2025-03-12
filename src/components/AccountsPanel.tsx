@@ -1,6 +1,11 @@
 import { Account, AccountType, CurrencyCode } from "@/components/AccountsList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PlusCircle, MoreHorizontal, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  PlusCircle,
+  MoreHorizontal,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import { formatCurrency, accountTypeEmojis } from "@/lib/utils";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +40,7 @@ export function AccountsPanel({
   onDeleteAccount,
 }: AccountsPanelProps) {
   const filteredAccounts = accounts.filter((account) =>
-    type === "assets" ? !account.isDebt : account.isDebt
+    type === "assets" ? !account.isDebt : account.isDebt,
   );
 
   const groupedAccounts = filteredAccounts.reduce(
@@ -46,14 +51,14 @@ export function AccountsPanel({
       acc[account.type].push(account);
       return acc;
     },
-    {} as Record<AccountType, Account[]>
+    {} as Record<AccountType, Account[]>,
   );
 
   const formatAccountBalance = (account: Account) => {
     const symbol = CURRENCY_SYMBOLS[account.currency];
     const formatted = formatCurrency(Math.abs(account.balance)).replace(
       /^\$/,
-      ""
+      "",
     );
     return account.balance < 0
       ? `-${symbol}${formatted}`
@@ -65,12 +70,18 @@ export function AccountsPanel({
       <Alert variant="default" className="m-4 bg-muted/50 border border-dashed">
         <PlusCircle className="h-4 w-4 text-muted-foreground" />
         <AlertDescription className="flex items-center justify-between w-full">
-          <span>Add your first {type === "assets" ? "asset" : "liability"} account to start tracking</span>
+          <span>
+            Add your first {type === "assets" ? "asset" : "liability"} account
+            to start tracking
+          </span>
           <AddAccountDialog
             onAddAccount={() => {}}
             onEditAccount={() => {}}
             trigger={
-              <Badge variant="outline" className="cursor-pointer hover:bg-primary/10">
+              <Badge
+                variant="outline"
+                className="cursor-pointer hover:bg-primary/10"
+              >
                 Add {type === "assets" ? "Asset" : "Liability"}
               </Badge>
             }
@@ -85,7 +96,9 @@ export function AccountsPanel({
       {Object.entries(groupedAccounts).map(([type, accounts]) => (
         <div key={type} className="border rounded-md overflow-hidden shadow-sm">
           <div className="px-3 py-2.5 font-medium text-base flex items-center gap-1.5 bg-muted/40 border-b">
-            <span className="text-xl">{accountTypeEmojis[type as AccountType]}</span> 
+            <span className="text-xl">
+              {accountTypeEmojis[type as AccountType]}
+            </span>
             <span>{type}</span>
             <Badge variant="outline" className="font-normal ml-2 text-xs">
               {accounts.length}
@@ -94,23 +107,24 @@ export function AccountsPanel({
           <div className="p-2.5 space-y-2">
             {accounts.map((account) => {
               const isNegative = account.balance < 0;
-              const accountColor = isNegative && type === "assets" 
-                ? "text-red-500" 
-                : type === "assets" 
-                  ? "text-green-500" 
-                  : "text-orange-500";
-                  
+              const accountColor =
+                isNegative && type === "assets"
+                  ? "text-red-500"
+                  : type === "assets"
+                    ? "text-green-500"
+                    : "text-orange-500";
+
               return (
                 <div
                   key={account.id}
                   className={cn(
                     "flex items-center justify-between p-3 border rounded-md bg-card hover:bg-accent/10 transition-colors",
                     "border-l-4",
-                    isNegative && type === "assets" 
-                      ? "border-l-red-500/80" 
-                      : type === "assets" 
-                        ? "border-l-green-500/80" 
-                        : "border-l-orange-500/80"
+                    isNegative && type === "assets"
+                      ? "border-l-red-500/80"
+                      : type === "assets"
+                        ? "border-l-green-500/80"
+                        : "border-l-orange-500/80",
                   )}
                 >
                   <div className="flex flex-col min-w-0">
@@ -118,15 +132,17 @@ export function AccountsPanel({
                       <p className="text-base font-medium leading-tight truncate">
                         {account.name}
                       </p>
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className="text-xs py-0 h-5 shrink-0"
                       >
                         {account.currency}
                       </Badge>
                     </div>
                     <div className="flex items-center mt-1.5">
-                      <p className={`text-base font-medium ${accountColor} truncate`}>
+                      <p
+                        className={`text-base font-medium ${accountColor} truncate`}
+                      >
                         {formatAccountBalance(account)}
                       </p>
                     </div>
@@ -148,7 +164,7 @@ export function AccountsPanel({
                           </DropdownMenuItem>
                         }
                       />
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="cursor-pointer text-red-500 focus:text-red-500"
                         onClick={() => onDeleteAccount(account.id)}
                       >

@@ -5,4 +5,6 @@ export interface TestModeContextType {
   toggleTestMode: () => void;
 }
 
-export const TestModeContext = createContext<TestModeContextType | undefined>(undefined); 
+export const TestModeContext = createContext<TestModeContextType | undefined>(
+  undefined,
+);

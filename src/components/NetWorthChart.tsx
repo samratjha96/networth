@@ -47,7 +47,8 @@ export function NetWorthChart({
   onTimeRangeChange,
   initialTimeRange = 7,
 }: NetWorthChartProps) {
-  const [selectedRange, setSelectedRange] = React.useState<number>(initialTimeRange);
+  const [selectedRange, setSelectedRange] =
+    React.useState<number>(initialTimeRange);
   const isMobile = useIsMobile();
   const { data: rawData = [], isLoading } = useNetworthHistory(selectedRange);
   const isTestMode = db.isTestModeEnabled();
@@ -70,88 +71,93 @@ export function NetWorthChart({
   // Process the data to ensure visible fluctuations for all time ranges
   const data = React.useMemo(() => {
     if (!rawData || rawData.length === 0) return [];
-    
+
     // For 1D view, we generate hourly data points
     if (selectedRange === 1) {
       const lastPoint = rawData[rawData.length - 1];
       const result = [];
       const baseDate = new Date(lastPoint.date);
       const baseValue = currentNetWorth;
-      
+
       // Create hourly fluctuations for the last 24 hours
       for (let i = 24; i >= 0; i--) {
         const hourDate = new Date(baseDate);
         hourDate.setHours(hourDate.getHours() - i);
-        
+
         const fluctuationPercent = (Math.random() - 0.5) * 0.02; // ±1% fluctuation
         const fluctuation = baseValue * fluctuationPercent;
-        
+
         result.push({
           date: hourDate.toISOString(),
           value: baseValue + fluctuation,
         });
       }
-      
+
       if (result.length > 0) {
         result[result.length - 1].value = currentNetWorth;
       }
-      
+
       return result;
     }
 
     if (selectedRange > 0) {
-      const filteredData = [...rawData].filter(point => {
+      const filteredData = [...rawData].filter((point) => {
         const pointDate = new Date(point.date);
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - selectedRange);
         return pointDate >= cutoffDate;
       });
-      
-      const result = filteredData.length > 0 ? filteredData : rawData.slice(-selectedRange);
-      
+
+      const result =
+        filteredData.length > 0 ? filteredData : rawData.slice(-selectedRange);
+
       if (result.length > 0) {
         const mostRecentIndex = result.reduce((maxIndex, point, index, arr) => {
           if (index === 0) return 0;
-          return new Date(point.date) > new Date(arr[maxIndex].date) ? index : maxIndex;
+          return new Date(point.date) > new Date(arr[maxIndex].date)
+            ? index
+            : maxIndex;
         }, 0);
-        
+
         result[mostRecentIndex] = {
           ...result[mostRecentIndex],
-          value: currentNetWorth
+          value: currentNetWorth,
         };
       }
-      
+
       return result;
     }
-    
+
     const allData = [...rawData];
-    
+
     if (allData.length > 0) {
       const mostRecentIndex = allData.reduce((maxIndex, point, index, arr) => {
         if (index === 0) return 0;
-        return new Date(point.date) > new Date(arr[maxIndex].date) ? index : maxIndex;
+        return new Date(point.date) > new Date(arr[maxIndex].date)
+          ? index
+          : maxIndex;
       }, 0);
-      
+
       allData[mostRecentIndex] = {
         ...allData[mostRecentIndex],
-        value: currentNetWorth
+        value: currentNetWorth,
       };
     }
-    
+
     return allData;
   }, [rawData, selectedRange, currentNetWorth]);
 
   // Calculate Y-axis domain to enhance visualization of fluctuations
   const yAxisDomain = React.useMemo(() => {
     if (!data || data.length === 0) {
-      return [0, 'auto'] as [number, 'auto'];
+      return [0, "auto"] as [number, "auto"];
     }
 
     // Find min and max values
     let minValue = Infinity;
     let maxValue = -Infinity;
-    
-    data.forEach(item => {
+
+    data.forEach((item) => {
       if (item.value < minValue) minValue = item.value;
       if (item.value > maxValue) maxValue = item.value;
     });
@@ -162,10 +168,10 @@ export function NetWorthChart({
 
     // Add some padding (this can be adjusted)
     const range = maxValue - minValue;
-    
+
     // Calculate relative range
     const relativeRange = range / maxValue;
-    
+
     // Adjust domain based on the data's relative range
     if (relativeRange < 0.05) {
       // Very small fluctuations - zoom in significantly
@@ -220,8 +226,8 @@ export function NetWorthChart({
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <CardTitle>Net Worth Over Time</CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="text-xs"
               onClick={() => setAutoScale(!autoScale)}
@@ -252,7 +258,9 @@ export function NetWorthChart({
             </div>
           ) : data.length === 0 ? (
             <div className="flex h-full items-center justify-center">
-              <div className="text-muted-foreground">No data available for the selected time range</div>
+              <div className="text-muted-foreground">
+                No data available for the selected time range
+              </div>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -295,15 +303,15 @@ export function NetWorthChart({
                   axisLine={false}
                   tickFormatter={(dateStr) => {
                     const date = new Date(dateStr);
-                    
+
                     // For 1D view (hourly data)
                     if (selectedRange === 1) {
-                      return date.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit'
+                      return date.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
                       });
                     }
-                    
+
                     const month = date.toLocaleString("default", {
                       month: "short",
                     });
@@ -339,19 +347,20 @@ export function NetWorthChart({
                     if (active && payload && payload.length) {
                       const value = payload[0].value as number;
                       const date = new Date(payload[0].payload.date);
-                      const formattedDate = selectedRange === 1
-                        ? date.toLocaleString("default", {
-                            hour: "numeric",
-                            minute: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })
-                        : date.toLocaleDateString("default", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          });
-                      
+                      const formattedDate =
+                        selectedRange === 1
+                          ? date.toLocaleString("default", {
+                              hour: "numeric",
+                              minute: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : date.toLocaleDateString("default", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            });
+
                       return (
                         <div className="rounded-lg border bg-background p-2 shadow-sm">
                           <div className="grid grid-cols-2 gap-2">

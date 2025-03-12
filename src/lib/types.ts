@@ -1,4 +1,4 @@
-import { Account } from "@/components/AccountsList"
+import { Account } from "@/components/AccountsList";
 
 export interface AccountStorage {
   getAccounts(): Promise<Account[]>;

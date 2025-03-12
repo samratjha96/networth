@@ -6,11 +6,11 @@ import { useToast } from "@/hooks/use-toast";
 export function TestModeToggle() {
   const { toast } = useToast();
   const isTestMode = db.isTestModeEnabled();
-  
+
   const handleToggleTestMode = () => {
     try {
       db.toggleTestMode();
-      
+
       // Force page reload to apply test mode changes
       window.location.reload();
     } catch (error) {
@@ -22,11 +22,11 @@ export function TestModeToggle() {
       console.error(error);
     }
   };
-  
+
   return (
-    <Button 
-      variant={isTestMode ? "destructive" : "outline"} 
-      size="sm" 
+    <Button
+      variant={isTestMode ? "destructive" : "outline"}
+      size="sm"
       onClick={handleToggleTestMode}
       className="gap-1"
     >
@@ -47,4 +47,4 @@ export function TestModeToggle() {
       {isTestMode ? "Disable Test Mode" : "Enable Test Mode"}
     </Button>
   );
-} 
+}

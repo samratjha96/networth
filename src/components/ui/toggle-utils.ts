@@ -20,4 +20,4 @@ export const toggleVariants = cva(
       size: "default",
     },
   },
-); 
+);

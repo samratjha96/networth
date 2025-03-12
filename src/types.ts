@@ -14,4 +14,4 @@ export interface PerformanceData {
   worstPerformer: AccountPerformance | null;
   isLoading: boolean;
   error: Error | null;
-} 
+}

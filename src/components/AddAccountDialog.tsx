@@ -147,7 +147,11 @@ export function AddAccountDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger ?? <Button variant="outline" className={className}>Add Account</Button>}
+        {trigger ?? (
+          <Button variant="outline" className={className}>
+            Add Account
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

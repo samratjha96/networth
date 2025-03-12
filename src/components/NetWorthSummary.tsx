@@ -71,8 +71,11 @@ export function NetWorthSummary({
             {formatWithCurrency(currentNetWorth)}
           </div>
           <p className="text-xs text-muted-foreground flex items-center">
-            <span className={isPositiveChange ? "text-primary" : "text-destructive"}>
-              {isPositiveChange ? '+' : ''}{formatWithCurrency(netWorthChange)}
+            <span
+              className={isPositiveChange ? "text-primary" : "text-destructive"}
+            >
+              {isPositiveChange ? "+" : ""}
+              {formatWithCurrency(netWorthChange)}
             </span>
             <span className="ml-1">from last {period}</span>
           </p>

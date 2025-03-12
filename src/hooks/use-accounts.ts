@@ -18,7 +18,9 @@ export function useAccounts() {
       setAccounts(loadedAccounts);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load accounts'));
+      setError(
+        err instanceof Error ? err : new Error("Failed to load accounts"),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -31,7 +33,8 @@ export function useAccounts() {
       setError(null);
       return account;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to add account');
+      const error =
+        err instanceof Error ? err : new Error("Failed to add account");
       setError(error);
       throw error;
     }
@@ -41,11 +44,12 @@ export function useAccounts() {
     try {
       await db.updateAccount(account);
       setAccounts((prev) =>
-        prev.map((a) => (a.id === account.id ? account : a))
+        prev.map((a) => (a.id === account.id ? account : a)),
       );
       setError(null);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to update account');
+      const error =
+        err instanceof Error ? err : new Error("Failed to update account");
       setError(error);
       throw error;
     }
@@ -57,7 +61,8 @@ export function useAccounts() {
       setAccounts((prev) => prev.filter((a) => a.id !== id));
       setError(null);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to delete account');
+      const error =
+        err instanceof Error ? err : new Error("Failed to delete account");
       setError(error);
       throw error;
     }

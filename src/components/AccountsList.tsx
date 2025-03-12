@@ -44,13 +44,13 @@ export function AccountsList({
   onAddAccount,
 }: AccountsListProps) {
   const [view, setView] = useState<"assets" | "liabilities">("assets");
-  
+
   const assetsTotal = accounts
-    .filter(account => !account.isDebt)
+    .filter((account) => !account.isDebt)
     .reduce((sum, account) => sum + account.balance, 0);
-    
+
   const liabilitiesTotal = accounts
-    .filter(account => account.isDebt)
+    .filter((account) => account.isDebt)
     .reduce((sum, account) => sum + Math.abs(account.balance), 0);
 
   return (
@@ -62,8 +62,8 @@ export function AccountsList({
             <span className="text-sm text-muted-foreground px-1.5 py-0.5 bg-muted/50 rounded-full">
               {accounts.length} total
             </span>
-            <AddAccountDialog 
-              onAddAccount={onAddAccount} 
+            <AddAccountDialog
+              onAddAccount={onAddAccount}
               trigger={
                 <Button variant="ghost" size="icon" className="h-7 w-7">
                   <Plus className="h-4 w-4" />
@@ -71,21 +71,33 @@ export function AccountsList({
               }
             />
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-3">
             {view === "assets" && assetsTotal > 0 && (
               <div className="flex items-center text-sm md:text-base font-medium text-green-600">
                 <TrendingUp className="h-4 w-4 mr-1.5" />
-                <span>Total Assets: ${assetsTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>
+                  Total Assets: $
+                  {assetsTotal.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
             )}
             {view === "liabilities" && liabilitiesTotal > 0 && (
               <div className="flex items-center text-sm md:text-base font-medium text-red-600">
                 <TrendingDown className="h-4 w-4 mr-1.5" />
-                <span>Total Liabilities: ${liabilitiesTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>
+                  Total Liabilities: $
+                  {liabilitiesTotal.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
             )}
-            
+
             <ToggleGroup
               type="single"
               value={view}
@@ -94,18 +106,24 @@ export function AccountsList({
               }
               className="bg-muted/30 p-0.5 border"
             >
-              <ToggleGroupItem value="assets" className="text-sm md:text-base flex gap-1.5 items-center px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm">
+              <ToggleGroupItem
+                value="assets"
+                className="text-sm md:text-base flex gap-1.5 items-center px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm"
+              >
                 <TrendingUp className="h-4 w-4" />
                 <span>Assets</span>
                 <span className="text-xs font-medium rounded-full bg-green-100 text-green-700 px-2 py-0.5 ml-1">
-                  {accounts.filter(a => !a.isDebt).length}
+                  {accounts.filter((a) => !a.isDebt).length}
                 </span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="liabilities" className="text-sm md:text-base flex gap-1.5 items-center px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm">
+              <ToggleGroupItem
+                value="liabilities"
+                className="text-sm md:text-base flex gap-1.5 items-center px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm"
+              >
                 <TrendingDown className="h-4 w-4" />
                 <span>Liabilities</span>
                 <span className="text-xs font-medium rounded-full bg-red-100 text-red-700 px-2 py-0.5 ml-1">
-                  {accounts.filter(a => a.isDebt).length}
+                  {accounts.filter((a) => a.isDebt).length}
                 </span>
               </ToggleGroupItem>
             </ToggleGroup>

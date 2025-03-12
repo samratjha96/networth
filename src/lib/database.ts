@@ -1,12 +1,15 @@
-import { Account } from "@/components/AccountsList"
-import { DatabaseProvider, NetworthHistory } from "@/lib/types"
-import { generateMockAccounts, generateMockNetworthHistory } from "@/lib/mock-data"
+import { Account } from "@/components/AccountsList";
+import { DatabaseProvider, NetworthHistory } from "@/lib/types";
+import {
+  generateMockAccounts,
+  generateMockNetworthHistory,
+} from "@/lib/mock-data";
 
 const STORAGE_KEYS = {
   ACCOUNTS: "networth_accounts",
   HISTORY: "networth_history",
   TEST_MODE: "networth_test_mode",
-  LAST_UPDATE: "networth_last_update"
+  LAST_UPDATE: "networth_last_update",
 };
 
 // Mock database implementation using localStorage
@@ -21,20 +24,23 @@ export class MockDatabase implements DatabaseProvider {
       MockDatabase.instance = new MockDatabase();
       // Initialize storage if empty
       if (!localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) {
-        localStorage.setItem(STORAGE_KEYS.ACCOUNTS, '[]');
+        localStorage.setItem(STORAGE_KEYS.ACCOUNTS, "[]");
       }
       if (!localStorage.getItem(STORAGE_KEYS.HISTORY)) {
-        localStorage.setItem(STORAGE_KEYS.HISTORY, '[]');
+        localStorage.setItem(STORAGE_KEYS.HISTORY, "[]");
       }
       if (!localStorage.getItem(STORAGE_KEYS.LAST_UPDATE)) {
-        localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, new Date().toISOString());
+        localStorage.setItem(
+          STORAGE_KEYS.LAST_UPDATE,
+          new Date().toISOString(),
+        );
       }
-      
+
       // Check if test mode was previously enabled
-      if (localStorage.getItem(STORAGE_KEYS.TEST_MODE) === 'true') {
+      if (localStorage.getItem(STORAGE_KEYS.TEST_MODE) === "true") {
         MockDatabase.instance.enableTestMode();
       }
-      
+
       console.log("Mock database initialized");
     }
     return MockDatabase.instance;
@@ -44,7 +50,7 @@ export class MockDatabase implements DatabaseProvider {
     if (this.testMode && this.mockAccounts) {
       return this.mockAccounts;
     }
-    
+
     const stored = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
     return stored ? JSON.parse(stored) : [];
   }
@@ -54,7 +60,7 @@ export class MockDatabase implements DatabaseProvider {
       this.mockAccounts = accounts;
       return;
     }
-    
+
     localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
   }
 
@@ -62,7 +68,7 @@ export class MockDatabase implements DatabaseProvider {
     if (this.testMode && this.mockHistory) {
       return this.mockHistory;
     }
-    
+
     const stored = localStorage.getItem(STORAGE_KEYS.HISTORY);
     return stored ? JSON.parse(stored) : [];
   }
@@ -72,7 +78,7 @@ export class MockDatabase implements DatabaseProvider {
       this.mockHistory = history;
       return;
     }
-    
+
     localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
   }
 
@@ -89,29 +95,29 @@ export class MockDatabase implements DatabaseProvider {
   isTestModeEnabled(): boolean {
     return this.testMode;
   }
-  
+
   enableTestMode(): void {
     this.testMode = true;
-    localStorage.setItem(STORAGE_KEYS.TEST_MODE, 'true');
-    
+    localStorage.setItem(STORAGE_KEYS.TEST_MODE, "true");
+
     // Generate fresh mock data each time test mode is enabled
     this.mockAccounts = generateMockAccounts();
     this.mockHistory = generateMockNetworthHistory();
-    
+
     console.log("Test mode enabled with mock data");
   }
-  
+
   disableTestMode(): void {
     this.testMode = false;
-    localStorage.setItem(STORAGE_KEYS.TEST_MODE, 'false');
-    
+    localStorage.setItem(STORAGE_KEYS.TEST_MODE, "false");
+
     // Clear mock data to save memory
     this.mockAccounts = null;
     this.mockHistory = null;
-    
+
     console.log("Test mode disabled");
   }
-  
+
   toggleTestMode(): void {
     if (this.testMode) {
       this.disableTestMode();
@@ -136,16 +142,18 @@ export class MockDatabase implements DatabaseProvider {
 
   async getAccount(id: string): Promise<Account | undefined> {
     const accounts = this.getStoredAccounts();
-    return accounts.find(account => account.id === id);
+    return accounts.find((account) => account.id === id);
   }
 
   async insertAccount(accountData: Omit<Account, "id">): Promise<Account> {
     const newAccount: Account = {
       ...accountData,
       id: crypto.randomUUID(),
-      balance: accountData.isDebt ? -Math.abs(accountData.balance) : Math.abs(accountData.balance),
+      balance: accountData.isDebt
+        ? -Math.abs(accountData.balance)
+        : Math.abs(accountData.balance),
     };
-    
+
     const accounts = this.getStoredAccounts();
     this.setStoredAccounts([...accounts, newAccount]);
     await this.updateNetworthSnapshot();
@@ -154,15 +162,17 @@ export class MockDatabase implements DatabaseProvider {
 
   async updateAccount(account: Account): Promise<void> {
     const accounts = this.getStoredAccounts();
-    const index = accounts.findIndex(a => a.id === account.id);
-    
+    const index = accounts.findIndex((a) => a.id === account.id);
+
     if (index === -1) {
       throw new Error(`Account with id ${account.id} not found`);
     }
 
     const updatedAccount = {
       ...account,
-      balance: account.isDebt ? -Math.abs(account.balance) : Math.abs(account.balance),
+      balance: account.isDebt
+        ? -Math.abs(account.balance)
+        : Math.abs(account.balance),
     };
     accounts[index] = updatedAccount;
     this.setStoredAccounts(accounts);
@@ -171,24 +181,24 @@ export class MockDatabase implements DatabaseProvider {
 
   async deleteAccount(id: string): Promise<void> {
     const accounts = this.getStoredAccounts();
-    this.setStoredAccounts(accounts.filter(account => account.id !== id));
+    this.setStoredAccounts(accounts.filter((account) => account.id !== id));
     await this.updateNetworthSnapshot();
   }
 
   private async updateNetworthSnapshot(): Promise<void> {
     if (this.testMode) return; // Skip updates in test mode
-    
+
     const totalNetworth = await this.calculateCurrentNetworth();
     const now = new Date();
-    
+
     // Get last update timestamp
     const lastUpdate = this.getLastUpdate();
     const timeDiff = now.getTime() - lastUpdate.getTime();
     const hoursDiff = timeDiff / (1000 * 60 * 60);
-    
+
     // Store the current time as the last update
     this.setLastUpdate(now);
-    
+
     // Add a new snapshot if it's been at least 1 hour since the last update
     // or if there's no history yet
     const history = this.getStoredHistory();
@@ -200,7 +210,7 @@ export class MockDatabase implements DatabaseProvider {
       const updatedHistory = [...history];
       updatedHistory[updatedHistory.length - 1] = {
         date: now.toISOString(),
-        value: totalNetworth
+        value: totalNetworth,
       };
       this.setStoredHistory(updatedHistory);
     }
@@ -215,42 +225,42 @@ export class MockDatabase implements DatabaseProvider {
   // Networth history operations
   async getNetworthHistory(days: number): Promise<NetworthHistory[]> {
     const history = this.getStoredHistory();
-    
+
     // Special handling for test mode to ensure we always have data with proper time ranges
     if (this.testMode && this.mockHistory && this.mockHistory.length > 0) {
       // If test mode is enabled, we want to ensure we always have enough data points
       // for the requested range to show meaningful variations
-      
+
       // For "ALL", return complete mock history
       if (days === 0) {
         return this.mockHistory;
       }
-      
+
       // For specific ranges, filter by date to get the correct days
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      
+
       // Filter mock history to the requested time period
-      return this.mockHistory.filter(entry => {
+      return this.mockHistory.filter((entry) => {
         const entryDate = new Date(entry.date);
         return entryDate >= startDate && entryDate <= endDate;
       });
     }
-    
+
     // Normal behavior for real data
-    
+
     // For "ALL", return complete history
     if (days === 0) {
       return history;
     }
-    
+
     // For specific ranges, filter by date
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    
-    return history.filter(entry => {
+
+    return history.filter((entry) => {
       const entryDate = new Date(entry.date);
       return entryDate >= startDate && entryDate <= endDate;
     });
@@ -261,28 +271,28 @@ export class MockDatabase implements DatabaseProvider {
     if (this.testMode) {
       return;
     }
-    
+
     const history = this.getStoredHistory();
     const newEntry = {
       date: new Date().toISOString(),
-      value
+      value,
     };
-    
+
     // Check if we have an entry from the last hour
     const lastHour = new Date();
     lastHour.setHours(lastHour.getHours() - 1);
-    
+
     // Find any entries within the last hour
-    const recentEntries = history.filter(entry => {
+    const recentEntries = history.filter((entry) => {
       const entryDate = new Date(entry.date);
       return entryDate >= lastHour;
     });
-    
+
     let updatedHistory;
-    
+
     if (recentEntries.length > 0) {
       // Update the most recent entry instead of creating a new one
-      updatedHistory = history.map(entry => {
+      updatedHistory = history.map((entry) => {
         const entryDate = new Date(entry.date);
         if (entryDate >= lastHour) {
           return newEntry;
@@ -293,14 +303,14 @@ export class MockDatabase implements DatabaseProvider {
       // Add a new entry
       updatedHistory = [...history, newEntry];
     }
-    
+
     // Limit the history size to prevent excessive storage
     const MAX_HISTORY_SIZE = 1000; // Adjust as needed
     if (updatedHistory.length > MAX_HISTORY_SIZE) {
       // If we exceed the max size, keep the most recent entries
       updatedHistory = updatedHistory.slice(-MAX_HISTORY_SIZE);
     }
-    
+
     this.setStoredHistory(updatedHistory);
   }
 
@@ -310,20 +320,20 @@ export class MockDatabase implements DatabaseProvider {
 
     const currentNetworth = await this.calculateCurrentNetworth();
     const history = this.getStoredHistory();
-    
+
     if (history.length === 0) {
       // If there's no history, just add the current value
       await this.addNetworthSnapshot(currentNetworth);
       return;
     }
-    
+
     // Update the most recent entry to match the current calculated net worth
     const updatedHistory = [...history];
     updatedHistory[updatedHistory.length - 1] = {
       date: new Date().toISOString(),
-      value: currentNetworth
+      value: currentNetworth,
     };
-    
+
     this.setStoredHistory(updatedHistory);
   }
 }

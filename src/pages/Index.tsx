@@ -14,55 +14,66 @@ const DEFAULT_CURRENCY: CurrencyCode = "USD";
 const Index = () => {
   // Default time period for consistency between summary and chart
   const [selectedTimePeriod, setSelectedTimePeriod] = useState(30); // Default to month view
-  
+
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";
-    
+
     // Synchronize the networth history with current account data on initial load
     db.synchronizeNetworthHistory();
   }, []);
 
   const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts();
-  
+
   // Get account performance data
-  const { bestPerformer, isLoading: isPerformanceLoading } = useAccountPerformance(accounts, 'month');
+  const { bestPerformer, isLoading: isPerformanceLoading } =
+    useAccountPerformance(accounts, "month");
 
   // Calculate current net worth from accounts (source of truth)
-  const currentNetWorth = useMemo(() => 
-    accounts.reduce((sum, account) => sum + account.balance, 0),
-    [accounts]
+  const currentNetWorth = useMemo(
+    () => accounts.reduce((sum, account) => sum + account.balance, 0),
+    [accounts],
   );
-  
+
   // Calculate asset and liability totals for verification
-  const assetsTotal = useMemo(() => 
-    accounts.filter(account => !account.isDebt).reduce((sum, account) => sum + account.balance, 0),
-    [accounts]
+  const assetsTotal = useMemo(
+    () =>
+      accounts
+        .filter((account) => !account.isDebt)
+        .reduce((sum, account) => sum + account.balance, 0),
+    [accounts],
   );
-  
-  const liabilitiesTotal = useMemo(() => 
-    accounts.filter(account => account.isDebt).reduce((sum, account) => sum + Math.abs(account.balance), 0),
-    [accounts]
+
+  const liabilitiesTotal = useMemo(
+    () =>
+      accounts
+        .filter((account) => account.isDebt)
+        .reduce((sum, account) => sum + Math.abs(account.balance), 0),
+    [accounts],
   );
-  
+
   // Verify net worth calculation matches assets minus liabilities
   useEffect(() => {
     const calculatedNetWorth = assetsTotal - liabilitiesTotal;
     const discrepancy = Math.abs(calculatedNetWorth - currentNetWorth);
-    
-    if (discrepancy > 0.01) { // Allow for tiny floating point differences
-      console.warn('Net worth calculation discrepancy detected:', {
+
+    if (discrepancy > 0.01) {
+      // Allow for tiny floating point differences
+      console.warn("Net worth calculation discrepancy detected:", {
         fromAccounts: currentNetWorth,
         fromAssetLiabilityCalc: calculatedNetWorth,
         assets: assetsTotal,
         liabilities: liabilitiesTotal,
-        discrepancy
+        discrepancy,
       });
     }
   }, [currentNetWorth, assetsTotal, liabilitiesTotal]);
 
   // Get networth history data using the selected time period
-  const { data: networthHistory = [] } = useNetworthHistory(selectedTimePeriod, accounts);
-  
+  const { data: networthHistory = [] } = useNetworthHistory(
+    selectedTimePeriod,
+    accounts,
+  );
+
   // When accounts change, update the networth snapshot
   useEffect(() => {
     // Only update if we have accounts
@@ -71,24 +82,25 @@ const Index = () => {
       db.addNetworthSnapshot(currentNetWorth);
     }
   }, [accounts, currentNetWorth]);
-  
+
   // Find the oldest entry in our history (from the selected time period)
   const previousNetWorth = useMemo(() => {
     if (networthHistory.length <= 1) return currentNetWorth;
-    
+
     // Sort by date to find the oldest entry
     const sorted = [...networthHistory].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
-    
+
     return sorted[0]?.value || currentNetWorth;
   }, [networthHistory, currentNetWorth]);
-  
+
   // Calculate change amount and percentage based on history data
   const netWorthChange = currentNetWorth - previousNetWorth;
-  const changePercentage = previousNetWorth !== 0
-    ? (netWorthChange / Math.abs(previousNetWorth)) * 100
-    : 0;
+  const changePercentage =
+    previousNetWorth !== 0
+      ? (netWorthChange / Math.abs(previousNetWorth)) * 100
+      : 0;
 
   const handleAddAccount = (newAccount: Omit<Account, "id">) => {
     addAccount(newAccount);
@@ -105,7 +117,7 @@ const Index = () => {
   // Use the bestPerformer from our hook
   const bestPerformingAccount = useMemo(() => {
     if (!bestPerformer) return undefined;
-    
+
     return {
       name: bestPerformer.name,
       changePercentage: bestPerformer.changePercentage,
@@ -126,7 +138,9 @@ const Index = () => {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               Argos
             </h1>
-            <p className="text-xs text-muted-foreground">Your all-seeing financial guardian</p>
+            <p className="text-xs text-muted-foreground">
+              Your all-seeing financial guardian
+            </p>
           </div>
           <TestModeToggle />
         </div>
@@ -135,7 +149,15 @@ const Index = () => {
           currentNetWorth={currentNetWorth}
           previousNetWorth={previousNetWorth}
           changePercentage={changePercentage}
-          period={selectedTimePeriod === 1 ? "day" : selectedTimePeriod === 7 ? "week" : selectedTimePeriod === 30 ? "month" : "year"}
+          period={
+            selectedTimePeriod === 1
+              ? "day"
+              : selectedTimePeriod === 7
+                ? "week"
+                : selectedTimePeriod === 30
+                  ? "month"
+                  : "year"
+          }
           currency={DEFAULT_CURRENCY}
           bestPerformingAccount={bestPerformingAccount}
         />

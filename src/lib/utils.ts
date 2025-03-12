@@ -15,16 +15,16 @@ export function formatCurrency(value: number): string {
 
 export const accountTypeEmojis: Record<AccountType, string> = {
   // Assets
-  "Checking": "🏦",
-  "Savings": "💰",
-  "Brokerage": "📈",
-  "Retirement": "👴",
+  Checking: "🏦",
+  Savings: "💰",
+  Brokerage: "📈",
+  Retirement: "👴",
   "401K": "🏢",
-  "Car": "🚗",
+  Car: "🚗",
   "Real Estate": "🏠",
 
   // Liabilities
   "Credit Card": "💳",
-  "Loan": "💵",
-  "Mortgage": "🏡",
+  Loan: "💵",
+  Mortgage: "🏡",
 };
