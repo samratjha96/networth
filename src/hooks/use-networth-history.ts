@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { db } from "@/lib/database";
 import { NetworthHistory } from "@/lib/types";
 
-export function useNetworthHistory(days: number) {
+export function useNetworthHistory(days: number, refreshDependency?: any) {
   const [data, setData] = useState<NetworthHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -11,7 +11,23 @@ export function useNetworthHistory(days: number) {
     try {
       setIsLoading(true);
       const database = await db;
+      
+      // Ensure the networth history is synchronized with the current account data
+      await database.synchronizeNetworthHistory();
+      
       const history = await database.getNetworthHistory(days);
+
+      console.log('HOOK: Raw history data received:', 
+        history.length > 0 ? 
+        {
+          totalEntries: history.length,
+          firstEntry: history[0],
+          lastEntry: history[history.length - 1],
+          dataOrdering: history.length > 1 ? 
+            (new Date(history[0].date) > new Date(history[history.length - 1].date) ? 
+              'DESCENDING (newest first)' : 'ASCENDING (oldest first)') 
+            : 'N/A (only one entry)'
+        } : 'No data');
 
       // For "ALL", check if user has been around for at least 7 days
       if (days === 0 && history.length > 0) {
@@ -74,7 +90,7 @@ export function useNetworthHistory(days: number) {
 
   useEffect(() => {
     fetchHistory();
-  }, [fetchHistory]);
+  }, [fetchHistory, refreshDependency]);
 
   return {
     data,

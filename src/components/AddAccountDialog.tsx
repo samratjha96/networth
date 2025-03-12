@@ -25,6 +25,7 @@ interface AddAccountDialogProps {
   onEditAccount?: (account: Account) => void;
   account?: Account;
   trigger?: React.ReactNode;
+  className?: string;
 }
 
 const CURRENCIES = [
@@ -55,6 +56,7 @@ export function AddAccountDialog({
   onEditAccount,
   account,
   trigger,
+  className,
 }: AddAccountDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -145,7 +147,7 @@ export function AddAccountDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger ?? <Button variant="outline">Add Account</Button>}
+        {trigger ?? <Button variant="outline" className={className}>Add Account</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

@@ -39,8 +39,8 @@ export function NetWorthSummary({
   // - If current is more negative than previous (e.g., -100 vs -90), it's getting worse
   // - If current is less negative than previous (e.g., -90 vs -100), it's getting better
   const isPositiveChange = isPositiveNetWorth
-    ? currentNetWorth > previousNetWorth // For positive net worth, higher is better
-    : currentNetWorth > previousNetWorth; // For negative net worth, less negative is better
+    ? netWorthChange > 0 // For positive net worth, higher is better
+    : netWorthChange > 0; // For negative net worth, less negative is better
 
   const formatWithCurrency = (value: number) => {
     const symbol = CURRENCY_SYMBOLS[currency];
@@ -57,9 +57,9 @@ export function NetWorthSummary({
             className={`flex items-center text-sm ${isPositiveChange ? "text-primary" : "text-destructive"}`}
           >
             {isPositiveChange ? (
-              <ArrowUpRight className="h-4 w-4" />
+              <ArrowUpRight className="h-4 w-4 mr-1" />
             ) : (
-              <ArrowDownRight className="h-4 w-4" />
+              <ArrowDownRight className="h-4 w-4 mr-1" />
             )}
             {Math.abs(changePercentage).toFixed(2)}%
           </span>
@@ -70,8 +70,11 @@ export function NetWorthSummary({
           >
             {formatWithCurrency(currentNetWorth)}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {formatWithCurrency(netWorthChange)} from last {period}
+          <p className="text-xs text-muted-foreground flex items-center">
+            <span className={isPositiveChange ? "text-primary" : "text-destructive"}>
+              {isPositiveChange ? '+' : ''}{formatWithCurrency(netWorthChange)}
+            </span>
+            <span className="ml-1">from last {period}</span>
           </p>
         </CardContent>
       </Card>
@@ -88,8 +91,12 @@ export function NetWorthSummary({
             <div className="text-2xl font-bold">
               {bestPerformingAccount.name}
             </div>
-            <p className="text-xs text-muted-foreground">
-              +{bestPerformingAccount.changePercentage.toFixed(2)}% growth
+            <p className="text-xs text-muted-foreground flex items-center">
+              <span className="text-primary flex items-center mr-1">
+                <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                {bestPerformingAccount.changePercentage.toFixed(2)}%
+              </span>
+              growth over last {period}
             </p>
           </CardContent>
         </Card>

@@ -1,8 +1,16 @@
 import { Account, AccountType, CurrencyCode } from "@/components/AccountsList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, MoreHorizontal, TrendingUp, TrendingDown } from "lucide-react";
 import { formatCurrency, accountTypeEmojis } from "@/lib/utils";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",
@@ -27,7 +35,7 @@ export function AccountsPanel({
   onDeleteAccount,
 }: AccountsPanelProps) {
   const filteredAccounts = accounts.filter((account) =>
-    type === "assets" ? !account.isDebt : account.isDebt,
+    type === "assets" ? !account.isDebt : account.isDebt
   );
 
   const groupedAccounts = filteredAccounts.reduce(
@@ -38,16 +46,15 @@ export function AccountsPanel({
       acc[account.type].push(account);
       return acc;
     },
-    {} as Record<AccountType, Account[]>,
+    {} as Record<AccountType, Account[]>
   );
 
   const formatAccountBalance = (account: Account) => {
     const symbol = CURRENCY_SYMBOLS[account.currency];
     const formatted = formatCurrency(Math.abs(account.balance)).replace(
       /^\$/,
-      "",
+      ""
     );
-    // Balance is already negative for debts, so just format accordingly
     return account.balance < 0
       ? `-${symbol}${formatted}`
       : `${symbol}${formatted}`;
@@ -55,59 +62,103 @@ export function AccountsPanel({
 
   if (filteredAccounts.length === 0) {
     return (
-      <Alert variant="default" className="mt-4 bg-muted/50">
+      <Alert variant="default" className="m-4 bg-muted/50 border border-dashed">
         <PlusCircle className="h-4 w-4 text-muted-foreground" />
-        <AlertDescription>
-          Add your first {type === "assets" ? "asset" : "liability"} account to
-          start tracking
+        <AlertDescription className="flex items-center justify-between w-full">
+          <span>Add your first {type === "assets" ? "asset" : "liability"} account to start tracking</span>
+          <AddAccountDialog
+            onAddAccount={() => {}}
+            onEditAccount={() => {}}
+            trigger={
+              <Badge variant="outline" className="cursor-pointer hover:bg-primary/10">
+                Add {type === "assets" ? "Asset" : "Liability"}
+              </Badge>
+            }
+          />
         </AlertDescription>
       </Alert>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-3">
       {Object.entries(groupedAccounts).map(([type, accounts]) => (
-        <div key={type} className="space-y-4">
-          <div className="font-medium text-sm text-muted-foreground">
-            {accountTypeEmojis[type as AccountType]} {type}
+        <div key={type} className="border rounded-md overflow-hidden shadow-sm">
+          <div className="px-3 py-2.5 font-medium text-base flex items-center gap-1.5 bg-muted/40 border-b">
+            <span className="text-xl">{accountTypeEmojis[type as AccountType]}</span> 
+            <span>{type}</span>
+            <Badge variant="outline" className="font-normal ml-2 text-xs">
+              {accounts.length}
+            </Badge>
           </div>
-          <div className="grid gap-4">
-            {accounts.map((account) => (
-              <div
-                key={account.id}
-                className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-              >
-                <div className="space-y-1">
-                  <p className="text-sm font-medium leading-none text-foreground">
-                    {account.name}
-                  </p>
-                  <p
-                    className={`text-sm ${account.balance < 0 ? "text-destructive" : "text-muted-foreground"}`}
-                  >
-                    {formatAccountBalance(account)}
-                  </p>
-                </div>
-                <div className="flex space-x-2">
-                  <AddAccountDialog
-                    onAddAccount={() => {}} // Not used in edit mode
-                    onEditAccount={onEditAccount}
-                    account={account}
-                    trigger={
-                      <button className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                        Edit
+          <div className="p-2.5 space-y-2">
+            {accounts.map((account) => {
+              const isNegative = account.balance < 0;
+              const accountColor = isNegative && type === "assets" 
+                ? "text-red-500" 
+                : type === "assets" 
+                  ? "text-green-500" 
+                  : "text-orange-500";
+                  
+              return (
+                <div
+                  key={account.id}
+                  className={cn(
+                    "flex items-center justify-between p-3 border rounded-md bg-card hover:bg-accent/10 transition-colors",
+                    "border-l-4",
+                    isNegative && type === "assets" 
+                      ? "border-l-red-500/80" 
+                      : type === "assets" 
+                        ? "border-l-green-500/80" 
+                        : "border-l-orange-500/80"
+                  )}
+                >
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center space-x-1.5 truncate">
+                      <p className="text-base font-medium leading-tight truncate">
+                        {account.name}
+                      </p>
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs py-0 h-5 shrink-0"
+                      >
+                        {account.currency}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center mt-1.5">
+                      <p className={`text-base font-medium ${accountColor} truncate`}>
+                        {formatAccountBalance(account)}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1.5 rounded-md hover:bg-accent text-muted-foreground shrink-0 ml-1.5">
+                        <MoreHorizontal className="h-5 w-5" />
                       </button>
-                    }
-                  />
-                  <button
-                    onClick={() => onDeleteAccount(account.id)}
-                    className="text-sm text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    Delete
-                  </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <AddAccountDialog
+                        onAddAccount={() => {}} // Not used in edit mode
+                        onEditAccount={onEditAccount}
+                        account={account}
+                        trigger={
+                          <DropdownMenuItem className="cursor-pointer">
+                            Edit
+                          </DropdownMenuItem>
+                        }
+                      />
+                      <DropdownMenuItem 
+                        className="cursor-pointer text-red-500 focus:text-red-500"
+                        onClick={() => onDeleteAccount(account.id)}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
