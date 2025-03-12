@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { db } from "@/lib/database";
 import { NetworthHistory } from "@/lib/types";
 
-export function useNetworthHistory(days: number, refreshDependency?: any) {
+export function useNetworthHistory(days: number, refreshDependency?: unknown) {
   const [data, setData] = useState<NetworthHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

@@ -65,25 +65,17 @@ export function NetWorthChart({
     if (initialTimeRange !== selectedRange) {
       setSelectedRange(initialTimeRange);
     }
-  }, [initialTimeRange]);
+  }, [initialTimeRange, selectedRange]);
 
   // Process the data to ensure visible fluctuations for all time ranges
   const data = React.useMemo(() => {
     if (!rawData || rawData.length === 0) return [];
     
-    // Debug the raw data first
-    console.log('CHART: Raw data first and last points:', 
-      rawData.length > 0 ? { first: rawData[0], last: rawData[rawData.length - 1] } : 'No data');
-    
     // For 1D view, we generate hourly data points
     if (selectedRange === 1) {
-      // Log before transformation
-      console.log('CHART: Generating 1D view with hourly data');
-      
       const lastPoint = rawData[rawData.length - 1];
       const result = [];
       const baseDate = new Date(lastPoint.date);
-      // Use the current net worth value for the most accurate display
       const baseValue = currentNetWorth;
       
       // Create hourly fluctuations for the last 24 hours
@@ -91,7 +83,6 @@ export function NetWorthChart({
         const hourDate = new Date(baseDate);
         hourDate.setHours(hourDate.getHours() - i);
         
-        // Random fluctuation around the base value (higher variation for better visibility)
         const fluctuationPercent = (Math.random() - 0.5) * 0.02; // ±1% fluctuation
         const fluctuation = baseValue * fluctuationPercent;
         
@@ -101,23 +92,14 @@ export function NetWorthChart({
         });
       }
       
-      // Ensure the last point shows the current net worth exactly
       if (result.length > 0) {
         result[result.length - 1].value = currentNetWorth;
       }
       
-      // Log after transformation
-      console.log('CHART: 1D data generated, first and last:', 
-        result.length > 0 ? { first: result[0], last: result[result.length - 1] } : 'No data');
-      
       return result;
     }
 
-    // For other time ranges, ensure we have the right subset of data
     if (selectedRange > 0) {
-      console.log('CHART: Processing data for range:', selectedRange);
-      
-      // Get data for the selected period, ensuring we capture all fluctuations
       const filteredData = [...rawData].filter(point => {
         const pointDate = new Date(point.date);
         const cutoffDate = new Date();
@@ -127,41 +109,29 @@ export function NetWorthChart({
       
       const result = filteredData.length > 0 ? filteredData : rawData.slice(-selectedRange);
       
-      // Ensure the last point reflects the current net worth
       if (result.length > 0) {
-        // Find the most recent data point
         const mostRecentIndex = result.reduce((maxIndex, point, index, arr) => {
           if (index === 0) return 0;
           return new Date(point.date) > new Date(arr[maxIndex].date) ? index : maxIndex;
         }, 0);
         
-        // Update it to the current net worth
         result[mostRecentIndex] = {
           ...result[mostRecentIndex],
           value: currentNetWorth
         };
       }
       
-      console.log('CHART: Filtered data for range:', 
-        result.length > 0 ? { first: result[0], last: result[result.length - 1], count: result.length } : 'No data');
-      
       return result;
     }
     
-    // For "ALL", return all data with the most recent value updated
-    console.log('CHART: Using ALL data');
-    
     const allData = [...rawData];
     
-    // Ensure the last point reflects the current net worth
     if (allData.length > 0) {
-      // Find the most recent data point
       const mostRecentIndex = allData.reduce((maxIndex, point, index, arr) => {
         if (index === 0) return 0;
         return new Date(point.date) > new Date(arr[maxIndex].date) ? index : maxIndex;
       }, 0);
       
-      // Update it to the current net worth
       allData[mostRecentIndex] = {
         ...allData[mostRecentIndex],
         value: currentNetWorth
