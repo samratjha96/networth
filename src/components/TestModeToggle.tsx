@@ -9,7 +9,7 @@ export function TestModeToggle() {
 
   const handleToggleTestMode = () => {
     try {
-      db.toggleTestMode();
+      db.setTestMode(!isTestMode);
 
       // Force page reload to apply test mode changes
       window.location.reload();

@@ -26,6 +26,8 @@ interface AddAccountDialogProps {
   account?: Account;
   trigger?: React.ReactNode;
   className?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const CURRENCIES = [
@@ -57,18 +59,49 @@ export function AddAccountDialog({
   account,
   trigger,
   className,
+  open: controlledOpen,
+  onOpenChange,
 }: AddAccountDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use local state
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  // Create a unified handler for open state changes
+  const handleOpenChange = (newOpenState: boolean) => {
+    console.log("Dialog open change", {
+      oldState: open,
+      newState: newOpenState,
+      isControlled,
+    });
+
+    if (isControlled) {
+      onOpenChange?.(newOpenState);
+    } else {
+      setUncontrolledOpen(newOpenState);
+    }
+  };
+
   const [name, setName] = useState("");
   const [type, setType] = useState<AssetType | DebtType>("Checking");
   const [balance, setBalance] = useState("");
   const [currency, setCurrency] = useState<Currency>("USD");
   const [isDebt, setIsDebt] = useState(false);
 
+  console.log("Dialog render", {
+    open,
+    account: account?.name,
+    isEdit: !!account,
+  });
+
   // Reset form when dialog opens and when account changes
   useEffect(() => {
+    console.log("useEffect triggered", { open, account: account?.name });
+
     if (open) {
       if (account) {
+        console.log("Populating edit form", { account });
         setName(account.name);
         setType(account.type);
         setBalance(Math.abs(account.balance).toString());
@@ -91,10 +124,15 @@ export function AddAccountDialog({
   });
 
   const handleSubmit = (e: React.FormEvent) => {
+    console.log("Form submit attempt", { name, account: account?.name });
     e.preventDefault();
 
     // Validate required fields
     if (!name.trim() || !balance.trim()) {
+      console.log("Validation failed", {
+        name: name.trim(),
+        balance: balance.trim(),
+      });
       setTouched({ name: true, balance: true });
       return;
     }
@@ -115,13 +153,18 @@ export function AddAccountDialog({
       currency,
     };
 
+    console.log("Submitting form", {
+      isEdit: !!account,
+      accountData,
+    });
+
     if (account && onEditAccount) {
       onEditAccount({ ...accountData, id: account.id });
     } else {
       onAddAccount(accountData);
     }
 
-    setOpen(false);
+    handleOpenChange(false);
     setName("");
     setType("Checking");
     setBalance("0");
@@ -144,14 +187,24 @@ export function AddAccountDialog({
   // Get available account types based on whether it's an asset or liability
   const availableTypes = isDebt ? debtTypes : assetTypes;
 
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    console.log("Trigger clicked", {
+      isEdit: !!account,
+      currentOpenState: open,
+    });
+    // No need to do anything else, the DialogTrigger handles toggling
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        {trigger ?? (
-          <Button variant="outline" className={className}>
-            Add Account
-          </Button>
-        )}
+        <div onClick={handleTriggerClick}>
+          {trigger ?? (
+            <Button variant="outline" className={className}>
+              Add Account
+            </Button>
+          )}
+        </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

@@ -15,6 +15,7 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
 interface NetWorthSummaryProps {
   currentNetWorth: number;
   previousNetWorth: number;
+  netWorthChange: number;
   changePercentage: number;
   period: string;
   currency: CurrencyCode;
@@ -27,17 +28,17 @@ interface NetWorthSummaryProps {
 export function NetWorthSummary({
   currentNetWorth,
   previousNetWorth,
+  netWorthChange,
   changePercentage,
   period,
   currency,
   bestPerformingAccount,
 }: NetWorthSummaryProps) {
   const isPositiveNetWorth = currentNetWorth >= 0;
-  const netWorthChange = currentNetWorth - previousNetWorth;
 
-  // For negative net worth:
-  // - If current is more negative than previous (e.g., -100 vs -90), it's getting worse
-  // - If current is less negative than previous (e.g., -90 vs -100), it's getting better
+  // For negative net worth, the interpretation is different:
+  // - If absolute value decreases (gets less negative), it's positive
+  // - If absolute value increases (gets more negative), it's negative
   const isPositiveChange = isPositiveNetWorth
     ? netWorthChange > 0 // For positive net worth, higher is better
     : netWorthChange > 0; // For negative net worth, less negative is better
@@ -74,10 +75,14 @@ export function NetWorthSummary({
             <span
               className={isPositiveChange ? "text-primary" : "text-destructive"}
             >
-              {isPositiveChange ? "+" : ""}
-              {formatWithCurrency(netWorthChange)}
+              {isPositiveChange ? "+" : "-"}
+              {formatWithCurrency(Math.abs(netWorthChange))}
             </span>
-            <span className="ml-1">from last {period}</span>
+            <span className="ml-1">
+              {period === "all"
+                ? "since tracking began"
+                : `over the last ${period}`}
+            </span>
           </p>
         </CardContent>
       </Card>
@@ -99,7 +104,10 @@ export function NetWorthSummary({
                 <ArrowUpRight className="h-3 w-3 mr-0.5" />
                 {bestPerformingAccount.changePercentage.toFixed(2)}%
               </span>
-              growth over last {period}
+              growth{" "}
+              {period === "all"
+                ? "since tracking began"
+                : `over the last ${period}`}
             </p>
           </CardContent>
         </Card>

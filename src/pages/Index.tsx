@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useNetworthHistory } from "@/hooks/use-networth-history";
 import { useAccountPerformance } from "@/hooks/use-account-performance";
@@ -15,11 +15,18 @@ const Index = () => {
   // Default time period for consistency between summary and chart
   const [selectedTimePeriod, setSelectedTimePeriod] = useState(30); // Default to month view
 
+  // Use a ref to track initialization to prevent multiple calls
+  const initializedRef = useRef(false);
+
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";
 
     // Synchronize the networth history with current account data on initial load
-    db.synchronizeNetworthHistory();
+    // Only do this once to prevent infinite updates
+    if (!initializedRef.current) {
+      db.synchronizeNetworthHistory();
+      initializedRef.current = true;
+    }
   }, []);
 
   const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts();
@@ -76,31 +83,60 @@ const Index = () => {
 
   // When accounts change, update the networth snapshot
   useEffect(() => {
-    // Only update if we have accounts
-    if (accounts.length > 0) {
+    // Only update if we have accounts and not in test mode
+    if (accounts.length > 0 && !db.isTestModeEnabled()) {
       // Ensure the current net worth is reflected in history
       db.addNetworthSnapshot(currentNetWorth);
     }
   }, [accounts, currentNetWorth]);
 
-  // Find the oldest entry in our history (from the selected time period)
+  // Find the value from the exact start of the selected time period
   const previousNetWorth = useMemo(() => {
     if (networthHistory.length <= 1) return currentNetWorth;
 
-    // Sort by date to find the oldest entry
+    // Sort by date to find entries in chronological order
     const sorted = [...networthHistory].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
+    // Use the first (oldest) entry in the time period
+    return sorted[0]?.value || currentNetWorth;
+  }, [networthHistory, currentNetWorth]);
+
+  // Get the current net worth from the latest history entry
+  const historyNetWorth = useMemo(() => {
+    if (networthHistory.length === 0) return currentNetWorth;
+
+    // Sort by date to find entries in chronological order
+    const sorted = [...networthHistory].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    // Use the latest entry to ensure we're consistent with the chart
     return sorted[0]?.value || currentNetWorth;
   }, [networthHistory, currentNetWorth]);
 
   // Calculate change amount and percentage based on history data
-  const netWorthChange = currentNetWorth - previousNetWorth;
-  const changePercentage =
-    previousNetWorth !== 0
-      ? (netWorthChange / Math.abs(previousNetWorth)) * 100
-      : 0;
+  const netWorthChange = historyNetWorth - previousNetWorth;
+
+  // For negative values, we need to handle the percentage calculation differently
+  const changePercentage = useMemo(() => {
+    if (previousNetWorth === 0) return 0;
+
+    // For negative net worth values
+    if (previousNetWorth < 0 && historyNetWorth < 0) {
+      // Both negative - look at the change in absolute values
+      const prevAbs = Math.abs(previousNetWorth);
+      const currAbs = Math.abs(historyNetWorth);
+
+      // If abs value increased (got worse), negative percentage
+      // If abs value decreased (got better), positive percentage
+      return ((prevAbs - currAbs) / prevAbs) * 100;
+    }
+
+    // Standard calculation for positive values
+    return (netWorthChange / Math.abs(previousNetWorth)) * 100;
+  }, [historyNetWorth, previousNetWorth, netWorthChange]);
 
   const handleAddAccount = (newAccount: Omit<Account, "id">) => {
     addAccount(newAccount);
@@ -148,6 +184,7 @@ const Index = () => {
         <NetWorthSummary
           currentNetWorth={currentNetWorth}
           previousNetWorth={previousNetWorth}
+          netWorthChange={netWorthChange}
           changePercentage={changePercentage}
           period={
             selectedTimePeriod === 1
@@ -156,7 +193,9 @@ const Index = () => {
                 ? "week"
                 : selectedTimePeriod === 30
                   ? "month"
-                  : "year"
+                  : selectedTimePeriod === 365
+                    ? "year"
+                    : "all"
           }
           currency={DEFAULT_CURRENCY}
           bestPerformingAccount={bestPerformingAccount}

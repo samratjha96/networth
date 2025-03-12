@@ -18,32 +18,41 @@ export class MockDatabase implements DatabaseProvider {
   private testMode: boolean = false;
   private mockAccounts: Account[] | null = null;
   private mockHistory: NetworthHistory[] | null = null;
+  private isInitialized: boolean = false;
+
+  private constructor() {
+    // Private constructor to enforce singleton pattern
+  }
 
   static getInstance(): MockDatabase {
     if (!MockDatabase.instance) {
       MockDatabase.instance = new MockDatabase();
-      // Initialize storage if empty
-      if (!localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) {
-        localStorage.setItem(STORAGE_KEYS.ACCOUNTS, "[]");
-      }
-      if (!localStorage.getItem(STORAGE_KEYS.HISTORY)) {
-        localStorage.setItem(STORAGE_KEYS.HISTORY, "[]");
-      }
-      if (!localStorage.getItem(STORAGE_KEYS.LAST_UPDATE)) {
-        localStorage.setItem(
-          STORAGE_KEYS.LAST_UPDATE,
-          new Date().toISOString(),
-        );
-      }
-
-      // Check if test mode was previously enabled
-      if (localStorage.getItem(STORAGE_KEYS.TEST_MODE) === "true") {
-        MockDatabase.instance.enableTestMode();
-      }
-
-      console.log("Mock database initialized");
+      MockDatabase.instance.initializeInternal();
     }
     return MockDatabase.instance;
+  }
+
+  private initializeInternal(): void {
+    if (this.isInitialized) return;
+
+    // Initialize storage if empty
+    if (!localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) {
+      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, "[]");
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.HISTORY)) {
+      localStorage.setItem(STORAGE_KEYS.HISTORY, "[]");
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.LAST_UPDATE)) {
+      localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, new Date().toISOString());
+    }
+
+    // Check if test mode was previously enabled and restore mock data
+    if (localStorage.getItem(STORAGE_KEYS.TEST_MODE) === "true") {
+      this.restoreOrGenerateMockData();
+    }
+
+    console.log("Mock database initialized");
+    this.isInitialized = true;
   }
 
   private getStoredAccounts(): Account[] {
@@ -91,44 +100,60 @@ export class MockDatabase implements DatabaseProvider {
     localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, date.toISOString());
   }
 
+  // Helper to store mock data in localStorage
+  private storeMockData(): void {
+    if (this.mockAccounts && this.mockHistory) {
+      localStorage.setItem("mock_accounts", JSON.stringify(this.mockAccounts));
+      localStorage.setItem("mock_history", JSON.stringify(this.mockHistory));
+    }
+  }
+
   // Test mode controls
   isTestModeEnabled(): boolean {
     return this.testMode;
   }
 
-  enableTestMode(): void {
+  // Helper to restore or generate mock data
+  private restoreOrGenerateMockData(): void {
     this.testMode = true;
-    localStorage.setItem(STORAGE_KEYS.TEST_MODE, "true");
 
-    // Generate fresh mock data each time test mode is enabled
-    this.mockAccounts = generateMockAccounts();
-    this.mockHistory = generateMockNetworthHistory();
+    // Try to restore existing mock data
+    const storedAccounts = localStorage.getItem("mock_accounts");
+    const storedHistory = localStorage.getItem("mock_history");
 
-    console.log("Test mode enabled with mock data");
-  }
-
-  disableTestMode(): void {
-    this.testMode = false;
-    localStorage.setItem(STORAGE_KEYS.TEST_MODE, "false");
-
-    // Clear mock data to save memory
-    this.mockAccounts = null;
-    this.mockHistory = null;
-
-    console.log("Test mode disabled");
-  }
-
-  toggleTestMode(): void {
-    if (this.testMode) {
-      this.disableTestMode();
+    if (storedAccounts && storedHistory) {
+      this.mockAccounts = JSON.parse(storedAccounts);
+      this.mockHistory = JSON.parse(storedHistory);
     } else {
-      this.enableTestMode();
+      this.mockAccounts = generateMockAccounts();
+      this.mockHistory = generateMockNetworthHistory();
+      this.storeMockData();
+    }
+  }
+
+  // Enable/disable test mode
+  setTestMode(enabled: boolean): void {
+    const wasEnabled = this.testMode;
+    this.testMode = enabled;
+    localStorage.setItem(STORAGE_KEYS.TEST_MODE, enabled.toString());
+
+    if (enabled && !wasEnabled) {
+      this.restoreOrGenerateMockData();
+    } else if (!enabled) {
+      // Clear mock data when disabling test mode
+      this.mockAccounts = null;
+      this.mockHistory = null;
+      localStorage.removeItem("mock_accounts");
+      localStorage.removeItem("mock_history");
     }
   }
 
   // For interface compatibility
   async initialize(): Promise<void> {
-    console.log("Mock database already initialized");
+    // This is called externally, but we've already initialized in getInstance
+    if (!this.isInitialized) {
+      this.initializeInternal();
+    }
   }
 
   async close(): Promise<void> {
@@ -176,6 +201,15 @@ export class MockDatabase implements DatabaseProvider {
     };
     accounts[index] = updatedAccount;
     this.setStoredAccounts(accounts);
+
+    // Also update history in test mode to reflect the new balance
+    if (this.testMode && this.mockHistory && this.mockHistory.length > 0) {
+      const newNetWorth = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+      // Update the latest mock history entry
+      const lastEntry = this.mockHistory[this.mockHistory.length - 1];
+      lastEntry.value = newNetWorth;
+    }
+
     await this.updateNetworthSnapshot();
   }
 
@@ -186,10 +220,20 @@ export class MockDatabase implements DatabaseProvider {
   }
 
   private async updateNetworthSnapshot(): Promise<void> {
-    if (this.testMode) return; // Skip updates in test mode
-
     const totalNetworth = await this.calculateCurrentNetworth();
     const now = new Date();
+
+    // Handle test mode differently instead of skipping entirely
+    if (this.testMode) {
+      if (this.mockHistory && this.mockHistory.length > 0) {
+        // Update the last entry in mock history
+        this.mockHistory[this.mockHistory.length - 1] = {
+          date: now.toISOString(),
+          value: totalNetworth,
+        };
+      }
+      return;
+    }
 
     // Get last update timestamp
     const lastUpdate = this.getLastUpdate();
@@ -228,9 +272,6 @@ export class MockDatabase implements DatabaseProvider {
 
     // Special handling for test mode to ensure we always have data with proper time ranges
     if (this.testMode && this.mockHistory && this.mockHistory.length > 0) {
-      // If test mode is enabled, we want to ensure we always have enough data points
-      // for the requested range to show meaningful variations
-
       // For "ALL", return complete mock history
       if (days === 0) {
         return this.mockHistory;
@@ -241,11 +282,35 @@ export class MockDatabase implements DatabaseProvider {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      // Filter mock history to the requested time period
-      return this.mockHistory.filter((entry) => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= startDate && entryDate <= endDate;
-      });
+      // Filter mock history to the requested time period and ensure proper sorting
+      const filteredHistory = this.mockHistory
+        .filter((entry) => {
+          const entryDate = new Date(entry.date);
+          return entryDate >= startDate && entryDate <= endDate;
+        })
+        .sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        );
+
+      // Return filtered history if we have enough points
+      if (filteredHistory.length >= 2) {
+        return filteredHistory;
+      }
+
+      // If we don't have enough points, use the closest available data point
+      const lastAvailablePoint = this.mockHistory[this.mockHistory.length - 1];
+      const newHistory: NetworthHistory[] = [];
+      const currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        newHistory.push({
+          date: currentDate.toISOString(),
+          value: lastAvailablePoint.value,
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return newHistory;
     }
 
     // Normal behavior for real data
@@ -316,9 +381,20 @@ export class MockDatabase implements DatabaseProvider {
 
   // Public method to force synchronization of networth history with current account data
   async synchronizeNetworthHistory(): Promise<void> {
-    if (this.testMode) return; // Skip in test mode
-
     const currentNetworth = await this.calculateCurrentNetworth();
+
+    if (this.testMode) {
+      // Update test mode history if it exists
+      if (this.mockHistory && this.mockHistory.length > 0) {
+        // Update the most recent entry to reflect current net worth
+        this.mockHistory[this.mockHistory.length - 1] = {
+          date: new Date().toISOString(),
+          value: currentNetworth,
+        };
+      }
+      return;
+    }
+
     const history = this.getStoredHistory();
 
     if (history.length === 0) {
@@ -335,6 +411,88 @@ export class MockDatabase implements DatabaseProvider {
     };
 
     this.setStoredHistory(updatedHistory);
+  }
+
+  // Generate 60 days of mock data with hourly intervals
+  generateHourlyMockData(): void {
+    // Check if mock data already exists
+    const existingHistory = this.getStoredHistory();
+    if (existingHistory.length > 0) return; // Exit if data already exists
+
+    const now = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 60);
+    const mockData: NetworthHistory[] = [];
+
+    // Start with a base value and add realistic fluctuations
+    let baseValue = 5000 + Math.random() * 5000; // Random starting value between 5000-10000
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= now) {
+      // Add some realistic fluctuations
+      // Small hourly changes (0.1% - 0.5%)
+      const hourlyChange =
+        baseValue *
+        (0.001 + Math.random() * 0.004) *
+        (Math.random() > 0.5 ? 1 : -1);
+
+      // Larger daily changes (0.5% - 2%)
+      const dailyChange =
+        baseValue *
+        (0.005 + Math.random() * 0.015) *
+        (Math.random() > 0.5 ? 1 : -1);
+
+      // Weekly trend (1% - 5%)
+      const weeklyTrend =
+        baseValue *
+        (0.01 + Math.random() * 0.04) *
+        (Math.random() > 0.6 ? 1 : -1);
+
+      // Apply changes based on time
+      const hour = currentDate.getHours();
+      const day = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+
+      // More activity during business hours
+      const timeMultiplier = hour >= 9 && hour <= 17 ? 1.2 : 0.8;
+
+      // Less activity on weekends
+      const dayMultiplier = day === 0 || day === 6 ? 0.7 : 1.0;
+
+      // Calculate the value change
+      let valueChange = hourlyChange * timeMultiplier * dayMultiplier;
+
+      // Apply daily change at the start of each day
+      if (hour === 0) {
+        valueChange += dailyChange;
+      }
+
+      // Apply weekly trend at the start of each week
+      if (day === 1 && hour === 0) {
+        valueChange += weeklyTrend;
+      }
+
+      // Update the base value
+      baseValue += valueChange;
+
+      // Ensure value doesn't go below 1000
+      baseValue = Math.max(1000, baseValue);
+
+      mockData.push({
+        date: currentDate.toISOString(),
+        value: Math.round(baseValue * 100) / 100, // Round to 2 decimal places
+      });
+
+      // Move to next hour
+      currentDate.setHours(currentDate.getHours() + 1);
+    }
+
+    console.log(`Generated ${mockData.length} hourly data points for 60 days`);
+    this.setStoredHistory(mockData);
+  }
+
+  // Public method to initialize mock data for the chart
+  initializeMockDataForChart(): void {
+    this.generateHourlyMockData();
   }
 }
 

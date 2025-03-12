@@ -31,6 +31,7 @@ interface AccountsPanelProps {
   type: "assets" | "liabilities";
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (id: string) => void;
+  onAddAccount: (account: Omit<Account, "id">) => void;
 }
 
 export function AccountsPanel({
@@ -38,6 +39,7 @@ export function AccountsPanel({
   type,
   onEditAccount,
   onDeleteAccount,
+  onAddAccount,
 }: AccountsPanelProps) {
   const filteredAccounts = accounts.filter((account) =>
     type === "assets" ? !account.isDebt : account.isDebt,
@@ -75,8 +77,8 @@ export function AccountsPanel({
             to start tracking
           </span>
           <AddAccountDialog
-            onAddAccount={() => {}}
-            onEditAccount={() => {}}
+            onAddAccount={onAddAccount}
+            onEditAccount={onEditAccount}
             trigger={
               <Badge
                 variant="outline"
@@ -154,16 +156,25 @@ export function AccountsPanel({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
-                      <AddAccountDialog
-                        onAddAccount={() => {}} // Not used in edit mode
-                        onEditAccount={onEditAccount}
-                        account={account}
-                        trigger={
-                          <DropdownMenuItem className="cursor-pointer">
-                            Edit
-                          </DropdownMenuItem>
-                        }
-                      />
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          // Stop here to prevent the menu from closing right away
+                          e.preventDefault();
+                          e.stopPropagation();
+
+                          console.log("Edit button clicked", {
+                            account: account.name,
+                          });
+
+                          // Give time for the menu to process the click before showing dialog
+                          setTimeout(() => {
+                            onEditAccount(account);
+                          }, 100);
+                        }}
+                      >
+                        Edit
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer text-red-500 focus:text-red-500"
                         onClick={() => onDeleteAccount(account.id)}
