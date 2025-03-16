@@ -53,7 +53,10 @@ export class MockDatabase implements DatabaseProvider {
     if (savedTestMode) {
       // Generate new mock data on every page load when in test mode
       this.mockAccounts = generateMockAccounts();
-      const startValue = this.mockAccounts.reduce((sum, account) => sum + account.balance, 0);
+      const startValue = this.mockAccounts.reduce(
+        (sum, account) => sum + account.balance,
+        0,
+      );
       this.mockHistory = generateMockNetworthHistory(startValue);
       console.log(
         "Mock database initialized in TEST MODE with fresh mock data",
@@ -122,7 +125,10 @@ export class MockDatabase implements DatabaseProvider {
 
     // Always generate fresh mock data for demo mode on every page load
     this.mockAccounts = generateMockAccounts();
-    const startValue = this.mockAccounts.reduce((sum, account) => sum + account.balance, 0);
+    const startValue = this.mockAccounts.reduce(
+      (sum, account) => sum + account.balance,
+      0,
+    );
     this.mockHistory = generateMockNetworthHistory(startValue);
 
     // We don't store the mock data in localStorage anymore
@@ -324,7 +330,7 @@ export class MockDatabase implements DatabaseProvider {
         });
         currentDate.setDate(currentDate.getDate() + 1);
       }
-      
+
       // Add today's value as the last point
       newHistory.push({
         date: today.toISOString(),
@@ -358,7 +364,7 @@ export class MockDatabase implements DatabaseProvider {
       const entryDate = new Date(entry.date);
       return entryDate >= startDate && entryDate <= endDate;
     });
-    
+
     // Ensure the last point matches current net worth
     if (filteredHistory.length > 0) {
       filteredHistory[filteredHistory.length - 1] = {

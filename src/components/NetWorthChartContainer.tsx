@@ -10,7 +10,7 @@ export function NetWorthChartContainer() {
   const { isTestMode, db } = useDatabase();
   const { data } = useNetworthHistory(timeRange);
   const { accounts } = useAccounts();
-  
+
   // Calculate current net worth from accounts
   const currentNetWorth = React.useMemo(() => {
     return accounts.reduce((sum, account) => sum + account.balance, 0);

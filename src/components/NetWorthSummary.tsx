@@ -15,12 +15,18 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
 
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
-    case 1: return "24 hours";
-    case 7: return "week";
-    case 30: return "month";
-    case 365: return "year";
-    case 0: return "all time";
-    default: return `${days} days`;
+    case 1:
+      return "24 hours";
+    case 7:
+      return "week";
+    case 30:
+      return "month";
+    case 365:
+      return "year";
+    case 0:
+      return "all time";
+    default:
+      return `${days} days`;
   }
 };
 

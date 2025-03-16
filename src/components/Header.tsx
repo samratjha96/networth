@@ -1,12 +1,17 @@
 import { useAuth } from "./AuthProvider";
 import { Button } from "./ui/button";
 import { TestModeToggle } from "./TestModeToggle";
-import { SignInButton } from "./SignInButton";
+import { SignInDialog } from "./SignInDialog";
 import { useDatabase } from "@/lib/database-context";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
-  const { isTestMode, toggleTestMode } = useDatabase();
+
+  const handleSignOut = async () => {
+    await signOut();
+    // Refresh the page after signing out
+    window.location.reload();
+  };
 
   return (
     <div className="flex justify-between items-center">
@@ -24,13 +29,16 @@ export const Header = () => {
           // Authenticated user view
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{user.email}</span>
-            <Button variant="outline" size="sm" onClick={signOut}>
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
               Sign out
             </Button>
           </div>
         ) : (
-          // Demo mode view with sign in button
-          <SignInButton />
+          // Demo mode view with sign in dialog
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Demo Mode</span>
+            <SignInDialog />
+          </div>
         )}
 
         {/* Only show test mode toggle for authenticated users */}
