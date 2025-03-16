@@ -5,7 +5,7 @@ import { SignInDialog } from "./SignInDialog";
 import { useDatabase } from "@/lib/database-context";
 
 export const Header = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isLoading } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -25,7 +25,9 @@ export const Header = () => {
       </div>
 
       <div className="flex items-center gap-4">
-        {user ? (
+        {isLoading ? (
+          <div className="h-8 w-[200px] animate-pulse rounded bg-muted" />
+        ) : user ? (
           // Authenticated user view
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{user.email}</span>
@@ -42,7 +44,7 @@ export const Header = () => {
         )}
 
         {/* Only show test mode toggle for authenticated users */}
-        {user && <TestModeToggle />}
+        {!isLoading && user && <TestModeToggle />}
       </div>
     </div>
   );
