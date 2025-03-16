@@ -10,11 +10,14 @@ const MAX_CHART_POINTS = 150;
  */
 export function getOptimalResolution(
   viewportWidth: number,
-  timeRangeDays: number
+  timeRangeDays: number,
 ): number {
   // Base number of points based on viewport width
-  const basePoints = Math.max(50, Math.min(viewportWidth / 5, MAX_CHART_POINTS));
-  
+  const basePoints = Math.max(
+    50,
+    Math.min(viewportWidth / 5, MAX_CHART_POINTS),
+  );
+
   // Adjust resolution based on time range
   if (timeRangeDays <= 1) {
     // For 1 day, show more granular data (hourly)
@@ -40,16 +43,16 @@ export function getOptimalResolution(
  */
 export function sampleDataPoints(
   data: NetWorthDataPoint[],
-  resolution: number, 
-  maxPoints: number = MAX_CHART_POINTS
+  resolution: number,
+  maxPoints: number = MAX_CHART_POINTS,
 ): NetWorthDataPoint[] {
   if (!data.length) return [];
-  
+
   // If data is already smaller than max points, return as is
   if (data.length <= maxPoints) return data;
-  
+
   const result: NetWorthDataPoint[] = [];
-  
+
   // For small datasets, use simple downsampling
   if (data.length <= maxPoints * 3) {
     const step = Math.ceil(data.length / maxPoints);
@@ -62,31 +65,31 @@ export function sampleDataPoints(
     }
     return result;
   }
-  
+
   // For larger datasets, use more sophisticated sampling with aggregation
-  
+
   // Sort data by timestamp if not already sorted
   const sortedData = [...data].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
-  
+
   // Calculate interval size based on time range
   const startTime = new Date(sortedData[0].date).getTime();
   const endTime = new Date(sortedData[sortedData.length - 1].date).getTime();
   const timeRange = endTime - startTime;
-  
+
   const intervalSize = timeRange / maxPoints;
-  
+
   let currentInterval = startTime;
   let currentBucket: NetWorthDataPoint[] = [];
-  
+
   // Always include the first point
   result.push(sortedData[0]);
-  
+
   // Process intermediate points
   for (let i = 1; i < sortedData.length - 1; i++) {
     const pointTime = new Date(sortedData[i].date).getTime();
-    
+
     if (pointTime <= currentInterval + intervalSize) {
       // Add to current bucket
       currentBucket.push(sortedData[i]);
@@ -98,26 +101,26 @@ export function sampleDataPoints(
         result.push(significantPoint);
         currentBucket = [];
       }
-      
+
       // Move to next interval
       while (pointTime > currentInterval + intervalSize) {
         currentInterval += intervalSize;
       }
-      
+
       currentBucket.push(sortedData[i]);
     }
   }
-  
+
   // Process the last bucket if needed
   if (currentBucket.length > 0) {
     result.push(getMostSignificantPoint(currentBucket));
   }
-  
+
   // Always include the last point
   if (result[result.length - 1] !== sortedData[sortedData.length - 1]) {
     result.push(sortedData[sortedData.length - 1]);
   }
-  
+
   return result;
 }
 
@@ -125,21 +128,23 @@ export function sampleDataPoints(
  * Get the most significant point from a bucket of points.
  * This could be the point with the largest change, or we could use other strategies.
  */
-function getMostSignificantPoint(points: NetWorthDataPoint[]): NetWorthDataPoint {
+function getMostSignificantPoint(
+  points: NetWorthDataPoint[],
+): NetWorthDataPoint {
   if (points.length === 1) return points[0];
-  
+
   // Default strategy: return the point with the largest value change from previous point
   let maxChangePoint = points[0];
   let maxChange = 0;
-  
+
   for (let i = 1; i < points.length; i++) {
-    const change = Math.abs(points[i].value - points[i-1].value);
+    const change = Math.abs(points[i].value - points[i - 1].value);
     if (change > maxChange) {
       maxChange = change;
       maxChangePoint = points[i];
     }
   }
-  
+
   return maxChangePoint;
 }
 
@@ -148,25 +153,26 @@ function getMostSignificantPoint(points: NetWorthDataPoint[]): NetWorthDataPoint
  */
 export function getSignificantEvents(
   data: NetWorthDataPoint[],
-  thresholdPercentage: number = 2.0
+  thresholdPercentage: number = 2.0,
 ): NetWorthDataPoint[] {
   if (data.length < 2) return [];
-  
+
   const events: NetWorthDataPoint[] = [];
-  
+
   for (let i = 1; i < data.length; i++) {
-    const prevValue = data[i-1].value;
+    const prevValue = data[i - 1].value;
     const currentValue = data[i].value;
-    
+
     // Skip when prevValue is zero to avoid division by zero
     if (prevValue === 0) continue;
-    
-    const percentChange = Math.abs((currentValue - prevValue) / prevValue) * 100;
-    
+
+    const percentChange =
+      Math.abs((currentValue - prevValue) / prevValue) * 100;
+
     if (percentChange >= thresholdPercentage) {
       events.push(data[i]);
     }
   }
-  
+
   return events;
-} 
+}

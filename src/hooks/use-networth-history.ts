@@ -16,7 +16,9 @@ export function useNetworthHistory(days: number, refreshDependency?: unknown) {
       setData(history);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch history"));
+      setError(
+        err instanceof Error ? err : new Error("Failed to fetch history"),
+      );
     } finally {
       setIsLoading(false);
     }

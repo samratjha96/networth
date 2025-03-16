@@ -46,9 +46,10 @@ export class MockDatabase implements DatabaseProvider {
     }
 
     // Check if test mode was previously enabled and restore mock data
-    const savedTestMode = localStorage.getItem(STORAGE_KEYS.TEST_MODE) === "true";
+    const savedTestMode =
+      localStorage.getItem(STORAGE_KEYS.TEST_MODE) === "true";
     this.testMode = savedTestMode;
-    
+
     if (savedTestMode) {
       this.restoreOrGenerateMockData();
       console.log("Mock database initialized in TEST MODE with mock data");

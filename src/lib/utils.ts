@@ -35,7 +35,11 @@ export type AccountColorScheme = {
   backgroundColor?: string;
 };
 
-export function getAccountColor(type: AccountType, isDebt?: boolean, balance?: number): AccountColorScheme {
+export function getAccountColor(
+  type: AccountType,
+  isDebt?: boolean,
+  balance?: number,
+): AccountColorScheme {
   // Check for negative balances in asset accounts
   if (balance !== undefined && balance < 0 && !isDebt) {
     return {

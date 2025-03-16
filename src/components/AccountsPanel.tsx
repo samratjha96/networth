@@ -6,7 +6,11 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import { formatCurrency, accountTypeEmojis, getAccountColor } from "@/lib/utils";
+import {
+  formatCurrency,
+  accountTypeEmojis,
+  getAccountColor,
+} from "@/lib/utils";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -108,7 +112,11 @@ export function AccountsPanel({
           </div>
           <div className="p-2.5 space-y-2">
             {accounts.map((account) => {
-              const colors = getAccountColor(account.type as AccountType, account.isDebt, account.balance);
+              const colors = getAccountColor(
+                account.type as AccountType,
+                account.isDebt,
+                account.balance,
+              );
 
               return (
                 <div
@@ -116,7 +124,7 @@ export function AccountsPanel({
                   className={cn(
                     "flex items-center justify-between p-3 border rounded-md bg-card hover:bg-accent/10 transition-colors",
                     "border-l-4",
-                    colors.borderColor
+                    colors.borderColor,
                   )}
                 >
                   <div className="flex flex-col min-w-0">

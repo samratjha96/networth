@@ -6,7 +6,13 @@ import { TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { Button } from "@/components/ui/button";
 import { getAccountColor } from "@/lib/utils";
-import { Account, AccountType, AssetType, DebtType, CurrencyCode } from "@/types";
+import {
+  Account,
+  AccountType,
+  AssetType,
+  DebtType,
+  CurrencyCode,
+} from "@/types";
 
 interface AccountsListProps {
   accounts: Account[];
@@ -45,7 +51,7 @@ export function AccountsList({
   const liabilitiesTotal = accounts
     .filter((account) => account.isDebt)
     .reduce((sum, account) => sum + Math.abs(account.balance), 0);
-    
+
   // Get default colors for assets and liabilities
   const assetColors = getAccountColor("Checking", false);
   const liabilityColors = getAccountColor("Credit Card", true);
@@ -83,7 +89,9 @@ export function AccountsList({
 
             <div className="flex flex-wrap items-center gap-3">
               {view === "assets" && assetsTotal > 0 && (
-                <div className={`flex items-center text-sm md:text-base font-medium ${assetColors.textColor}`}>
+                <div
+                  className={`flex items-center text-sm md:text-base font-medium ${assetColors.textColor}`}
+                >
                   <TrendingUp className="h-4 w-4 mr-1.5" />
                   <span>
                     Total Assets: $
@@ -95,7 +103,9 @@ export function AccountsList({
                 </div>
               )}
               {view === "liabilities" && liabilitiesTotal > 0 && (
-                <div className={`flex items-center text-sm md:text-base font-medium ${liabilityColors.textColor}`}>
+                <div
+                  className={`flex items-center text-sm md:text-base font-medium ${liabilityColors.textColor}`}
+                >
                   <TrendingDown className="h-4 w-4 mr-1.5" />
                   <span>
                     Total Liabilities: $
@@ -121,7 +131,9 @@ export function AccountsList({
                 >
                   <TrendingUp className="h-4 w-4" />
                   <span>Assets</span>
-                  <span className={`text-xs font-medium rounded-full bg-green-100/20 px-2 py-0.5 ml-1 ${assetColors.textColor}`}>
+                  <span
+                    className={`text-xs font-medium rounded-full bg-green-100/20 px-2 py-0.5 ml-1 ${assetColors.textColor}`}
+                  >
                     {accounts.filter((a) => !a.isDebt).length}
                   </span>
                 </ToggleGroupItem>
@@ -131,7 +143,9 @@ export function AccountsList({
                 >
                   <TrendingDown className="h-4 w-4" />
                   <span>Liabilities</span>
-                  <span className={`text-xs font-medium rounded-full bg-orange-100/20 px-2 py-0.5 ml-1 ${liabilityColors.textColor}`}>
+                  <span
+                    className={`text-xs font-medium rounded-full bg-orange-100/20 px-2 py-0.5 ml-1 ${liabilityColors.textColor}`}
+                  >
                     {accounts.filter((a) => a.isDebt).length}
                   </span>
                 </ToggleGroupItem>

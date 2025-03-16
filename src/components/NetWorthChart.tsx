@@ -16,7 +16,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAdaptiveNetWorthHistory } from "@/hooks/use-adaptive-networth-history";
 import { TimeRange } from "@/types";
 import { Info } from "lucide-react";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",
@@ -48,15 +53,19 @@ export function NetWorthChart({
   onTimeRangeChange,
   initialTimeRange = 7 as TimeRange,
 }: NetWorthChartProps) {
-  const [selectedRange, setSelectedRange] = React.useState<TimeRange>(initialTimeRange);
+  const [selectedRange, setSelectedRange] =
+    React.useState<TimeRange>(initialTimeRange);
   const isMobile = useIsMobile();
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  
-  const { data, events, isLoading, error } = useAdaptiveNetWorthHistory(selectedRange, {
-    includeEvents: true,
-    eventThreshold: 3.0, // Only show events with 3% or more change
-  });
-  
+
+  const { data, events, isLoading, error } = useAdaptiveNetWorthHistory(
+    selectedRange,
+    {
+      includeEvents: true,
+      eventThreshold: 3.0, // Only show events with 3% or more change
+    },
+  );
+
   const handleRangeChange = (days: TimeRange) => {
     setSelectedRange(days);
     if (onTimeRangeChange) onTimeRangeChange(days);
@@ -77,22 +86,30 @@ export function NetWorthChart({
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    
+
     if (selectedRange >= 365 || selectedRange === 0) {
-      return date.toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
+      return date.toLocaleDateString(undefined, {
+        month: "short",
+        year: "2-digit",
+      });
     }
-    
+
     if (selectedRange >= 7) {
-      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      });
     }
-    
-    return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+    return date.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   // Chart color based on net worth
-  const chartColor = currentNetWorth < 0 
-    ? "hsl(var(--destructive))" 
-    : "hsl(var(--primary))";
+  const chartColor =
+    currentNetWorth < 0 ? "hsl(var(--destructive))" : "hsl(var(--primary))";
 
   return (
     <Card className="col-span-4">
@@ -148,11 +165,7 @@ export function NetWorthChart({
                       stopColor={chartColor}
                       stopOpacity={0.8}
                     />
-                    <stop
-                      offset="95%"
-                      stopColor={chartColor}
-                      stopOpacity={0}
-                    />
+                    <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -220,21 +233,23 @@ export function NetWorthChart({
                   fillOpacity={1}
                   fill="url(#colorValue)"
                 />
-                {events && events.length > 0 && events.map((event, index) => (
-                  <ReferenceDot
-                    key={`event-${index}`}
-                    x={event.date}
-                    y={event.value}
-                    r={6}
-                    fill={chartColor}
-                    stroke="white"
-                  />
-                ))}
+                {events &&
+                  events.length > 0 &&
+                  events.map((event, index) => (
+                    <ReferenceDot
+                      key={`event-${index}`}
+                      x={event.date}
+                      y={event.value}
+                      r={6}
+                      fill={chartColor}
+                      stroke="white"
+                    />
+                  ))}
               </AreaChart>
             </ResponsiveContainer>
           )}
         </div>
-        
+
         {events && events.length > 0 && (
           <div className="mt-2 flex items-center text-xs text-muted-foreground">
             <TooltipProvider>
@@ -246,7 +261,10 @@ export function NetWorthChart({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[300px]">
-                  <p>These points indicate significant changes in your net worth (3% or more) that might represent notable financial events.</p>
+                  <p>
+                    These points indicate significant changes in your net worth
+                    (3% or more) that might represent notable financial events.
+                  </p>
                 </TooltipContent>
               </UITooltip>
             </TooltipProvider>

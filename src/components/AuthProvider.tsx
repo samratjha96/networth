@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { createClient } from '@supabase/supabase-js';
-import { supabaseDb } from '@/lib/supabase-database';
-import { setDatabaseBackend } from '@/lib/database-factory';
+import { createContext, useContext, useEffect, useState } from "react";
+import { Session, User } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import { supabaseDb } from "@/lib/supabase-database";
+import { setDatabaseBackend } from "@/lib/database-factory";
 
 // Initialize Supabase client using Vite's environment variable approach
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -33,38 +33,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       // If we have a user, set the user ID in our database provider
       if (session?.user) {
         supabaseDb.setUserId(session.user.id);
-        
+
         // Switch to Supabase backend
-        setDatabaseBackend('supabase');
+        setDatabaseBackend("supabase");
       } else {
         // No user, fall back to local storage
-        setDatabaseBackend('local');
+        setDatabaseBackend("local");
       }
-      
+
       setIsLoading(false);
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Update user ID in database when auth state changes
-        if (session?.user) {
-          supabaseDb.setUserId(session.user.id);
-          setDatabaseBackend('supabase');
-        } else {
-          setDatabaseBackend('local');
-        }
-        
-        setIsLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      // Update user ID in database when auth state changes
+      if (session?.user) {
+        supabaseDb.setUserId(session.user.id);
+        setDatabaseBackend("supabase");
+      } else {
+        setDatabaseBackend("local");
       }
-    );
+
+      setIsLoading(false);
+    });
 
     // Clean up the subscription
     return () => {
@@ -75,9 +75,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     setIsLoading(false);
-    
+
     if (error) {
       throw error;
     }
@@ -88,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });
     setIsLoading(false);
-    
+
     if (error) {
       throw error;
     }
@@ -99,7 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     const { error } = await supabase.auth.signOut();
     setIsLoading(false);
-    
+
     if (error) {
       throw error;
     }
@@ -111,7 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading,
     signIn,
     signUp,
-    signOut
+    signOut,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -120,10 +123,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 // Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
+
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  
+
   return context;
-}; 
+};
