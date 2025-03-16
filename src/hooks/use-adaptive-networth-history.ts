@@ -31,6 +31,7 @@ export function useAdaptiveNetWorthHistory(
   const [adaptedData, setAdaptedData] = useState<NetWorthDataPoint[]>([]);
   const [events, setEvents] = useState<NetWorthEvent[]>([]);
   const [error, setError] = useState<Error | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const isMobile = useIsMobile();
 
   // Get viewport width - use a ref to avoid unnecessary re-renders
@@ -38,12 +39,35 @@ export function useAdaptiveNetWorthHistory(
   const viewportWidth = isMobile ? window.innerWidth - 40 : 900; // Estimated default
 
   // Use the existing networth history hook to get data from your database
-  const { data, isLoading } = useNetworthHistory(timeRange);
+  const { data, isLoading: isDataLoading } = useNetworthHistory(timeRange);
+
+  // Debug logging
+  useEffect(() => {
+    console.debug("NetWorthChart state:", {
+      timeRange,
+      dataLength: data?.length ?? 0,
+      isDataLoading,
+      isProcessing,
+      hasError: !!error,
+    });
+  }, [data, timeRange, isDataLoading, isProcessing, error]);
 
   // Process the data whenever it changes
   useEffect(() => {
-    if (!data || data.length === 0 || isLoading) return;
+    if (isDataLoading) {
+      console.debug("Skipping processing - data is still loading");
+      return;
+    }
 
+    if (!data) {
+      console.debug("No data available");
+      setAdaptedData([]);
+      setEvents([]);
+      return;
+    }
+
+    console.debug("Processing data:", { length: data.length });
+    setIsProcessing(true);
     try {
       // Determine optimal resolution based on viewport width and time range
       const resolution = getOptimalResolution(
@@ -53,6 +77,7 @@ export function useAdaptiveNetWorthHistory(
 
       // Sample data based on resolution
       const sampledData = sampleDataPoints(data, resolution, options.maxPoints);
+      console.debug("Sampled data:", { length: sampledData.length });
 
       setAdaptedData(sampledData);
 
@@ -77,13 +102,16 @@ export function useAdaptiveNetWorthHistory(
 
         setEvents(formattedEvents);
       }
+      setError(null);
     } catch (err) {
       console.error("Error processing net worth history:", err);
       setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsProcessing(false);
     }
   }, [
     data,
-    isLoading,
+    isDataLoading,
     timeRange,
     options.includeEvents,
     options.eventThreshold,
@@ -124,7 +152,7 @@ export function useAdaptiveNetWorthHistory(
   return {
     data: adaptedData,
     events,
-    isLoading,
+    isLoading: isDataLoading || isProcessing,
     error,
   };
 }

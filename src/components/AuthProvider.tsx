@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { Session, User } from "@supabase/supabase-js";
+import { Session, User, AuthChangeEvent } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseDb } from "@/lib/supabase-database";
 import { setDatabaseBackend, setGlobalTestMode } from "@/lib/database-factory";
@@ -44,54 +44,138 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    let mounted = true;
+    // Track initialization state
+    let isInitializing = false;
+
     // Get the initial session and set up auth subscription
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const initializeAuth = async () => {
+      // Prevent double initialization
+      if (isInitializing) return;
+      isInitializing = true;
 
-      // If we have a user, set the user ID in our database provider
-      if (session?.user) {
-        supabaseDb.setUserId(session.user.id);
+      try {
+        setIsLoading(true);
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-        // Switch to Supabase backend and disable test mode
-        setDatabaseBackend("supabase");
-        setGlobalTestMode(false);
-      } else {
-        // No user, fall back to local storage and enable test mode
+        if (error) throw error;
+        if (!mounted) return;
+
+        console.log("Initial auth state:", {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+        });
+
+        if (session?.user) {
+          setSession(session);
+          setUser(session.user);
+          supabaseDb.setUserId(session.user.id);
+          setDatabaseBackend("supabase");
+          setGlobalTestMode(false);
+          await supabaseDb.initialize();
+        } else {
+          setSession(null);
+          setUser(null);
+          setDatabaseBackend("local");
+          setGlobalTestMode(true);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
         setDatabaseBackend("local");
         setGlobalTestMode(true);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+        isInitializing = false;
       }
+    };
 
-      setIsLoading(false);
-    });
+    initializeAuth();
+
+    // Debounce auth state changes to prevent rapid firing
+    let authChangeTimeout: number | null = null;
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, session) => {
+        if (!mounted) return;
 
-      // Update user ID in database when auth state changes
-      if (session?.user) {
-        supabaseDb?.setUserId(session.user.id);
-        setDatabaseBackend("supabase");
-        setGlobalTestMode(false);
-      } else {
-        setDatabaseBackend("local");
-        setGlobalTestMode(true);
-      }
+        console.debug("Auth event:", event, session?.user?.id);
 
-      setIsLoading(false);
-    });
+        // Clear any pending auth change handlers
+        if (authChangeTimeout) {
+          window.clearTimeout(authChangeTimeout);
+        }
 
-    // Clean up the subscription
+        // Debounce auth changes to prevent rapid firing
+        authChangeTimeout = window.setTimeout(async () => {
+          try {
+            switch (event) {
+              case "INITIAL_SESSION":
+                // Skip as we handle this in initializeAuth
+                break;
+
+              case "SIGNED_IN":
+                setIsLoading(true);
+                if (session?.user) {
+                  setSession(session);
+                  setUser(session.user);
+                  supabaseDb.setUserId(session.user.id);
+                  setDatabaseBackend("supabase");
+                  setGlobalTestMode(false);
+                  await supabaseDb.initialize();
+                }
+                setIsLoading(false);
+                break;
+
+              case "SIGNED_OUT":
+                setIsLoading(true);
+                setSession(null);
+                setUser(null);
+                setDatabaseBackend("local");
+                setGlobalTestMode(true);
+                setIsLoading(false);
+                break;
+
+              case "USER_UPDATED":
+                if (session?.user) {
+                  setUser(session.user);
+                  setSession(session);
+                }
+                break;
+
+              case "TOKEN_REFRESHED":
+                if (session) {
+                  setSession(session);
+                }
+                break;
+            }
+          } catch (error) {
+            console.error("Error handling auth change:", error);
+            setDatabaseBackend("local");
+            setGlobalTestMode(true);
+            setIsLoading(false);
+          }
+        }, 50); // Small delay to batch rapid auth events
+      },
+    );
+
+    // Clean up
     return () => {
+      mounted = false;
+      if (authChangeTimeout) {
+        window.clearTimeout(authChangeTimeout);
+      }
       subscription.unsubscribe();
     };
   }, []);
 
-  // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     if (!supabase) {
       throw new Error(
@@ -100,14 +184,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setIsLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
+      if (error) throw error;
+    } catch (error) {
+      console.error("Sign in error:", error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

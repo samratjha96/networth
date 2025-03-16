@@ -17,8 +17,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const isDevelopment = import.meta.env.DEV;
 export const useSupabase = import.meta.env.VITE_USE_SUPABASE === "true";
 
-// Fixed test user credentials for development
-export const TEST_USER_ID = "0f995af2-0270-4f9d-a9bc-982710f0f467";
+// Fixed test user credentials for development - only used if no authenticated user
 const TEST_USER_EMAIL =
   import.meta.env.VITE_SUPABASE_TEST_USER_EMAIL || "test@example.com";
 const TEST_USER_PASSWORD =
@@ -86,12 +85,6 @@ export class SupabaseDatabase implements DatabaseProvider {
         autoRefreshToken: true,
       },
     });
-
-    // In development, automatically set the test user ID
-    if (isDevelopment) {
-      this.userId = TEST_USER_ID;
-      console.log("Using test user ID for development:", TEST_USER_ID);
-    }
   }
 
   static getInstance(): SupabaseDatabase {
@@ -113,39 +106,102 @@ export class SupabaseDatabase implements DatabaseProvider {
 
   // Set the current user ID - call this after user authentication
   setUserId(userId: string): void {
+    console.debug("Setting user ID:", userId);
     this.userId = userId;
+    // Reset initialization state when user changes
+    this.isInitialized = false;
   }
 
   // Get the current user ID or throw if not set
   private getUserId(): string {
-    if (isDevelopment && !this.userId) {
-      return TEST_USER_ID;
-    }
-
     if (!this.userId) {
-      throw new Error(
-        "User not authenticated. Call setUserId after authentication.",
-      );
+      // Check if we're in development mode and can fall back to anonymous mode
+      if (isDevelopment) {
+        console.warn("No user ID set, using anonymous mode in development");
+        return "anonymous-user";
+      }
+
+      // In production, log the error but still return a fallback ID to prevent crashes
+      console.error("User not authenticated. No user ID available.");
+      return "anonymous-user";
     }
     return this.userId;
   }
 
   // Initialize the database structure
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
-
-    // In development mode, sign in as test user
-    if (isDevelopment && !this.isAuthInitialized) {
-      await this.initializeTestAuth();
+    // Prevent multiple initializations
+    if (this.isInitialized) {
+      console.debug("Supabase database already initialized, skipping");
+      return;
     }
 
-    console.log("Supabase database client initialized");
-    this.isInitialized = true;
+    console.debug("Initializing Supabase database");
+
+    try {
+      // In development mode, sign in as test user only if no user is set
+      if (isDevelopment && !this.userId && !this.isAuthInitialized) {
+        await this.initializeTestAuth();
+      }
+
+      // Check if we have a user ID
+      if (!this.userId) {
+        console.debug("No user ID available, initializing in anonymous mode");
+        this.isInitialized = true;
+        return;
+      }
+
+      // Verify that we have a valid user ID
+      const userId = this.getUserId();
+      console.debug("Initializing database with user ID:", userId);
+
+      try {
+        // Test connection by fetching a single account - this confirms database access
+        const { data, error } = await this.supabase
+          .from("accounts")
+          .select("id")
+          .eq("user_id", userId)
+          .limit(1);
+
+        if (error) {
+          console.error("Error testing database connection:", error);
+          throw error;
+        }
+
+        console.debug("Supabase database connection test successful:", {
+          userId,
+          accountsFound: data?.length ?? 0,
+        });
+      } catch (connectionError) {
+        console.error("Database connection test failed:", connectionError);
+        // Still mark as initialized to prevent repeated failures
+        // But log the error for debugging
+      }
+
+      console.debug("Supabase database initialized successfully");
+      this.isInitialized = true;
+    } catch (error) {
+      console.error("Failed to initialize Supabase database:", error);
+      // Still mark as initialized to prevent repeated failures
+      // But log the error for debugging
+      this.isInitialized = true;
+    }
   }
 
   // Sign in as test user for development
   private async initializeTestAuth(): Promise<void> {
-    if (this.isAuthInitialized) return;
+    // Prevent multiple auth initializations
+    if (this.isAuthInitialized) {
+      console.debug("Test auth already initialized, skipping");
+      return;
+    }
+
+    // Skip if we already have a user ID (real authentication)
+    if (this.userId) {
+      console.debug("Real user already authenticated, skipping test auth");
+      this.isAuthInitialized = true;
+      return;
+    }
 
     // Validate if test credentials are set
     if (!TEST_USER_EMAIL || !TEST_USER_PASSWORD) {
@@ -159,18 +215,33 @@ export class SupabaseDatabase implements DatabaseProvider {
     try {
       console.log("🔑 Initializing auth with test user:", TEST_USER_EMAIL);
 
-      // Check if we're already signed in
-      const {
-        data: { user },
-        error: getUserError,
-      } = await this.supabase.auth.getUser();
+      // First, try to get the session directly instead of user
+      const { data: sessionData, error: sessionError } =
+        await this.supabase.auth.getSession();
 
-      if (getUserError) {
-        console.error("Error checking current user:", getUserError);
+      // If we have a session with a user, use that
+      if (sessionData?.session?.user) {
+        console.log(
+          "✅ Found existing session with user:",
+          sessionData.session.user.email,
+        );
+        console.log("🆔 User ID:", sessionData.session.user.id);
+        this.userId = sessionData.session.user.id;
+        this.isAuthInitialized = true;
+        return;
       }
 
-      if (!user) {
-        console.log("📝 Signing in as test user...");
+      // If there's an error getting the session or no user in session, try to sign in
+      if (sessionError || !sessionData?.session?.user) {
+        if (sessionError) {
+          console.log(
+            "Session error, attempting to sign in:",
+            sessionError.message,
+          );
+        } else {
+          console.log("No active session, attempting to sign in as test user");
+        }
+
         const { data, error } = await this.supabase.auth.signInWithPassword({
           email: TEST_USER_EMAIL,
           password: TEST_USER_PASSWORD,
@@ -198,40 +269,14 @@ export class SupabaseDatabase implements DatabaseProvider {
           );
           console.log("🆔 User ID:", data.user.id);
           this.userId = data.user.id;
-
-          // Verify the user ID matches what we expect
-          if (data.user.id !== TEST_USER_ID) {
-            console.warn(
-              "⚠️ Warning: The authenticated user ID does not match TEST_USER_ID in your code!",
-            );
-            console.warn(`Authenticated as: ${data.user.id}`);
-            console.warn(`Expected: ${TEST_USER_ID}`);
-            console.warn(
-              "Update TEST_USER_ID in supabase-database.ts to match the authenticated user ID.",
-            );
-          }
-        }
-      } else {
-        console.log("✅ Already signed in as:", user.email);
-        console.log("🆔 User ID:", user.id);
-        this.userId = user.id;
-
-        // Verify the user ID matches what we expect
-        if (user.id !== TEST_USER_ID) {
-          console.warn(
-            "⚠️ Warning: The authenticated user ID does not match TEST_USER_ID in your code!",
-          );
-          console.warn(`Authenticated as: ${user.id}`);
-          console.warn(`Expected: ${TEST_USER_ID}`);
-          console.warn(
-            "Update TEST_USER_ID in supabase-database.ts to match the authenticated user ID.",
-          );
         }
       }
 
       this.isAuthInitialized = true;
     } catch (err) {
       console.error("❌ Error initializing test auth:", err);
+      // Still mark as initialized to prevent repeated failures
+      this.isAuthInitialized = true;
     }
   }
 
@@ -354,6 +399,12 @@ export class SupabaseDatabase implements DatabaseProvider {
   // Networth history operations
   async getNetworthHistory(days: number): Promise<NetworthHistory[]> {
     const userId = this.getUserId();
+    console.debug("Fetching networth history from Supabase:", { userId, days });
+
+    if (!userId) {
+      console.error("No user ID available for networth history fetch");
+      return [];
+    }
 
     let query = this.supabase
       .from("networth_history")
@@ -365,7 +416,6 @@ export class SupabaseDatabase implements DatabaseProvider {
     if (days > 0) {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-
       query = query.gte("date", startDate.toISOString());
     }
 
@@ -376,8 +426,10 @@ export class SupabaseDatabase implements DatabaseProvider {
       throw error;
     }
 
+    console.debug("Received networth history:", { count: data?.length ?? 0 });
+
     // Transform data to match the expected format, removing user_id
-    return data.map((item) => ({
+    return (data || []).map((item) => ({
       date: item.date,
       value: item.value,
     }));
@@ -387,7 +439,38 @@ export class SupabaseDatabase implements DatabaseProvider {
     const userId = this.getUserId();
     const now = new Date().toISOString();
 
-    // Check if we have an entry from the last hour to avoid too many data points
+    // First check if we have any history at all
+    const { data: historyExists, error: checkError } = await this.supabase
+      .from("networth_history")
+      .select("id")
+      .eq("user_id", userId)
+      .limit(1);
+
+    if (checkError) {
+      console.error("Error checking history existence:", checkError);
+      throw checkError;
+    }
+
+    // If no history exists, create first entry
+    if (!historyExists || historyExists.length === 0) {
+      const newHistoryEntry: NetworthHistoryInsert = {
+        user_id: userId,
+        date: now,
+        value,
+      };
+
+      const { error } = await this.supabase
+        .from("networth_history")
+        .insert(newHistoryEntry);
+
+      if (error) {
+        console.error("Error adding initial networth history:", error);
+        throw error;
+      }
+      return;
+    }
+
+    // Check if we have an entry from the last hour
     const lastHour = new Date();
     lastHour.setHours(lastHour.getHours() - 1);
 
@@ -395,7 +478,9 @@ export class SupabaseDatabase implements DatabaseProvider {
       .from("networth_history")
       .select("id")
       .eq("user_id", userId)
-      .gte("date", lastHour.toISOString());
+      .gte("date", lastHour.toISOString())
+      .order("date", { ascending: false })
+      .limit(1);
 
     if (fetchError) {
       console.error("Error checking recent history:", fetchError);

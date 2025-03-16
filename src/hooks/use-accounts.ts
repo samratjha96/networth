@@ -1,100 +1,114 @@
 import { useState, useEffect, useCallback } from "react";
 import { Account } from "@/types";
 import { useDatabase } from "@/lib/database-context";
+import { useAuth } from "@/components/AuthProvider";
 
 export function useAccounts() {
-  const { db, currentBackend, initialized } = useDatabase();
+  const { db, currentBackend } = useDatabase();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const loadAccounts = useCallback(async () => {
-    if (!initialized) return;
+    // Only skip loading if auth is still loading AND we're using Supabase
+    // If we're in local mode, we should still load accounts even without a user
+    if (isAuthLoading && currentBackend === "supabase") {
+      console.debug("Skipping account load - waiting for auth", {
+        isAuthLoading,
+        hasUser: !!user,
+        backend: currentBackend,
+      });
+      return;
+    }
+
+    // Also skip if we expect a user (Supabase mode) but don't have one yet
+    if (!user && currentBackend === "supabase") {
+      console.debug("Skipping account load - no user in Supabase mode");
+      setAccounts([]); // Reset accounts when signed out
+      return;
+    }
 
     try {
       setIsLoading(true);
-      setAccounts([]); // Clear accounts while loading new ones
+      console.debug("Loading accounts with backend:", currentBackend);
       const loadedAccounts = await db.getAllAccounts();
+      console.debug(`Loaded ${loadedAccounts.length} accounts`);
+
       setAccounts(loadedAccounts);
       setError(null);
     } catch (err) {
+      console.error("Error loading accounts:", err);
       setError(
         err instanceof Error ? err : new Error("Failed to load accounts"),
       );
-      setAccounts([]); // Clear accounts on error
+      setAccounts([]);
     } finally {
       setIsLoading(false);
     }
-  }, [db, initialized]);
+  }, [db, currentBackend, user, isAuthLoading]);
 
-  // Load accounts when database is initialized or backend changes
+  // Load accounts when database backend changes or auth state changes
   useEffect(() => {
     loadAccounts();
-  }, [loadAccounts, currentBackend, initialized]);
+  }, [loadAccounts, currentBackend, user]);
 
   const addAccount = useCallback(
     async (newAccount: Omit<Account, "id">) => {
-      if (!initialized) throw new Error("Database not initialized");
-
       try {
         const account = await db.insertAccount(newAccount);
-        setAccounts((prev) => [...prev, account]);
-        setError(null);
+        await loadAccounts();
         return account;
       } catch (err) {
+        console.error("Error adding account:", err);
         const error =
           err instanceof Error ? err : new Error("Failed to add account");
         setError(error);
         throw error;
       }
     },
-    [db, initialized],
+    [db, loadAccounts],
   );
 
   const updateAccount = useCallback(
     async (account: Account) => {
-      if (!initialized) throw new Error("Database not initialized");
-
       try {
         await db.updateAccount(account);
-        setAccounts((prev) =>
-          prev.map((a) => (a.id === account.id ? account : a)),
-        );
-        setError(null);
+        await loadAccounts();
       } catch (err) {
+        console.error("Error updating account:", err);
         const error =
           err instanceof Error ? err : new Error("Failed to update account");
         setError(error);
         throw error;
       }
     },
-    [db, initialized],
+    [db, loadAccounts],
   );
 
   const deleteAccount = useCallback(
     async (id: string) => {
-      if (!initialized) throw new Error("Database not initialized");
-
       try {
         await db.deleteAccount(id);
-        setAccounts((prev) => prev.filter((a) => a.id !== id));
-        setError(null);
+        await loadAccounts();
       } catch (err) {
+        console.error("Error deleting account:", err);
         const error =
           err instanceof Error ? err : new Error("Failed to delete account");
         setError(error);
         throw error;
       }
     },
-    [db, initialized],
+    [db, loadAccounts],
   );
 
   return {
     accounts,
-    isLoading,
+    isLoading: isLoading || (isAuthLoading && currentBackend === "supabase"),
     error,
     addAccount,
     updateAccount,
     deleteAccount,
+    refetch: loadAccounts,
   };
 }

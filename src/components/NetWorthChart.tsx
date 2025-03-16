@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import {
   Area,
@@ -58,15 +58,33 @@ export function NetWorthChart({
 }: NetWorthChartProps) {
   const [selectedRange, setSelectedRange] = useTimeRange(initialTimeRange);
   const isMobile = useIsMobile();
-  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showLoading, setShowLoading] = useState(false);
 
-  const { data, events, isLoading, error } = useAdaptiveNetWorthHistory(
-    selectedRange,
-    {
-      includeEvents: true,
-      eventThreshold: 3.0, // Only show events with 3% or more change
-    },
-  );
+  const {
+    data,
+    events,
+    isLoading: dataIsLoading,
+    error,
+  } = useAdaptiveNetWorthHistory(selectedRange, {
+    includeEvents: true,
+    eventThreshold: 3.0, // Only show events with 3% or more change
+  });
+
+  // Delayed loading state to prevent flickering
+  useEffect(() => {
+    let timer: number;
+    if (dataIsLoading) {
+      timer = window.setTimeout(() => setShowLoading(true), 500);
+    } else {
+      setShowLoading(false);
+    }
+    return () => window.clearTimeout(timer);
+  }, [dataIsLoading]);
+
+  // Show empty data instead of loading if we have no data but we're authenticated
+  const isLoading = showLoading && dataIsLoading;
+  const isEmpty = !isLoading && (!data || data.length === 0);
 
   const handleRangeChange = (days: TimeRange) => {
     setSelectedRange(days);
@@ -136,11 +154,14 @@ export function NetWorthChart({
             <div className="flex h-full items-center justify-center">
               <div className="text-destructive">Error loading data</div>
             </div>
-          ) : data.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
+          ) : isEmpty ? (
+            <div className="flex h-full items-center justify-center flex-col gap-2">
               <div className="text-muted-foreground">
                 No data available for the selected time range
               </div>
+              <p className="text-sm text-muted-foreground">
+                Add or update accounts to start tracking your net worth
+              </p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">

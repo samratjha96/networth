@@ -2,18 +2,28 @@ import { useAuth } from "./AuthProvider";
 import { Button } from "./ui/button";
 import { SignInDialog } from "./SignInDialog";
 import { useDatabase } from "@/lib/database-context";
+import { useCallback } from "react";
 
 export const Header = () => {
   const { user, signOut, isLoading } = useAuth();
+  const { refreshDatabase, currentBackend } = useDatabase();
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
+      console.log("Signing out and switching to local database");
       await signOut();
-      window.location.reload();
+
+      // Give a small delay to allow AuthProvider's sign out handler to complete
+      setTimeout(() => {
+        console.log("Refreshing database connection after sign out", {
+          currentBackend,
+        });
+        refreshDatabase();
+      }, 100);
     } catch (error) {
       console.error("Error signing out:", error);
     }
-  };
+  }, [signOut, refreshDatabase, currentBackend]);
 
   return (
     <div className="flex justify-between items-center">

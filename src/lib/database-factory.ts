@@ -66,8 +66,22 @@ export function getDatabase(): DatabaseProvider {
 
 // Switch to a different backend (for testing or development)
 export function setDatabaseBackend(backend: DatabaseBackend): void {
+  const prevBackend = currentBackend;
   currentBackend = backend;
-  console.log(`Switched to ${backend} database backend`);
+
+  // Also ensure test mode is set appropriately when switching to local backend
+  if (backend === "local") {
+    setGlobalTestMode(true);
+  }
+
+  console.log(`Switched database backend from ${prevBackend} to ${backend}`);
+
+  // Force a dispatch of a custom event to help components react to the change
+  window.dispatchEvent(
+    new CustomEvent("database-backend-changed", {
+      detail: { backend, previousBackend: prevBackend },
+    }),
+  );
 }
 
 // Set global test mode state (persisted to localStorage)

@@ -19,8 +19,8 @@ interface DatabaseContextType {
   db: DbProvider;
   isTestMode: boolean;
   toggleTestMode: () => Promise<void>;
-  initialized: boolean;
   currentBackend: DatabaseBackend;
+  refreshDatabase: () => Promise<void>;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(
@@ -31,7 +31,6 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState(getDatabase());
   const [currentBackend, setCurrentBackend] = useState(getDatabaseBackend());
   const [isTestMode, setIsTestMode] = useState(isGlobalTestMode());
-  const [initialized, setInitialized] = useState(false);
 
   // Initialize test mode on the actual database instance to match global setting
   useEffect(() => {
@@ -41,37 +40,63 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     }
   }, [db]);
 
-  // Combined effect for handling backend changes and initialization
+  // Initialize database function that can be called manually
+  const initializeDatabase = useCallback(async () => {
+    const newBackend = getDatabaseBackend();
+    console.debug(
+      "Initializing database with backend:",
+      newBackend,
+      "current:",
+      currentBackend,
+    );
+
+    // If backend changed, update the database instance
+    if (newBackend !== currentBackend) {
+      setCurrentBackend(newBackend);
+      const newDb = getDatabase();
+      setDb(newDb);
+      await newDb.initialize();
+      setIsTestMode(isGlobalTestMode());
+      await newDb.synchronizeNetworthHistory();
+    } else {
+      await db.initialize();
+      await db.synchronizeNetworthHistory();
+    }
+  }, [currentBackend, db]);
+
+  // Effect for handling backend changes
   useEffect(() => {
-    const initializeDatabase = async () => {
-      const newBackend = getDatabaseBackend();
+    initializeDatabase();
+  }, [initializeDatabase]);
 
-      // If backend changed, update the database instance
-      if (newBackend !== currentBackend) {
-        setInitialized(false);
-        setCurrentBackend(newBackend);
-        const newDb = getDatabase();
-        setDb(newDb);
+  // Listen for custom backend change events
+  useEffect(() => {
+    const handleBackendChange = (event: Event) => {
+      console.debug("Detected database backend change event");
+      const customEvent = event as CustomEvent;
+      const { backend } = customEvent.detail;
 
-        // Initialize the new database instance
-        await newDb.initialize();
-        setIsTestMode(isGlobalTestMode());
-        await newDb.synchronizeNetworthHistory();
-        setInitialized(true);
-      } else if (!initialized) {
-        // If backend hasn't changed but we're not initialized, initialize current db
-        await db.initialize();
-        setIsTestMode(isGlobalTestMode());
-        await db.synchronizeNetworthHistory();
-        setInitialized(true);
+      if (backend !== currentBackend) {
+        console.debug(
+          `Backend changed from ${currentBackend} to ${backend}, refreshing database`,
+        );
+        setCurrentBackend(backend);
+        // Directly trigger initialization instead of waiting for the effect
+        initializeDatabase();
       }
     };
 
-    initializeDatabase();
-  }, [currentBackend, db, initialized]);
+    window.addEventListener("database-backend-changed", handleBackendChange);
+
+    return () => {
+      window.removeEventListener(
+        "database-backend-changed",
+        handleBackendChange,
+      );
+    };
+  }, [initializeDatabase, currentBackend]);
 
   const toggleTestMode = async () => {
-    setInitialized(false);
     const newTestMode = !isTestMode;
 
     // Update the database instance
@@ -84,7 +109,12 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     setDb(newDb);
     await newDb.initialize();
     await newDb.synchronizeNetworthHistory();
-    setInitialized(true);
+  };
+
+  // Function to force a database refresh
+  const refreshDatabase = async () => {
+    console.log("Manually refreshing database connection");
+    await initializeDatabase();
   };
 
   return (
@@ -93,8 +123,8 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         db,
         isTestMode,
         toggleTestMode,
-        initialized,
         currentBackend,
+        refreshDatabase,
       }}
     >
       {children}

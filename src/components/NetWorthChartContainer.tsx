@@ -4,12 +4,14 @@ import { useDatabase } from "@/lib/database-context";
 import { useNetworthHistory } from "@/hooks/use-networth-history";
 import { CurrencyCode, TimeRange } from "@/types";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useAuth } from "@/components/AuthProvider";
 
 export function NetWorthChartContainer() {
   const [timeRange, setTimeRange] = React.useState<TimeRange>(7); // Default to 1W
-  const { isTestMode, db } = useDatabase();
+  const { isTestMode, db, currentBackend } = useDatabase();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { data } = useNetworthHistory(timeRange);
-  const { accounts } = useAccounts();
+  const { accounts, isLoading: accountsLoading } = useAccounts();
 
   // Calculate current net worth from accounts
   const currentNetWorth = React.useMemo(() => {
@@ -21,12 +23,32 @@ export function NetWorthChartContainer() {
     setTimeRange(days);
   }, []);
 
-  // Ensure networth history is synchronized with the current net worth
+  // Synchronize networth history with the current net worth only when
+  // accounts are loaded and we're authenticated in Supabase mode
   React.useEffect(() => {
-    if (accounts.length > 0) {
+    const shouldSync =
+      !isAuthLoading &&
+      !accountsLoading &&
+      accounts.length > 0 &&
+      (user || currentBackend !== "supabase");
+
+    if (shouldSync) {
+      console.debug("Synchronizing networth history", {
+        accountCount: accounts.length,
+        currentNetWorth,
+        backend: currentBackend,
+      });
       db.synchronizeNetworthHistory();
     }
-  }, [accounts, db]);
+  }, [
+    accounts,
+    accountsLoading,
+    db,
+    isAuthLoading,
+    user,
+    currentBackend,
+    currentNetWorth,
+  ]);
 
   return (
     <NetWorthChart
