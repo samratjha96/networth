@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
-import { db } from "@/lib/database";
+import { getDatabase } from "@/lib/database-factory";
 import { useToast } from "@/hooks/use-toast";
 
 export function TestModeToggle() {
   const { toast } = useToast();
-  const isTestMode = db.isTestModeEnabled();
+  const isTestMode = getDatabase().isTestModeEnabled();
 
   const handleToggleTestMode = () => {
     try {
+      const db = getDatabase();
       db.setTestMode(!isTestMode);
 
       // Force page reload to apply test mode changes

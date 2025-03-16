@@ -1,6 +1,6 @@
 import React from "react";
 import { NetWorthChart } from "./NetWorthChart";
-import { db } from "@/lib/database";
+import { getDatabase } from "@/lib/database-factory";
 import { useNetworthHistory } from "@/hooks/use-networth-history";
 import { CurrencyCode } from "@/components/AccountsList";
 
@@ -11,21 +11,23 @@ export function NetWorthChartContainer() {
   const initializedRef = React.useRef(false);
 
   // Get the test mode status once during component mount
-  const isTestModeRef = React.useRef(db.isTestModeEnabled());
+  const isTestModeRef = React.useRef(getDatabase().isTestModeEnabled());
 
   const { data } = useNetworthHistory(timeRange);
 
   // Initialize mock data once using useEffect with empty dependency array
   React.useEffect(() => {
     const initializeData = async () => {
+      // Only initialize once and only in test mode
       if (!initializedRef.current && isTestModeRef.current) {
-        await db.initializeMockDataForChart();
+        const db = getDatabase();
+        await db.synchronizeNetworthHistory();
         initializedRef.current = true;
       }
     };
 
     initializeData();
-  }, []); // Empty dependency array ensures this only runs once
+  }, []);
 
   // Calculate current net worth from the latest data point
   const currentNetWorth = React.useMemo(() => {

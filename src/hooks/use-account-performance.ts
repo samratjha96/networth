@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Account } from "@/components/AccountsList";
 import { NetworthHistory } from "@/lib/types";
-import { db } from "@/lib/database";
+import { getDatabase } from "@/lib/database-factory";
 
 interface AccountPerformance {
   id: string;
@@ -62,8 +62,8 @@ export function useAccountPerformance(
       }
 
       // Get history data for the specified period
-      const history = await db.getNetworthHistory(days);
-      const isTestMode = db.isTestModeEnabled();
+      const history = await getDatabase().getNetworthHistory(days);
+      const isTestMode = getDatabase().isTestModeEnabled();
 
       // Performance data for all accounts
       const accountPerformance: AccountPerformance[] = [];

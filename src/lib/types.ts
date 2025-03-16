@@ -37,4 +37,7 @@ export interface DatabaseOperations {
 export interface DatabaseProvider extends DatabaseOperations {
   initialize(): Promise<void>;
   close(): Promise<void>;
+  synchronizeNetworthHistory(): Promise<void>;
+  isTestModeEnabled(): boolean;
+  setTestMode(enabled: boolean): void;
 }

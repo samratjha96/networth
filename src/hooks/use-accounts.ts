@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Account } from "@/components/AccountsList";
-import { db } from "@/lib/database";
+import { getDatabase } from "@/lib/database-factory";
 
 export function useAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -14,6 +14,7 @@ export function useAccounts() {
 
   const loadAccounts = async () => {
     try {
+      const db = getDatabase();
       const loadedAccounts = await db.getAllAccounts();
       setAccounts(loadedAccounts);
       setError(null);
@@ -28,6 +29,7 @@ export function useAccounts() {
 
   const addAccount = useCallback(async (newAccount: Omit<Account, "id">) => {
     try {
+      const db = getDatabase();
       const account = await db.insertAccount(newAccount);
       setAccounts((prev) => [...prev, account]);
       setError(null);
@@ -42,6 +44,7 @@ export function useAccounts() {
 
   const updateAccount = useCallback(async (account: Account) => {
     try {
+      const db = getDatabase();
       await db.updateAccount(account);
       setAccounts((prev) =>
         prev.map((a) => (a.id === account.id ? account : a)),
@@ -57,6 +60,7 @@ export function useAccounts() {
 
   const deleteAccount = useCallback(async (id: string) => {
     try {
+      const db = getDatabase();
       await db.deleteAccount(id);
       setAccounts((prev) => prev.filter((a) => a.id !== id));
       setError(null);

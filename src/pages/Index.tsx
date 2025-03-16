@@ -7,7 +7,7 @@ import { NetWorthChart } from "@/components/NetWorthChart";
 import { AccountsList, Account, CurrencyCode } from "@/components/AccountsList";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { TestModeToggle } from "@/components/TestModeToggle";
-import { db } from "@/lib/database";
+import { getDatabase } from "@/lib/database-factory";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
@@ -24,6 +24,7 @@ const Index = () => {
     // Synchronize the networth history with current account data on initial load
     // Only do this once to prevent infinite updates
     if (!initializedRef.current) {
+      const db = getDatabase();
       db.synchronizeNetworthHistory();
       initializedRef.current = true;
     }
@@ -83,6 +84,7 @@ const Index = () => {
 
   // When accounts change, update the networth snapshot
   useEffect(() => {
+    const db = getDatabase();
     // Only update if we have accounts and not in test mode
     if (accounts.length > 0 && !db.isTestModeEnabled()) {
       // Ensure the current net worth is reflected in history
