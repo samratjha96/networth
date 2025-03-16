@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { NetworthHistory } from "@/types";
-import { useDatabase } from "@/lib/database-context";
 import { useAuth } from "@/components/AuthProvider";
+import { useDatabaseStore } from "@/store/database-store";
 
 export function useNetworthHistory(days: number, refreshDependency?: unknown) {
-  const { db, currentBackend } = useDatabase();
+  const { db, currentBackend } = useDatabaseStore();
   const { user, isLoading: isAuthLoading } = useAuth();
   const [data, setData] = useState<NetworthHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);

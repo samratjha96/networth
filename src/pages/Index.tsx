@@ -8,7 +8,7 @@ import { AccountsList } from "@/components/AccountsList";
 import { Account, CurrencyCode, TimeRange } from "@/types";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { TestModeToggle } from "@/components/TestModeToggle";
-import { useDatabase } from "@/lib/database-context";
+import { useDatabase } from "@/hooks/use-database";
 import { Header } from "@/components/Header";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
@@ -169,17 +169,6 @@ const Index = () => {
           previousNetWorth={previousNetWorth}
           netWorthChange={netWorthChange}
           changePercentage={changePercentage}
-          period={
-            selectedTimePeriod === 1
-              ? "day"
-              : selectedTimePeriod === 7
-                ? "week"
-                : selectedTimePeriod === 30
-                  ? "month"
-                  : selectedTimePeriod === 365
-                    ? "year"
-                    : "all"
-          }
           currency={DEFAULT_CURRENCY}
           bestPerformingAccount={bestPerformingAccount}
         />

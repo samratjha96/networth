@@ -1,6 +1,6 @@
 import React from "react";
 import { NetWorthChart } from "./NetWorthChart";
-import { useDatabase } from "@/lib/database-context";
+import { useDatabase } from "@/hooks/use-database";
 import { useNetworthHistory } from "@/hooks/use-networth-history";
 import { CurrencyCode, TimeRange } from "@/types";
 import { useAccounts } from "@/hooks/use-accounts";

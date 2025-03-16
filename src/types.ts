@@ -288,3 +288,37 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never;
+
+// Database provider for compatibility with older code
+export interface DatabaseProviderAdapter {
+  // Database methods
+  initialize: () => Promise<void>;
+  addAccount: (account: Account) => Promise<Account>;
+  getAccounts: () => Promise<Account[]>;
+  updateAccount: (account: Account) => Promise<void>;
+  deleteAccount: (id: string) => Promise<void>;
+  getNetworthHistory: (days?: number) => Promise<NetworthHistory[]>;
+  addNetworthSnapshot: (value: number) => Promise<void>;
+  synchronizeNetworthHistory: () => Promise<void>;
+
+  // Test mode
+  isTestModeEnabled: () => boolean;
+  setTestMode: (enabled: boolean) => void;
+}
+
+// Database state for Zustand store
+export interface DatabaseState {
+  // State
+  currentBackend: "local" | "supabase";
+  isTestMode: boolean;
+  db: DatabaseProvider;
+
+  // Actions
+  setBackend: (backend: "local" | "supabase") => Promise<void>;
+  toggleTestMode: () => Promise<void>;
+  refreshDatabase: () => Promise<void>;
+
+  // Authentication-related helpers
+  switchToSupabase: () => Promise<void>;
+  switchToLocal: () => Promise<void>;
+}

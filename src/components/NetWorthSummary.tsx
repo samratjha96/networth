@@ -3,6 +3,7 @@ import { formatCurrency } from "@/lib/utils";
 import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
 import { CurrencyCode, TimeRange } from "@/types";
 import { useTimeRange } from "@/hooks/use-time-range";
+import { useDatabase } from "@/hooks/use-database";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",

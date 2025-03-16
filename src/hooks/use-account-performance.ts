@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Account, NetworthHistory } from "@/types";
-import { useDatabase } from "@/lib/database-context";
+import { useDatabase } from "@/hooks/use-database";
 
 interface AccountPerformance {
   id: string;

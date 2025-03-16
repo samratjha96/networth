@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { useDatabase } from "@/hooks/use-database";
 import { Account } from "@/types";
-import { useDatabase } from "@/lib/database-context";
 import { useAuth } from "@/components/AuthProvider";
 
 export function useAccounts() {

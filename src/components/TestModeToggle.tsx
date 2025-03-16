@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useDatabase } from "@/lib/database-context";
+import { useDatabase } from "@/hooks/use-database";
 
 export function TestModeToggle() {
   const { toast } = useToast();

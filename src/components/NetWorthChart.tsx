@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 import { useTimeRange } from "@/hooks/use-time-range";
+import { useDatabase } from "@/hooks/use-database";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",

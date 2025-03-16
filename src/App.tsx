@@ -4,8 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import { DatabaseProvider } from "@/lib/database-context";
 import { AuthProvider } from "@/components/AuthProvider";
+import { DatabaseSyncProvider } from "@/components/DatabaseSyncProvider";
 
 const queryClient = new QueryClient();
 
@@ -13,7 +13,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <DatabaseProvider>
+        <DatabaseSyncProvider>
           <div className="min-h-screen bg-background">
             <Toaster />
             <Sonner />
@@ -23,7 +23,7 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </div>
-        </DatabaseProvider>
+        </DatabaseSyncProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
