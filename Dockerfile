@@ -1,11 +1,6 @@
-# Build stage
-FROM oven/bun:1 AS build
-
-WORKDIR /app
-
-# Copy package files
-COPY package.json .
-COPY bun.lockb .
+# Use Node.js LTS image
+FROM node:20-slim AS base
+WORKDIR /usr/src/app
 
 # Set build arguments
 ARG NODE_ENV=production
@@ -23,31 +18,43 @@ ENV VITE_USE_SUPABASE=$VITE_USE_SUPABASE
 ENV VITE_SUPABASE_TEST_USER_EMAIL=$VITE_SUPABASE_TEST_USER_EMAIL
 ENV VITE_SUPABASE_TEST_USER_PASSWORD=$VITE_SUPABASE_TEST_USER_PASSWORD
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies into temp directory
+FROM base AS install
+RUN mkdir -p /temp/dev
+COPY package*.json /temp/dev/
+RUN cd /temp/dev && npm install
 
-# Copy source code
+# Install with --production (exclude devDependencies)
+RUN mkdir -p /temp/prod
+COPY package*.json /temp/prod/
+RUN cd /temp/prod && npm install --omit=dev
+
+# Build stage with dev dependencies
+FROM base AS build
+COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
+# Set NODE_ENV to production for the build
+ENV NODE_ENV=production
+ENV PATH="/usr/src/app/node_modules/.bin:${PATH}"
+
 # Build the app
-RUN bun run build
+RUN npm run build
 
 # Production stage
-FROM oven/bun:1-slim
+FROM base AS release
+# Install serve globally in production
+RUN npm install -g serve
 
-WORKDIR /app
+# Copy only the built assets and production dependencies
+COPY --from=install /temp/prod/node_modules node_modules
+COPY --from=build /usr/src/app/dist dist
 
-# Install serve
-RUN bun add -g serve
-
-# Copy the built app from build stage
-COPY --from=build /app/dist .
+# Use non-root user
+USER node
 
 # Expose port 8080
 EXPOSE 8080
 
-# Set production environment
-ENV NODE_ENV=production
-
 # Start serve with production optimizations
-CMD ["serve", "-p", "8080", "-l", "tcp://0.0.0.0:8080", "--single", "--no-clipboard", "--no-compression", "."]
+CMD ["serve", "-p", "8080", "-l", "tcp://0.0.0.0:8080", "--single", "--no-clipboard", "--no-compression", "dist"]

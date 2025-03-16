@@ -1,29 +1,28 @@
-version: '3.8'
-
 services:
   argos-prod:
     container_name: argos-prod
     build:
       context: .
       dockerfile: Dockerfile
+      target: release
       args:
         - NODE_ENV=production
-        - VITE_SUPABASE_URL
-        - VITE_SUPABASE_ANON_KEY
-        - VITE_USE_SUPABASE
-        - VITE_SUPABASE_TEST_USER_EMAIL
-        - VITE_SUPABASE_TEST_USER_PASSWORD
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+        - VITE_USE_SUPABASE=${VITE_USE_SUPABASE}
+        - VITE_SUPABASE_TEST_USER_EMAIL=${VITE_SUPABASE_TEST_USER_EMAIL}
+        - VITE_SUPABASE_TEST_USER_PASSWORD=${VITE_SUPABASE_TEST_USER_PASSWORD}
     ports:
       - "8090:8080"
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      - VITE_SUPABASE_URL
-      - VITE_SUPABASE_ANON_KEY
-      - VITE_USE_SUPABASE
-      - VITE_SUPABASE_TEST_USER_EMAIL
-      - VITE_SUPABASE_TEST_USER_PASSWORD
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_USE_SUPABASE=${VITE_USE_SUPABASE}
+      - VITE_SUPABASE_TEST_USER_EMAIL=${VITE_SUPABASE_TEST_USER_EMAIL}
+      - VITE_SUPABASE_TEST_USER_PASSWORD=${VITE_SUPABASE_TEST_USER_PASSWORD}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8090"]

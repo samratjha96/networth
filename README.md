@@ -21,12 +21,32 @@ This project uses Vite as its build tool, which requires environment variables t
 - `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key for client-side operations
 - `VITE_USE_SUPABASE`: Set to "true" to use Supabase backend, or "false" to use local storage
 
-### Dependency Installation
+### Getting Started
 
-We use dotenv-expand for enhanced environment variable handling:
-
+1. Make sure you have Node.js installed (LTS version recommended)
+2. Install dependencies:
 ```bash
-npm install --save-dev dotenv-expand
+npm install
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+4. For production build:
+```bash
+npm run build
+```
+
+5. To preview production build:
+```bash
+npm run preview
+```
+
+6. To run type checking:
+```bash
+npm run typecheck
 ```
 
 ### Environment Variable Access
@@ -67,31 +87,7 @@ export default defineConfig(({ mode }) => {
 
 > **Important**: Do not use `process.env` as it's not available in Vite client-side code.
 
-## How can I edit this code?
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-## What technologies are used for this project?
+## Technologies
 
 This project is built with:
 
