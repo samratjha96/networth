@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseDb } from "@/lib/supabase-database";
-import { setDatabaseBackend } from "@/lib/database-factory";
+import { setDatabaseBackend, setGlobalTestMode } from "@/lib/database-factory";
 
 // Initialize Supabase client using Vite's environment variable approach
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -17,6 +17,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 };
 
 // Create auth context
@@ -38,11 +39,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session?.user) {
         supabaseDb.setUserId(session.user.id);
 
-        // Switch to Supabase backend
+        // Switch to Supabase backend and disable test mode
         setDatabaseBackend("supabase");
+        setGlobalTestMode(false);
       } else {
-        // No user, fall back to local storage
+        // No user, fall back to local storage and enable test mode
         setDatabaseBackend("local");
+        setGlobalTestMode(true);
       }
 
       setIsLoading(false);
@@ -59,8 +62,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session?.user) {
         supabaseDb.setUserId(session.user.id);
         setDatabaseBackend("supabase");
+        setGlobalTestMode(false);
       } else {
         setDatabaseBackend("local");
+        setGlobalTestMode(true);
       }
 
       setIsLoading(false);
@@ -108,6 +113,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Sign in with Google OAuth
+  const signInWithGoogle = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+    setIsLoading(false);
+
+    if (error) {
+      throw error;
+    }
+  };
+
   const value = {
     session,
     user,
@@ -115,6 +136,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

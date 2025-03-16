@@ -9,6 +9,7 @@ import { Account, CurrencyCode, TimeRange } from "@/types";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { TestModeToggle } from "@/components/TestModeToggle";
 import { useDatabase } from "@/lib/database-context";
+import { Header } from "@/components/Header";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
@@ -160,18 +161,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-6 space-y-6">
-        {/* Header with TestModeToggle */}
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Argos
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Your all-seeing financial guardian
-            </p>
-          </div>
-          <TestModeToggle />
-        </div>
+        {/* Use the new Header component */}
+        <Header />
 
         <NetWorthSummary
           currentNetWorth={currentNetWorth}
