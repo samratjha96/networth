@@ -103,6 +103,17 @@ export class SupabaseDatabase implements DatabaseProvider {
     // Check if user ID has changed
     if (this.currentUserId !== userId) {
       console.debug(`Changing user ID from ${this.currentUserId} to ${userId}`);
+
+      // Don't allow overriding a real user ID with anonymous-user
+      if (
+        userId === "anonymous-user" &&
+        this.currentUserId &&
+        this.currentUserId !== "anonymous-user"
+      ) {
+        console.warn("Preventing override of real user ID with anonymous-user");
+        return;
+      }
+
       this.currentUserId = userId;
 
       // Reset initialized state so we reinitialize with the new user
@@ -112,9 +123,9 @@ export class SupabaseDatabase implements DatabaseProvider {
     }
   }
 
-  // Check if a user ID is available
+  // Check if a user ID is available and valid
   hasUserId(): boolean {
-    return !!this.currentUserId;
+    return !!this.currentUserId && this.currentUserId !== "anonymous-user";
   }
 
   // Get the current user ID or throw if not set
@@ -148,7 +159,7 @@ export class SupabaseDatabase implements DatabaseProvider {
         await this.initializeTestAuth();
       }
 
-      // Check if we have a user ID
+      // Check if we have a valid user ID (not anonymous)
       if (!this.hasUserId()) {
         console.debug(
           "No user ID available for Supabase database, initialization skipped",
@@ -298,6 +309,11 @@ export class SupabaseDatabase implements DatabaseProvider {
     try {
       const userId = this.getUserId();
 
+      if (userId === "anonymous-user") {
+        console.error("Cannot fetch accounts with anonymous user");
+        return [];
+      }
+
       const { data, error } = await this.supabase
         .from("accounts")
         .select("*")
@@ -439,8 +455,8 @@ export class SupabaseDatabase implements DatabaseProvider {
         days,
       });
 
-      if (!userId) {
-        console.error("No user ID available for networth history fetch");
+      if (!userId || userId === "anonymous-user") {
+        console.error("No valid user ID available for networth history fetch");
         return [];
       }
 
@@ -483,8 +499,10 @@ export class SupabaseDatabase implements DatabaseProvider {
       const now = new Date().toISOString();
 
       // Check if user is authenticated - important to prevent operations after sign-out
-      if (!this.hasUserId()) {
-        console.debug("Skipping networth snapshot - no authenticated user");
+      if (!this.hasUserId() || userId === "anonymous-user") {
+        console.debug(
+          "Skipping networth snapshot - no authenticated user or anonymous user",
+        );
         return;
       }
 
@@ -576,6 +594,13 @@ export class SupabaseDatabase implements DatabaseProvider {
       console.debug("Skipping updateNetworthSnapshot - no authenticated user");
       return;
     }
+
+    const userId = this.currentUserId;
+    if (userId === "anonymous-user") {
+      console.debug("Skipping updateNetworthSnapshot - anonymous user");
+      return;
+    }
+
     const totalNetworth = await this.calculateCurrentNetworth();
     await this.addNetworthSnapshot(totalNetworth);
   }
@@ -597,6 +622,13 @@ export class SupabaseDatabase implements DatabaseProvider {
         console.debug(
           "Skipping synchronizeNetworthHistory - no authenticated user",
         );
+        return;
+      }
+
+      // Ensure we have a valid non-anonymous user ID
+      const userId = this.getUserId();
+      if (userId === "anonymous-user") {
+        console.debug("Skipping synchronizeNetworthHistory - anonymous user");
         return;
       }
 
@@ -627,6 +659,148 @@ export class SupabaseDatabase implements DatabaseProvider {
       );
     }
     // No need to do anything here, since the factory handles switching implementations
+  }
+
+  /**
+   * Gets account performance data based on historical records
+   * @param account The account to get performance data for
+   * @param days Number of days to look back for history
+   * @returns Object containing current balance, previous balance and timestamps
+   */
+  async getAccountHistoricalData(
+    account: Account,
+    days: number,
+  ): Promise<{
+    currentBalance: number;
+    previousBalance: number;
+    currentDate: string;
+    previousDate: string;
+  } | null> {
+    try {
+      const userId = this.getUserId();
+
+      // Date range for historical data
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      // Get all accounts of this type that belong to the user within date range
+      const { data: accountHistoryData, error: accountHistoryError } =
+        await this.supabase
+          .from("accounts")
+          .select("*")
+          .eq("name", account.name)
+          .eq("type", account.type)
+          .eq("user_id", userId)
+          .gte("updated_at", startDate.toISOString())
+          .lte("updated_at", endDate.toISOString())
+          .order("updated_at", { ascending: true });
+
+      if (accountHistoryError) {
+        console.error("Error fetching account history:", accountHistoryError);
+        return null;
+      }
+
+      // If we have history data, return the oldest and newest records
+      if (accountHistoryData && accountHistoryData.length > 0) {
+        const oldestRecord = accountHistoryData[0];
+        const newestRecord = accountHistoryData[accountHistoryData.length - 1];
+
+        return {
+          currentBalance: newestRecord.balance,
+          previousBalance: oldestRecord.balance,
+          currentDate: newestRecord.updated_at,
+          previousDate: oldestRecord.updated_at,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error retrieving account history:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Gets performance data for multiple accounts based on historical records
+   * @param accounts List of accounts to get performance data for
+   * @param days Number of days to look back for history
+   * @returns Array of account performance metrics
+   */
+  async getAccountsPerformanceData(
+    accounts: Account[],
+    days: number,
+  ): Promise<
+    {
+      id: string;
+      name: string;
+      type: string;
+      currentBalance: number;
+      previousBalance: number;
+      changeAmount: number;
+      changePercentage: number;
+      isDebt: boolean;
+    }[]
+  > {
+    const performanceResults = [];
+
+    for (const account of accounts) {
+      try {
+        // Get historical data for this account
+        const historyData = await this.getAccountHistoricalData(account, days);
+
+        if (historyData) {
+          // Calculate performance metrics
+          const { currentBalance, previousBalance } = historyData;
+          const changeAmount = currentBalance - previousBalance;
+          const changePercentage =
+            previousBalance !== 0
+              ? (changeAmount / Math.abs(previousBalance)) * 100
+              : 0;
+
+          performanceResults.push({
+            id: account.id,
+            name: account.name,
+            type: account.type,
+            currentBalance,
+            previousBalance,
+            changeAmount,
+            changePercentage,
+            isDebt: !!account.isDebt,
+          });
+        } else {
+          // If no historical data, use current data with zero change
+          performanceResults.push({
+            id: account.id,
+            name: account.name,
+            type: account.type,
+            currentBalance: account.balance,
+            previousBalance: account.balance,
+            changeAmount: 0,
+            changePercentage: 0,
+            isDebt: !!account.isDebt,
+          });
+        }
+      } catch (error) {
+        console.error(
+          `Error processing account performance for ${account.name}:`,
+          error,
+        );
+        // Add default entry for this account
+        performanceResults.push({
+          id: account.id,
+          name: account.name,
+          type: account.type,
+          currentBalance: account.balance,
+          previousBalance: account.balance,
+          changeAmount: 0,
+          changePercentage: 0,
+          isDebt: !!account.isDebt,
+        });
+      }
+    }
+
+    return performanceResults;
   }
 }
 

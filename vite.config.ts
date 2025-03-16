@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current directory.
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), "");
+  const isProd = mode === "production";
 
   return {
     server: {
@@ -30,6 +31,18 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.VITE_USE_SUPABASE": JSON.stringify(
         env.VITE_USE_SUPABASE,
       ),
+      // Replace console.debug with empty function in production
+      ...(isProd ? { "console.debug": "(() => {})" } : {})
+    },
+    build: {
+      // In production, also remove console.debug when minifying
+      minify: isProd,
+      terserOptions: isProd ? {
+        compress: {
+          drop_console: false, // Don't drop all console statements
+          pure_funcs: ['console.debug'], // Only remove console.debug
+        }
+      } : undefined,
     },
   };
 });

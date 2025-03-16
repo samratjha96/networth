@@ -27,7 +27,7 @@ const Index = () => {
   }, []);
 
   // Get account performance data
-  const { bestPerformer } = useAccountPerformance(accounts, "month");
+  const { bestPerformer, isLoading } = useAccountPerformance(accounts, "month");
 
   // Calculate financial metrics
   const financialMetrics = useMemo(() => {
@@ -85,11 +85,11 @@ const Index = () => {
 
         <NetWorthSummary
           currentNetWorth={currentNetWorth}
-          previousNetWorth={changes.previousNetWorth}
           netWorthChange={changes.netWorthChange}
           changePercentage={changes.changePercentage}
           currency={DEFAULT_CURRENCY}
           bestPerformingAccount={bestPerformer}
+          isLoading={isLoading}
         />
 
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">

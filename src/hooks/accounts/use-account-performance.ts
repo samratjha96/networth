@@ -1,11 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDb } from "@/components/DatabaseProvider";
 import { Account } from "@/types/accounts";
-import {
-  AccountPerformance,
-  PerformanceData,
-  PerformancePeriod,
-} from "@/types/performance";
+import { PerformanceData, PerformancePeriod } from "@/types/performance";
 import { calculateAccountPerformance } from "./use-performance-calculator";
 
 /**
@@ -71,6 +67,7 @@ export function useAccountPerformance(
       let worstPerformer = null;
 
       if (assetPerformance.length > 0) {
+        console.debug("Asset performance:", assetPerformance);
         // For assets, higher percentage is better
         bestPerformer = assetPerformance.reduce((best, current) =>
           current.changePercentage > best.changePercentage ? current : best,

@@ -10,7 +10,7 @@ const AuthToDatabaseConnector = ({ children }: { children: ReactNode }) => {
 
   // Connect auth user to database when user changes
   useEffect(() => {
-    console.log("User changed, updating database userId:", user?.id || null);
+    console.debug("User changed, updating database userId:", user?.id || null);
     setUserId(user?.id || null);
   }, [user, setUserId]);
 

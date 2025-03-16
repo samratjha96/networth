@@ -15,9 +15,12 @@ export async function calculateAccountPerformance(
   const isSupabase = db instanceof SupabaseDatabase;
 
   if (isSupabase) {
-    // For Supabase mode, just determine the best account based on current data
-    // No simulation, no fake performance calculations
-    return getBestPerformingAccounts(accounts);
+    // For Supabase mode, use real historical account data
+    return getAccountPerformanceFromHistory(
+      accounts,
+      days,
+      db as SupabaseDatabase,
+    );
   } else {
     // Only for local mode, use simulated data with deterministic calculation
     return simulateAccountPerformance(accounts);
@@ -25,49 +28,107 @@ export async function calculateAccountPerformance(
 }
 
 /**
- * For Supabase mode, determine best performing accounts based on current data
- * without simulating any performance metrics
+ * For Supabase mode, use real historical account data to calculate performance
  */
-function getBestPerformingAccounts(accounts: Account[]): AccountPerformance[] {
-  // Filter accounts by type - assets and liabilities
-  const assetAccounts = accounts.filter((account) => !account.isDebt);
-  const liabilityAccounts = accounts.filter((account) => account.isDebt);
+async function getAccountPerformanceFromHistory(
+  accounts: Account[],
+  days: number,
+  db: SupabaseDatabase,
+): Promise<AccountPerformance[]> {
+  console.debug(
+    "Using real historical account data for performance calculation",
+    { accounts: accounts.length, days },
+  );
 
-  // Simple conversion to AccountPerformance format without any fake calculations
-  // The true best performer will be selected in the useAccountPerformance hook
-  return accounts.map((account) => {
-    // For consistency, set the "best" one with highest balance for assets
-    // or lowest balance for debts (relative to account type)
-    let score = 0;
+  // Get user ID for queries
+  const userId = (db as any).getUserId();
+  console.debug("Using user ID for performance queries:", userId);
 
-    if (account.isDebt) {
-      // For debts, lower balance is better (less debt)
-      const maxDebtBalance = Math.max(
-        ...liabilityAccounts.map((a) => Math.abs(a.balance)),
-        1,
-      );
-      score =
-        ((maxDebtBalance - Math.abs(account.balance)) / maxDebtBalance) * 100;
-    } else {
-      // For assets, higher balance is better
-      const maxAssetBalance = Math.max(
-        ...assetAccounts.map((a) => a.balance),
-        1,
-      );
-      score = (account.balance / maxAssetBalance) * 100;
-    }
-
-    return {
-      id: account.id,
-      name: account.name,
-      type: account.type,
-      currentBalance: account.balance,
-      previousBalance: account.balance, // Same balance, no fake previous
-      changeAmount: 0, // No fake change
-      changePercentage: score, // Use score as percentage for comparison
-      isDebt: !!account.isDebt,
-    };
+  // Date range for historical data
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  console.debug("Date range for performance calculation:", {
+    startDate,
+    endDate,
   });
+
+  const performanceResults: AccountPerformance[] = [];
+
+  // Process each account to determine performance
+  for (const account of accounts) {
+    try {
+      console.debug(`Processing account ${account.name} (${account.type})`);
+
+      // Get historical data for this account
+      const historyData = await db.getAccountHistoricalData(account, days);
+
+      if (!historyData) {
+        console.debug(
+          `No historical data available for ${account.name}, using current data`,
+        );
+        performanceResults.push({
+          id: account.id,
+          name: account.name,
+          type: account.type,
+          currentBalance: account.balance,
+          previousBalance: account.balance,
+          changeAmount: 0,
+          changePercentage: 0,
+          isDebt: !!account.isDebt,
+        });
+        continue;
+      }
+
+      console.debug(`Account history data for ${account.name}:`, historyData);
+
+      // Calculate performance metrics
+      const { currentBalance, previousBalance } = historyData;
+      const changeAmount = currentBalance - previousBalance;
+      const changePercentage =
+        previousBalance !== 0
+          ? (changeAmount / Math.abs(previousBalance)) * 100
+          : 0;
+
+      console.debug(`Performance metrics for ${account.name}:`, {
+        currentBalance,
+        previousBalance,
+        changeAmount,
+        changePercentage,
+        currentDate: historyData.currentDate,
+        previousDate: historyData.previousDate,
+      });
+
+      performanceResults.push({
+        id: account.id,
+        name: account.name,
+        type: account.type,
+        currentBalance,
+        previousBalance,
+        changeAmount,
+        changePercentage,
+        isDebt: !!account.isDebt,
+      });
+    } catch (error) {
+      console.error(`Error processing account ${account.name}:`, error);
+      // Add a default entry for this account
+      performanceResults.push({
+        id: account.id,
+        name: account.name,
+        type: account.type,
+        currentBalance: account.balance,
+        previousBalance: account.balance,
+        changeAmount: 0,
+        changePercentage: 0,
+        isDebt: !!account.isDebt,
+      });
+    }
+  }
+
+  console.debug("Completed performance calculation:", {
+    results: performanceResults.length,
+  });
+  return performanceResults;
 }
 
 /**
