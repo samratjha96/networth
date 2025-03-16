@@ -45,14 +45,18 @@ export class MockDatabase implements DatabaseProvider {
       localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, new Date().toISOString());
     }
 
-    // Check if test mode was previously enabled and restore mock data
+    // Check if test mode was previously enabled
     const savedTestMode =
       localStorage.getItem(STORAGE_KEYS.TEST_MODE) === "true";
     this.testMode = savedTestMode;
 
     if (savedTestMode) {
-      this.restoreOrGenerateMockData();
-      console.log("Mock database initialized in TEST MODE with mock data");
+      // Generate new mock data on every page load when in test mode
+      this.mockAccounts = generateMockAccounts();
+      this.mockHistory = generateMockNetworthHistory();
+      console.log(
+        "Mock database initialized in TEST MODE with fresh mock data",
+      );
     } else {
       console.log("Mock database initialized in REGULAR mode");
     }
@@ -105,14 +109,6 @@ export class MockDatabase implements DatabaseProvider {
     localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, date.toISOString());
   }
 
-  // Helper to store mock data in localStorage
-  private storeMockData(): void {
-    if (this.mockAccounts && this.mockHistory) {
-      localStorage.setItem("mock_accounts", JSON.stringify(this.mockAccounts));
-      localStorage.setItem("mock_history", JSON.stringify(this.mockHistory));
-    }
-  }
-
   // Test mode controls
   isTestModeEnabled(): boolean {
     return this.testMode;
@@ -123,18 +119,12 @@ export class MockDatabase implements DatabaseProvider {
     // Don't set testMode again as it should already be set
     // this.testMode = true;
 
-    // Try to restore existing mock data
-    const storedAccounts = localStorage.getItem("mock_accounts");
-    const storedHistory = localStorage.getItem("mock_history");
+    // Always generate fresh mock data for demo mode on every page load
+    this.mockAccounts = generateMockAccounts();
+    this.mockHistory = generateMockNetworthHistory();
 
-    if (storedAccounts && storedHistory) {
-      this.mockAccounts = JSON.parse(storedAccounts);
-      this.mockHistory = JSON.parse(storedHistory);
-    } else {
-      this.mockAccounts = generateMockAccounts();
-      this.mockHistory = generateMockNetworthHistory();
-      this.storeMockData();
-    }
+    // We don't store the mock data in localStorage anymore
+    // to ensure we get different data on every refresh
   }
 
   // Enable/disable test mode
@@ -144,13 +134,12 @@ export class MockDatabase implements DatabaseProvider {
     localStorage.setItem(STORAGE_KEYS.TEST_MODE, enabled.toString());
 
     if (enabled && !wasEnabled) {
+      // Always generate fresh mock data when enabling test mode
       this.restoreOrGenerateMockData();
     } else if (!enabled) {
       // Clear mock data when disabling test mode
       this.mockAccounts = null;
       this.mockHistory = null;
-      localStorage.removeItem("mock_accounts");
-      localStorage.removeItem("mock_history");
     }
   }
 
