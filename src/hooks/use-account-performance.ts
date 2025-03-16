@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Account } from "@/components/AccountsList";
-import { NetworthHistory } from "@/lib/types";
+import { Account, NetworthHistory } from "@/types";
 import { useDatabase } from "@/lib/database-context";
 
 interface AccountPerformance {

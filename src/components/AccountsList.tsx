@@ -6,30 +6,7 @@ import { TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { Button } from "@/components/ui/button";
 import { getAccountColor } from "@/lib/utils";
-
-export type AssetType =
-  | "Checking"
-  | "Savings"
-  | "Brokerage"
-  | "Retirement"
-  | "401K"
-  | "Car"
-  | "Real Estate";
-
-export type DebtType = "Credit Card" | "Loan" | "Mortgage";
-
-export type AccountType = AssetType | DebtType;
-
-export type CurrencyCode = "USD" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD";
-
-export interface Account {
-  id: string;
-  name: string;
-  type: AccountType;
-  balance: number;
-  isDebt?: boolean;
-  currency: CurrencyCode;
-}
+import { Account, AccountType, AssetType, DebtType, CurrencyCode } from "@/types";
 
 interface AccountsListProps {
   accounts: Account[];

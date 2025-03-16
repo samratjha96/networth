@@ -4,7 +4,8 @@ import { useNetworthHistory } from "@/hooks/use-networth-history";
 import { useAccountPerformance } from "@/hooks/use-account-performance";
 import { NetWorthSummary } from "@/components/NetWorthSummary";
 import { NetWorthChart } from "@/components/NetWorthChart";
-import { AccountsList, Account, CurrencyCode } from "@/components/AccountsList";
+import { AccountsList } from "@/components/AccountsList";
+import { Account, CurrencyCode, TimeRange } from "@/types";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { TestModeToggle } from "@/components/TestModeToggle";
 import { useDatabase } from "@/lib/database-context";
@@ -13,7 +14,7 @@ const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const Index = () => {
   // Default time period for consistency between summary and chart
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState(30); // Default to month view
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimeRange>(7);
   const { db, isTestMode } = useDatabase();
 
   useEffect(() => {
@@ -153,7 +154,7 @@ const Index = () => {
 
   // Handle time period changes from the chart
   const handleTimeRangeChange = (days: number) => {
-    setSelectedTimePeriod(days);
+    setSelectedTimePeriod(days as TimeRange);
   };
 
   return (

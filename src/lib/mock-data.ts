@@ -1,5 +1,4 @@
-import { Account } from "@/components/AccountsList";
-import { NetworthHistory } from "@/lib/types";
+import { Account, NetworthHistory } from "@/types";
 import { addDays, subDays } from "date-fns";
 
 // Helper to generate a random float between min and max with 2 decimal places

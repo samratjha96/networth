@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { NetworthHistory } from "@/lib/types";
+import { NetworthHistory } from "@/types";
 import { useDatabase } from "@/lib/database-context";
 
 export function useNetworthHistory(days: number, refreshDependency?: unknown) {

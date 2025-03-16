@@ -1,4 +1,4 @@
-import { Account, AccountType, CurrencyCode } from "@/components/AccountsList";
+import { Account, AccountType, CurrencyCode } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   PlusCircle,

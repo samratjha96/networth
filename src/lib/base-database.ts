@@ -1,5 +1,4 @@
-import { Account } from "@/components/AccountsList";
-import { DatabaseProvider, NetworthHistory } from "@/lib/types";
+import { Account, DatabaseProvider, NetworthHistory } from "@/types";
 
 /**
  * Abstract base class for database implementations

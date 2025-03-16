@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Account } from "@/components/AccountsList";
+import { Account } from "@/types";
 import { useDatabase } from "@/lib/database-context";
 
 export function useAccounts() {
