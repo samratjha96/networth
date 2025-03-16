@@ -10,10 +10,16 @@ COPY bun.lockb ./
 # Install dependencies
 RUN npm install
 
-# Copy source code
+# Copy source code and env file
 COPY . .
 
-# Build the app
+# Build the app with environment variables available
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_USE_SUPABASE
+ARG VITE_SUPABASE_TEST_USER_EMAIL
+ARG VITE_SUPABASE_TEST_USER_PASSWORD
+
 RUN npm run build
 
 # Production stage
