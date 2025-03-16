@@ -1,39 +1,18 @@
-import { useMemo } from "react";
 import { useDatabaseStore } from "@/store/database-store";
 import type { DatabaseProvider } from "@/types";
+import { useAuthStore } from "@/store/auth-store";
 
 export function useDatabase() {
-  const state = useDatabaseStore();
+  // Select only the database instance from store
+  const db = useDatabaseStore((state) => state.db) as DatabaseProvider;
+  const toggleTestMode = useDatabaseStore((state) => state.toggleTestMode);
+  const refreshDatabase = useDatabaseStore((state) => state.refreshDatabase);
+  const { databaseMode } = useAuthStore();
 
-  return useMemo(
-    () => ({
-      // Database instance
-      db: state.db as DatabaseProvider,
-
-      // State
-      currentBackend: state.currentBackend,
-      isTestMode: state.isTestMode,
-
-      // Actions
-      toggleTestMode: state.toggleTestMode,
-      refreshDatabase: state.refreshDatabase,
-
-      // Backend helpers
-      isLocal: state.currentBackend === "local",
-      isSupabase: state.currentBackend === "supabase",
-
-      // Backend switchers
-      switchToSupabase: state.switchToSupabase,
-      switchToLocal: state.switchToLocal,
-    }),
-    [
-      state.db,
-      state.currentBackend,
-      state.isTestMode,
-      state.toggleTestMode,
-      state.refreshDatabase,
-      state.switchToSupabase,
-      state.switchToLocal,
-    ],
-  );
+  return {
+    db,
+    toggleTestMode,
+    refreshDatabase,
+    databaseMode,
+  };
 }

@@ -1,18 +1,15 @@
-import { useAuth } from "./AuthProvider";
 import { Button } from "./ui/button";
 import { SignInDialog } from "./SignInDialog";
 import { useCallback } from "react";
-import { useDatabaseStore } from "@/store/database-store";
+import { useAuthStore } from "@/store/auth-store";
 
 export const Header = () => {
-  const { user, signOut, isLoading } = useAuth();
-  const { currentBackend } = useDatabaseStore();
+  const { user, signOut, isLoading } = useAuthStore();
 
   const handleSignOut = useCallback(async () => {
     try {
-      console.log("Signing out and switching to local database");
+      console.log("Signing out");
       await signOut();
-      // The backend switch will happen automatically through the DatabaseSyncProvider
     } catch (error) {
       console.error("Error signing out:", error);
     }

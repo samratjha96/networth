@@ -1,37 +1,29 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDatabase } from "@/hooks/use-database";
 import { Account } from "@/types";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuthStore } from "@/store/auth-store";
 
 export function useAccounts() {
-  const { db, currentBackend } = useDatabase();
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { db, databaseMode } = useDatabase();
+  const { user, isLoading: isAuthLoading } = useAuthStore();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const loadAccounts = useCallback(async () => {
     // Only skip loading if auth is still loading AND we're using Supabase
-    // If we're in local mode, we should still load accounts even without a user
-    if (isAuthLoading && currentBackend === "supabase") {
+    if (isAuthLoading && databaseMode === "supabase") {
       console.debug("Skipping account load - waiting for auth", {
         isAuthLoading,
         hasUser: !!user,
-        backend: currentBackend,
+        mode: databaseMode,
       });
-      return;
-    }
-
-    // Also skip if we expect a user (Supabase mode) but don't have one yet
-    if (!user && currentBackend === "supabase") {
-      console.debug("Skipping account load - no user in Supabase mode");
-      setAccounts([]); // Reset accounts when signed out
       return;
     }
 
     try {
       setIsLoading(true);
-      console.debug("Loading accounts with backend:", currentBackend);
+      console.debug("Loading accounts with mode:", databaseMode);
       const loadedAccounts = await db.getAllAccounts();
       console.debug(`Loaded ${loadedAccounts.length} accounts`);
 
@@ -46,66 +38,63 @@ export function useAccounts() {
     } finally {
       setIsLoading(false);
     }
-  }, [db, currentBackend, user, isAuthLoading]);
+  }, [db, databaseMode, isAuthLoading, user]);
 
-  // Load accounts when database backend changes or auth state changes
+  // Load accounts when database mode changes or auth state changes
   useEffect(() => {
     loadAccounts();
-  }, [loadAccounts, currentBackend, user]);
+  }, [loadAccounts, databaseMode, user]);
 
+  // Function to add a new account
   const addAccount = useCallback(
-    async (newAccount: Omit<Account, "id">) => {
+    async (accountData: Omit<Account, "id">) => {
       try {
-        const account = await db.insertAccount(newAccount);
-        await loadAccounts();
-        return account;
+        const newAccount = await db.insertAccount(accountData);
+        setAccounts((prevAccounts) => [...prevAccounts, newAccount]);
+        return newAccount;
       } catch (err) {
         console.error("Error adding account:", err);
-        const error =
-          err instanceof Error ? err : new Error("Failed to add account");
-        setError(error);
-        throw error;
+        throw err;
       }
     },
-    [db, loadAccounts],
+    [db],
   );
 
+  // Function to update an account
   const updateAccount = useCallback(
     async (account: Account) => {
       try {
         await db.updateAccount(account);
-        await loadAccounts();
+        setAccounts((prevAccounts) =>
+          prevAccounts.map((a) => (a.id === account.id ? account : a)),
+        );
       } catch (err) {
         console.error("Error updating account:", err);
-        const error =
-          err instanceof Error ? err : new Error("Failed to update account");
-        setError(error);
-        throw error;
+        throw err;
       }
     },
-    [db, loadAccounts],
+    [db],
   );
 
+  // Function to delete an account
   const deleteAccount = useCallback(
     async (id: string) => {
       try {
         await db.deleteAccount(id);
-        await loadAccounts();
+        setAccounts((prevAccounts) => prevAccounts.filter((a) => a.id !== id));
       } catch (err) {
         console.error("Error deleting account:", err);
-        const error =
-          err instanceof Error ? err : new Error("Failed to delete account");
-        setError(error);
-        throw error;
+        throw err;
       }
     },
-    [db, loadAccounts],
+    [db],
   );
 
   return {
     accounts,
-    isLoading: isLoading || (isAuthLoading && currentBackend === "supabase"),
+    isLoading,
     error,
+    refreshAccounts: loadAccounts,
     addAccount,
     updateAccount,
     deleteAccount,

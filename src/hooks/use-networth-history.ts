@@ -1,22 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { NetworthHistory } from "@/types";
-import { useAuth } from "@/components/AuthProvider";
-import { useDatabaseStore } from "@/store/database-store";
+import { useAuthStore } from "@/store/auth-store";
+import { useDatabase } from "@/hooks/use-database";
 
 export function useNetworthHistory(days: number, refreshDependency?: unknown) {
-  const { db, currentBackend } = useDatabaseStore();
-  const { user, isLoading: isAuthLoading } = useAuth();
+  // Destructure only what we need from hooks
+  const { db } = useDatabase();
+  const { user, isLoading: isAuthLoading, databaseMode } = useAuthStore();
+
   const [data, setData] = useState<NetworthHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchHistory = useCallback(async () => {
     // Don't try to fetch history if auth is still loading or user isn't set
-    if (isAuthLoading || (!user && currentBackend === "supabase")) {
+    if (isAuthLoading || (!user && databaseMode === "supabase")) {
       console.debug("Skipping networth history fetch - waiting for auth", {
         isAuthLoading,
         hasUser: !!user,
-        backend: currentBackend,
+        mode: databaseMode,
         days,
       });
       return;
@@ -24,7 +26,7 @@ export function useNetworthHistory(days: number, refreshDependency?: unknown) {
 
     console.debug("Fetching networth history:", {
       days,
-      backend: currentBackend,
+      mode: databaseMode,
     });
     try {
       setIsLoading(true);
@@ -48,16 +50,23 @@ export function useNetworthHistory(days: number, refreshDependency?: unknown) {
     } finally {
       setIsLoading(false);
     }
-  }, [days, db, currentBackend, user, isAuthLoading]);
+  }, [days, db, databaseMode, user, isAuthLoading]);
 
   useEffect(() => {
     fetchHistory();
-  }, [fetchHistory, currentBackend, refreshDependency, user]);
+  }, [fetchHistory, databaseMode, refreshDependency, user]);
+
+  // Compute a value to pass to chart components
+  const chartData = data.map((item) => ({
+    x: new Date(item.date),
+    y: item.value,
+  }));
 
   return {
     data,
-    isLoading: isLoading || (isAuthLoading && currentBackend === "supabase"),
+    chartData,
+    isLoading,
     error,
-    refetch: fetchHistory,
+    refreshHistory: fetchHistory,
   };
 }

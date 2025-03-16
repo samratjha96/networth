@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useAuth } from "./AuthProvider";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { useAuthStore } from "@/store/auth-store";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 } from "./ui/dialog";
 
 export const SignInDialog = () => {
-  const { signIn, signUp, signInWithGoogle, isLoading } = useAuth();
+  const { signIn, signUp, signInWithGoogle, isLoading } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -70,7 +70,6 @@ export const SignInDialog = () => {
         try {
           await signIn(email, password);
           setOpen(false);
-          window.location.reload();
         } catch (err) {
           setError(
             "Account created but failed to sign in. Please try signing in manually.",
@@ -80,7 +79,6 @@ export const SignInDialog = () => {
         try {
           await signIn(email, password);
           setOpen(false);
-          window.location.reload();
         } catch (err) {
           setError(handleError(err));
         }

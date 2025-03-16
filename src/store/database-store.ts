@@ -1,81 +1,26 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import {
-  DatabaseBackend,
-  getDatabaseBackend,
-  setDatabaseBackend,
-  setGlobalTestMode,
-  isGlobalTestMode,
-} from "@/lib/database-factory";
-import { DatabaseProvider, DatabaseState } from "@/types";
 import { getDatabase } from "@/lib/database-factory";
+import { DatabaseProvider } from "@/types";
+
+// Simple focused store that purely manages database operations
+type DatabaseState = {
+  // Core state
+  db: DatabaseProvider;
+
+  // Actions
+  refreshDatabase: () => Promise<void>;
+  toggleTestMode: () => Promise<void>;
+};
 
 export const useDatabaseStore = create<DatabaseState>()(
   devtools(
     (set, get) => ({
-      // Initial state
-      currentBackend: getDatabaseBackend(),
-      isTestMode: isGlobalTestMode(),
+      // Database instance is the only state we need
       db: getDatabase(),
 
-      // Actions
-      setBackend: async (backend: DatabaseBackend) => {
-        // Update the global backend in the factory
-        setDatabaseBackend(backend);
-
-        // Get the new database instance
-        const db = getDatabase();
-
-        // Update the store
-        set(
-          {
-            currentBackend: backend,
-            db,
-          },
-          false,
-          "setBackend",
-        );
-
-        // Initialize the database
-        await db.initialize();
-        await db.synchronizeNetworthHistory();
-      },
-
-      toggleTestMode: async () => {
-        const { isTestMode, db } = get();
-        const newTestMode = !isTestMode;
-
-        // Update test mode in database instance
-        db.setTestMode(newTestMode);
-
-        // Update global test mode
-        setGlobalTestMode(newTestMode);
-
-        // Get new database instance
-        const newDb = getDatabase();
-
-        // Update store
-        set(
-          {
-            isTestMode: newTestMode,
-            db: newDb,
-          },
-          false,
-          "toggleTestMode",
-        );
-
-        // Initialize the database
-        await newDb.initialize();
-        await newDb.synchronizeNetworthHistory();
-      },
-
+      // Refresh database instance
       refreshDatabase: async () => {
-        const { currentBackend } = get();
-        console.log(
-          "Refreshing database connection with backend:",
-          currentBackend,
-        );
-
         // Get fresh database instance
         const db = getDatabase();
 
@@ -87,21 +32,17 @@ export const useDatabaseStore = create<DatabaseState>()(
         await db.synchronizeNetworthHistory();
       },
 
-      // Convenience methods for auth flows
-      switchToSupabase: async () => {
-        const { currentBackend, setBackend } = get();
-        if (currentBackend !== "supabase") {
-          await setBackend("supabase");
-          console.log("Switched to Supabase backend");
-        }
-      },
+      // Toggle test mode
+      toggleTestMode: async () => {
+        const { db } = get();
+        const currentTestMode = db.isTestModeEnabled();
+        const newTestMode = !currentTestMode;
 
-      switchToLocal: async () => {
-        const { currentBackend, setBackend } = get();
-        if (currentBackend !== "local") {
-          await setBackend("local");
-          console.log("Switched to Local backend");
-        }
+        // Update test mode in database instance
+        db.setTestMode(newTestMode);
+
+        // Refresh the database to get the new test mode database
+        await get().refreshDatabase();
       },
     }),
     { name: "database-store" },

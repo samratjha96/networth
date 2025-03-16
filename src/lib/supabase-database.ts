@@ -112,18 +112,22 @@ export class SupabaseDatabase implements DatabaseProvider {
     this.isInitialized = false;
   }
 
+  // Check if a user ID is set
+  hasUserId(): boolean {
+    return !!this.userId;
+  }
+
   // Get the current user ID or throw if not set
   private getUserId(): string {
     if (!this.userId) {
-      // Check if we're in development mode and can fall back to anonymous mode
-      if (isDevelopment) {
+      // In development mode with explicit test credentials, we can use anonymous mode
+      if (isDevelopment && TEST_USER_EMAIL && TEST_USER_PASSWORD) {
         console.warn("No user ID set, using anonymous mode in development");
         return "anonymous-user";
       }
 
-      // In production, log the error but still return a fallback ID to prevent crashes
-      console.error("User not authenticated. No user ID available.");
-      return "anonymous-user";
+      // Otherwise, throw an error - operations requiring a user ID should not proceed
+      throw new Error("User not authenticated. No user ID available.");
     }
     return this.userId;
   }
@@ -146,7 +150,9 @@ export class SupabaseDatabase implements DatabaseProvider {
 
       // Check if we have a user ID
       if (!this.userId) {
-        console.debug("No user ID available, initializing in anonymous mode");
+        console.debug(
+          "No user ID available for Supabase database, initialization skipped",
+        );
         this.isInitialized = true;
         return;
       }
@@ -287,20 +293,26 @@ export class SupabaseDatabase implements DatabaseProvider {
 
   // Account operations
   async getAllAccounts(): Promise<Account[]> {
-    const userId = this.getUserId();
+    try {
+      const userId = this.getUserId();
 
-    const { data, error } = await this.supabase
-      .from("accounts")
-      .select("*")
-      .eq("user_id", userId);
+      const { data, error } = await this.supabase
+        .from("accounts")
+        .select("*")
+        .eq("user_id", userId);
 
-    if (error) {
-      console.error("Error fetching accounts:", error);
-      throw error;
+      if (error) {
+        console.error("Error fetching accounts:", error);
+        throw error;
+      }
+
+      // Map DB rows to Account objects
+      return (data || []).map(dbAccountToAccount);
+    } catch (error) {
+      console.error("Failed to fetch accounts:", error);
+      // Return empty array instead of throwing to avoid breaking the UI
+      return [];
     }
-
-    // Map DB rows to Account objects
-    return (data || []).map(dbAccountToAccount);
   }
 
   async getAccount(id: string): Promise<Account | undefined> {
