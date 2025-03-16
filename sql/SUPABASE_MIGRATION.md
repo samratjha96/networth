@@ -5,6 +5,7 @@ This document outlines how to migrate the Net Worth app from using browser local
 ## Overview
 
 The migration enables:
+
 - User authentication with email/password
 - Secure, per-user data storage in Supabase
 - Seamless fallback to localStorage when offline or not logged in
@@ -47,10 +48,12 @@ NEXT_PUBLIC_USE_SUPABASE=true
 The codebase has been updated with:
 
 1. **Database Factory Pattern**:
+
    - `DatabaseFactory` class that can switch between backends
    - Transparent API that doesn't require frontend changes
 
 2. **Supabase Implementation**:
+
    - `SupabaseDatabase` class implementing the `DatabaseProvider` interface
    - User-specific data filtering for all operations
    - Proper error handling
@@ -67,7 +70,7 @@ The codebase has been updated with:
 Wrap your application with the `AuthProvider`:
 
 ```tsx
-import { AuthProvider } from '@/components/AuthProvider';
+import { AuthProvider } from "@/components/AuthProvider";
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -83,11 +86,11 @@ function MyApp({ Component, pageProps }) {
 Use the `useAuth` hook to access authentication functions:
 
 ```tsx
-import { useAuth } from '@/components/AuthProvider';
+import { useAuth } from "@/components/AuthProvider";
 
 function LoginForm() {
   const { signIn, isLoading } = useAuth();
-  
+
   // Use signIn function in your form handler
 }
 ```
@@ -97,7 +100,7 @@ function LoginForm() {
 Use the database factory to get the current database implementation:
 
 ```tsx
-import { getDatabase } from '@/lib/database-factory';
+import { getDatabase } from "@/lib/database-factory";
 
 async function fetchAccounts() {
   const db = getDatabase();
@@ -122,15 +125,15 @@ async function migrateLocalStorageToSupabase(userId: string) {
   const localDb = mockDb;
   const accounts = await localDb.getAllAccounts();
   const history = await localDb.getNetworthHistory(0);
-  
+
   // Set user ID for Supabase DB
   supabaseDb.setUserId(userId);
-  
+
   // Migrate accounts
   for (const account of accounts) {
     await supabaseDb.insertAccount(account);
   }
-  
+
   // Migrate history (if needed)
   // Note: The history will be automatically updated when accounts are inserted
 }
@@ -147,6 +150,7 @@ To test the Supabase implementation:
 ## Fallback Mechanism
 
 The implementation includes automatic fallback to localStorage when:
+
 1. A user is not authenticated
 2. There are network connectivity issues
-3. The environment variable `NEXT_PUBLIC_USE_SUPABASE` is set to `false` 
+3. The environment variable `NEXT_PUBLIC_USE_SUPABASE` is set to `false`

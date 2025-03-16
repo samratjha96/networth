@@ -11,7 +11,7 @@ This project uses Vite as its build tool, which requires environment variables t
 ### Setup Instructions
 
 1. Create a `.env` file in the root of your project
-2. Copy the contents from `.env.example` 
+2. Copy the contents from `.env.example`
 3. Update the values as needed for your environment
 4. Make sure to restart the Vite dev server after making changes to environment variables
 
@@ -25,26 +25,31 @@ This project uses Vite as its build tool, which requires environment variables t
 
 1. Make sure you have Node.js installed (LTS version recommended)
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 ```
 
 4. For production build:
+
 ```bash
 npm run build
 ```
 
 5. To preview production build:
+
 ```bash
 npm run preview
 ```
 
 6. To run type checking:
+
 ```bash
 npm run typecheck
 ```
@@ -57,10 +62,11 @@ In the codebase, these variables are accessed using Vite's environment variable 
 // Correct way to access Vite environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const useSupabase = import.meta.env.VITE_USE_SUPABASE === 'true';
+const useSupabase = import.meta.env.VITE_USE_SUPABASE === "true";
 ```
 
 Key components using these environment variables:
+
 - `src/lib/supabase-database.ts` - Database connection
 - `src/lib/database-factory.ts` - Database backend selection
 - `src/components/AuthProvider.tsx` - Authentication setup
@@ -72,16 +78,22 @@ The Vite configuration (vite.config.ts) has been updated to properly load and ex
 ```typescript
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current directory
-  const env = loadEnv(mode, process.cwd(), '');
-  
+  const env = loadEnv(mode, process.cwd(), "");
+
   return {
     // ... other config
     define: {
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
-      'import.meta.env.VITE_USE_SUPABASE': JSON.stringify(env.VITE_USE_SUPABASE),
-    }
-  }
+      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
+        env.VITE_SUPABASE_URL,
+      ),
+      "import.meta.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(
+        env.VITE_SUPABASE_ANON_KEY,
+      ),
+      "import.meta.env.VITE_USE_SUPABASE": JSON.stringify(
+        env.VITE_USE_SUPABASE,
+      ),
+    },
+  };
 });
 ```
 
@@ -97,4 +109,3 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 - Supabase (optional backend)
-

@@ -27,6 +27,7 @@ The primary goals of Argos are to:
 ### Core Features
 
 1. **Account Management**
+
    - Add, edit, and delete financial accounts
    - Support for various account types:
      - Assets: Checking, Savings, Brokerage, Retirement, 401K, Car, Real Estate
@@ -34,6 +35,7 @@ The primary goals of Argos are to:
    - Multi-currency support (USD, EUR, GBP, JPY, CAD, AUD)
 
 2. **Net Worth Dashboard**
+
    - Current total net worth display
    - Net worth change visualization (amount and percentage)
    - Period comparison (daily, weekly, monthly, yearly)
@@ -41,6 +43,7 @@ The primary goals of Argos are to:
    - Test mode toggle for demonstration purposes
 
 3. **Net Worth History**
+
    - Historical net worth tracking with multiple time ranges
    - Adaptive resolution visualization that optimizes data points based on viewport
    - Significant event identification in charts
@@ -55,12 +58,14 @@ The primary goals of Argos are to:
 ### User Interface
 
 1. **Main Dashboard**
+
    - Header: Navigation and authentication controls
    - Top section: Net worth summary cards
    - Middle section: Net worth chart visualization with time range controls
    - Bottom section: Accounts list with toggle between assets and liabilities
 
 2. **Authentication System**
+
    - Sign-in/Sign-up dialog with form validation
    - Google authentication option
    - Error messaging for authentication issues
@@ -123,9 +128,11 @@ The primary goals of Argos are to:
 ### Key Components
 
 1. **Pages**
+
    - Index.tsx - Main dashboard page
 
 2. **Components**
+
    - Header - Navigation and authentication UI
    - AuthProvider - Authentication state provider
    - SignInDialog - Authentication form
@@ -139,6 +146,7 @@ The primary goals of Argos are to:
    - TestModeToggle - Enables test mode for demonstration
 
 3. **Hooks**
+
    - use-accounts - Manages account data and CRUD operations
    - use-networth-history - Manages historical net worth data
    - use-adaptive-networth-history - Handles adaptive resolution data processing
@@ -149,6 +157,7 @@ The primary goals of Argos are to:
    - use-toast - Manages toast notifications
 
 4. **Stores**
+
    - auth-store - Manages authentication state and operations
    - database-store - Manages database configuration and state
 
@@ -167,6 +176,7 @@ The primary goals of Argos are to:
 The application is now a fully functional net worth tracking application with both local and cloud storage options:
 
 1. **Completed Features**
+
    - Full account management (add, edit, delete)
    - Net worth calculation and visualization with adaptive resolution
    - Historical tracking of net worth with multiple time ranges
@@ -189,6 +199,7 @@ The application is now a fully functional net worth tracking application with bo
 Potential future improvements could include:
 
 1. **Advanced Features**
+
    - Financial goal setting and tracking
    - Financial institution API integration for automatic balance updates
    - Detailed reporting and analytics dashboard
@@ -197,6 +208,7 @@ Potential future improvements could include:
    - Budget tracking and integration with net worth
 
 2. **Enhanced Visualization**
+
    - Additional chart types (pie charts for asset allocation, etc.)
    - Forecasting and trend analysis
    - Custom reporting periods
@@ -233,4 +245,4 @@ The project is built with modern frontend tooling:
 - TypeScript for type safety
 - ESLint and Prettier for code quality
 - Docker configuration for containerized development and deployment
-- Environment variable management for configuration 
+- Environment variable management for configuration

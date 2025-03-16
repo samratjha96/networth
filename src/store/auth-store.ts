@@ -75,7 +75,6 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         throw new Error("User ID is required when setting Supabase mode");
       }
 
-      supabaseDb.setUserId(userId);
       forceMockDatabaseForDevelopment(false);
 
       // Keep auth state (already set by caller)

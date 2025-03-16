@@ -296,7 +296,7 @@ export class MockDatabase implements DatabaseProvider {
       startDate.setDate(startDate.getDate() - days);
 
       // Filter mock history to the requested time period and ensure proper sorting
-      let filteredHistory = this.mockHistory
+      const filteredHistory = this.mockHistory
         .filter((entry) => {
           const entryDate = new Date(entry.date);
           return entryDate >= startDate && entryDate <= endDate;

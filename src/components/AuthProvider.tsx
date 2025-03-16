@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { AuthChangeEvent } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import { useAuthStore } from "@/store/auth-store";
+import { supabaseDb } from "@/lib/supabase-database";
 
 // Initialize Supabase client using Vite's environment variable approach
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -36,6 +37,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           event === "TOKEN_REFRESHED"
         ) {
           await handleAuthStateChange(session);
+
+          // Update the user ID in the Supabase database class
+          if (supabaseDb) {
+            const userId = session?.user?.id || null;
+            supabaseDb.setUserId(userId);
+          }
         }
       },
     );
@@ -45,6 +52,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe();
     };
   }, [handleAuthStateChange]);
+
+  // Initialize user ID in supabase database on mount
+  useEffect(() => {
+    const initializeUserId = async () => {
+      if (!supabase || !supabaseDb) return;
+
+      try {
+        const { data } = await supabase.auth.getSession();
+        const userId = data.session?.user?.id || null;
+        supabaseDb.setUserId(userId);
+      } catch (error) {
+        console.error(
+          "Error initializing user ID in supabase database:",
+          error,
+        );
+      }
+    };
+
+    initializeUserId();
+  }, []);
 
   return <>{children}</>;
 };

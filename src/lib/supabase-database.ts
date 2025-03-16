@@ -64,9 +64,9 @@ const accountToDbAccount = (
 export class SupabaseDatabase implements DatabaseProvider {
   private static instance: SupabaseDatabase | null = null;
   private supabase: SupabaseClient<Database>;
-  private userId: string | null = null;
   private isInitialized: boolean = false;
   private isAuthInitialized: boolean = false;
+  private currentUserId: string | null = null;
 
   private constructor() {
     if (!supabaseUrl || !supabaseKey) {
@@ -104,22 +104,19 @@ export class SupabaseDatabase implements DatabaseProvider {
     }
   }
 
-  // Set the current user ID - call this after user authentication
-  setUserId(userId: string): void {
-    console.debug("Setting user ID:", userId);
-    this.userId = userId;
-    // Reset initialization state when user changes
-    this.isInitialized = false;
+  // Set the current user ID - called from outside
+  setUserId(userId: string | null): void {
+    this.currentUserId = userId;
   }
 
-  // Check if a user ID is set
+  // Check if a user ID is available
   hasUserId(): boolean {
-    return !!this.userId;
+    return !!this.currentUserId;
   }
 
   // Get the current user ID or throw if not set
   private getUserId(): string {
-    if (!this.userId) {
+    if (!this.currentUserId) {
       // In development mode with explicit test credentials, we can use anonymous mode
       if (isDevelopment && TEST_USER_EMAIL && TEST_USER_PASSWORD) {
         console.warn("No user ID set, using anonymous mode in development");
@@ -129,7 +126,7 @@ export class SupabaseDatabase implements DatabaseProvider {
       // Otherwise, throw an error - operations requiring a user ID should not proceed
       throw new Error("User not authenticated. No user ID available.");
     }
-    return this.userId;
+    return this.currentUserId;
   }
 
   // Initialize the database structure
@@ -144,12 +141,12 @@ export class SupabaseDatabase implements DatabaseProvider {
 
     try {
       // In development mode, sign in as test user only if no user is set
-      if (isDevelopment && !this.userId && !this.isAuthInitialized) {
+      if (isDevelopment && !this.hasUserId() && !this.isAuthInitialized) {
         await this.initializeTestAuth();
       }
 
       // Check if we have a user ID
-      if (!this.userId) {
+      if (!this.hasUserId()) {
         console.debug(
           "No user ID available for Supabase database, initialization skipped",
         );
@@ -203,7 +200,7 @@ export class SupabaseDatabase implements DatabaseProvider {
     }
 
     // Skip if we already have a user ID (real authentication)
-    if (this.userId) {
+    if (this.hasUserId()) {
       console.debug("Real user already authenticated, skipping test auth");
       this.isAuthInitialized = true;
       return;
@@ -232,7 +229,8 @@ export class SupabaseDatabase implements DatabaseProvider {
           sessionData.session.user.email,
         );
         console.log("🆔 User ID:", sessionData.session.user.id);
-        this.userId = sessionData.session.user.id;
+        // Store the user ID locally
+        this.setUserId(sessionData.session.user.id);
         this.isAuthInitialized = true;
         return;
       }
@@ -274,7 +272,8 @@ export class SupabaseDatabase implements DatabaseProvider {
             data.user.email,
           );
           console.log("🆔 User ID:", data.user.id);
-          this.userId = data.user.id;
+          // Store the user ID locally
+          this.setUserId(data.user.id);
         }
       }
 
@@ -316,234 +315,292 @@ export class SupabaseDatabase implements DatabaseProvider {
   }
 
   async getAccount(id: string): Promise<Account | undefined> {
-    const userId = this.getUserId();
+    try {
+      const userId = this.getUserId();
 
-    const { data, error } = await this.supabase
-      .from("accounts")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", userId)
-      .single();
+      const { data, error } = await this.supabase
+        .from("accounts")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", userId)
+        .single();
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        // Record not found error code
-        return undefined;
+      if (error) {
+        if (error.code === "PGRST116") {
+          // Record not found error code
+          return undefined;
+        }
+        console.error("Error fetching account:", error);
+        throw error;
       }
-      console.error("Error fetching account:", error);
-      throw error;
-    }
 
-    return data ? dbAccountToAccount(data) : undefined;
+      return data ? dbAccountToAccount(data) : undefined;
+    } catch (error) {
+      console.error("Error in getAccount:", error);
+      return undefined;
+    }
   }
 
   async insertAccount(accountData: Omit<Account, "id">): Promise<Account> {
-    const userId = this.getUserId();
+    try {
+      const userId = this.getUserId();
 
-    const newAccount = accountToDbAccount(accountData, userId);
+      const newAccount = accountToDbAccount(accountData, userId);
 
-    const { data, error } = await this.supabase
-      .from("accounts")
-      .insert(newAccount)
-      .select()
-      .single();
+      const { data, error } = await this.supabase
+        .from("accounts")
+        .insert(newAccount)
+        .select()
+        .single();
 
-    if (error) {
-      console.error("Error inserting account:", error);
+      if (error) {
+        console.error("Error inserting account:", error);
+        throw error;
+      }
+
+      const insertedAccount = dbAccountToAccount(data);
+
+      await this.updateNetworthSnapshot();
+      return insertedAccount;
+    } catch (error) {
+      console.error("Error in insertAccount:", error);
       throw error;
     }
-
-    const insertedAccount = dbAccountToAccount(data);
-
-    await this.updateNetworthSnapshot();
-    return insertedAccount;
   }
 
   async updateAccount(account: Account): Promise<void> {
-    const userId = this.getUserId();
+    try {
+      const userId = this.getUserId();
 
-    // Convert to DB format
-    const { balance, is_debt, currency, name, type } = accountToDbAccount(
-      account,
-      userId,
-    );
+      // Convert to DB format
+      const { balance, is_debt, currency, name, type } = accountToDbAccount(
+        account,
+        userId,
+      );
 
-    const updateData: AccountUpdate = {
-      name,
-      type,
-      currency,
-      balance,
-      is_debt,
-      updated_at: new Date().toISOString(),
-    };
+      const updateData: AccountUpdate = {
+        name,
+        type,
+        currency,
+        balance,
+        is_debt,
+        updated_at: new Date().toISOString(),
+      };
 
-    const { error } = await this.supabase
-      .from("accounts")
-      .update(updateData)
-      .eq("id", account.id)
-      .eq("user_id", userId);
+      const { error } = await this.supabase
+        .from("accounts")
+        .update(updateData)
+        .eq("id", account.id)
+        .eq("user_id", userId);
 
-    if (error) {
-      console.error("Error updating account:", error);
+      if (error) {
+        console.error("Error updating account:", error);
+        throw error;
+      }
+
+      await this.updateNetworthSnapshot();
+    } catch (error) {
+      console.error("Error in updateAccount:", error);
       throw error;
     }
-
-    await this.updateNetworthSnapshot();
   }
 
   async deleteAccount(id: string): Promise<void> {
-    const userId = this.getUserId();
+    try {
+      const userId = this.getUserId();
 
-    const { error } = await this.supabase
-      .from("accounts")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", userId);
+      const { error } = await this.supabase
+        .from("accounts")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
 
-    if (error) {
-      console.error("Error deleting account:", error);
+      if (error) {
+        console.error("Error deleting account:", error);
+        throw error;
+      }
+
+      await this.updateNetworthSnapshot();
+    } catch (error) {
+      console.error("Error in deleteAccount:", error);
       throw error;
     }
-
-    await this.updateNetworthSnapshot();
   }
 
   // Networth history operations
   async getNetworthHistory(days: number): Promise<NetworthHistory[]> {
-    const userId = this.getUserId();
-    console.debug("Fetching networth history from Supabase:", { userId, days });
+    try {
+      const userId = this.getUserId();
+      console.debug("Fetching networth history from Supabase:", {
+        userId,
+        days,
+      });
 
-    if (!userId) {
-      console.error("No user ID available for networth history fetch");
+      if (!userId) {
+        console.error("No user ID available for networth history fetch");
+        return [];
+      }
+
+      let query = this.supabase
+        .from("networth_history")
+        .select("*")
+        .eq("user_id", userId)
+        .order("date", { ascending: true });
+
+      // Filter by days if specified
+      if (days > 0) {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        query = query.gte("date", startDate.toISOString());
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching networth history:", error);
+        throw error;
+      }
+
+      console.debug("Received networth history:", { count: data?.length ?? 0 });
+
+      // Transform data to match the expected format, removing user_id
+      return (data || []).map((item) => ({
+        date: item.date,
+        value: item.value,
+      }));
+    } catch (error) {
+      console.error("Error in getNetworthHistory:", error);
       return [];
     }
-
-    let query = this.supabase
-      .from("networth_history")
-      .select("*")
-      .eq("user_id", userId)
-      .order("date", { ascending: true });
-
-    // Filter by days if specified
-    if (days > 0) {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-      query = query.gte("date", startDate.toISOString());
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Error fetching networth history:", error);
-      throw error;
-    }
-
-    console.debug("Received networth history:", { count: data?.length ?? 0 });
-
-    // Transform data to match the expected format, removing user_id
-    return (data || []).map((item) => ({
-      date: item.date,
-      value: item.value,
-    }));
   }
 
   async addNetworthSnapshot(value: number): Promise<void> {
-    const userId = this.getUserId();
-    const now = new Date().toISOString();
+    try {
+      const userId = this.getUserId();
+      const now = new Date().toISOString();
 
-    // First check if we have any history at all
-    const { data: historyExists, error: checkError } = await this.supabase
-      .from("networth_history")
-      .select("id")
-      .eq("user_id", userId)
-      .limit(1);
-
-    if (checkError) {
-      console.error("Error checking history existence:", checkError);
-      throw checkError;
-    }
-
-    // If no history exists, create first entry
-    if (!historyExists || historyExists.length === 0) {
-      const newHistoryEntry: NetworthHistoryInsert = {
-        user_id: userId,
-        date: now,
-        value,
-      };
-
-      const { error } = await this.supabase
-        .from("networth_history")
-        .insert(newHistoryEntry);
-
-      if (error) {
-        console.error("Error adding initial networth history:", error);
-        throw error;
+      // Check if user is authenticated - important to prevent operations after sign-out
+      if (!this.hasUserId()) {
+        console.debug("Skipping networth snapshot - no authenticated user");
+        return;
       }
-      return;
-    }
 
-    // Check if we have an entry from the last hour
-    const lastHour = new Date();
-    lastHour.setHours(lastHour.getHours() - 1);
-
-    const { data: recentEntries, error: fetchError } = await this.supabase
-      .from("networth_history")
-      .select("id")
-      .eq("user_id", userId)
-      .gte("date", lastHour.toISOString())
-      .order("date", { ascending: false })
-      .limit(1);
-
-    if (fetchError) {
-      console.error("Error checking recent history:", fetchError);
-      throw fetchError;
-    }
-
-    if (recentEntries && recentEntries.length > 0) {
-      // Update the most recent entry instead of creating a new one
-      const { error } = await this.supabase
+      // First check if we have any history at all
+      const { data: historyExists, error: checkError } = await this.supabase
         .from("networth_history")
-        .update({ date: now, value })
-        .eq("id", recentEntries[0].id)
-        .eq("user_id", userId);
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1);
 
-      if (error) {
-        console.error("Error updating networth history:", error);
-        throw error;
+      if (checkError) {
+        console.error("Error checking history existence:", checkError);
+        throw checkError;
       }
-    } else {
-      // Add a new entry
-      const newHistoryEntry: NetworthHistoryInsert = {
-        user_id: userId,
-        date: now,
-        value,
-      };
 
-      const { error } = await this.supabase
+      // If no history exists, create first entry
+      if (!historyExists || historyExists.length === 0) {
+        const newHistoryEntry: NetworthHistoryInsert = {
+          user_id: userId,
+          date: now,
+          value,
+        };
+
+        const { error } = await this.supabase
+          .from("networth_history")
+          .insert(newHistoryEntry);
+
+        if (error) {
+          console.error("Error adding initial networth history:", error);
+          throw error;
+        }
+        return;
+      }
+
+      // Check if we have an entry from the last hour
+      const lastHour = new Date();
+      lastHour.setHours(lastHour.getHours() - 1);
+
+      const { data: recentEntries, error: fetchError } = await this.supabase
         .from("networth_history")
-        .insert(newHistoryEntry);
+        .select("id")
+        .eq("user_id", userId)
+        .gte("date", lastHour.toISOString())
+        .order("date", { ascending: false })
+        .limit(1);
 
-      if (error) {
-        console.error("Error adding networth history:", error);
-        throw error;
+      if (fetchError) {
+        console.error("Error checking recent history:", fetchError);
+        throw fetchError;
       }
+
+      if (recentEntries && recentEntries.length > 0) {
+        // Update the most recent entry instead of creating a new one
+        const { error } = await this.supabase
+          .from("networth_history")
+          .update({ date: now, value })
+          .eq("id", recentEntries[0].id)
+          .eq("user_id", userId);
+
+        if (error) {
+          console.error("Error updating networth history:", error);
+          throw error;
+        }
+      } else {
+        // Add a new entry
+        const newHistoryEntry: NetworthHistoryInsert = {
+          user_id: userId,
+          date: now,
+          value,
+        };
+
+        const { error } = await this.supabase
+          .from("networth_history")
+          .insert(newHistoryEntry);
+
+        if (error) {
+          console.error("Error adding networth history:", error);
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error("Error in addNetworthSnapshot:", error);
+      // Don't rethrow - this shouldn't break the user experience
     }
   }
 
   private async updateNetworthSnapshot(): Promise<void> {
+    if (!this.hasUserId()) {
+      console.debug("Skipping updateNetworthSnapshot - no authenticated user");
+      return;
+    }
     const totalNetworth = await this.calculateCurrentNetworth();
     await this.addNetworthSnapshot(totalNetworth);
   }
 
   // Helper to calculate current net worth
   async calculateCurrentNetworth(): Promise<number> {
-    const accounts = await this.getAllAccounts();
-    return accounts.reduce((sum, account) => sum + account.balance, 0);
+    try {
+      const accounts = await this.getAllAccounts();
+      return accounts.reduce((sum, account) => sum + account.balance, 0);
+    } catch (error) {
+      console.error("Error calculating networth:", error);
+      return 0;
+    }
   }
 
   async synchronizeNetworthHistory(): Promise<void> {
-    const currentNetworth = await this.calculateCurrentNetworth();
-    await this.addNetworthSnapshot(currentNetworth);
+    try {
+      if (!this.hasUserId()) {
+        console.debug(
+          "Skipping synchronizeNetworthHistory - no authenticated user",
+        );
+        return;
+      }
+      const currentNetworth = await this.calculateCurrentNetworth();
+      await this.addNetworthSnapshot(currentNetworth);
+    } catch (error) {
+      console.error("Error in synchronizeNetworthHistory:", error);
+    }
   }
 
   // Test mode methods are not implemented for Supabase

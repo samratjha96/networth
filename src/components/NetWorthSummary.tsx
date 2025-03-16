@@ -1,18 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
-import { CurrencyCode, TimeRange } from "@/types";
+import { CurrencyCode, TimeRange, CURRENCY_SYMBOLS } from "@/types";
 import { useTimeRange } from "@/hooks/use-time-range";
 import { useDatabase } from "@/hooks/use-database";
-
-const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  CAD: "C$",
-  AUD: "A$",
-};
 
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {

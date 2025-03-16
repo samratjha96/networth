@@ -16,97 +16,50 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { Account, AssetType, DebtType } from "./AccountsList";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  AssetType,
+  DebtType,
+  CurrencyCode,
+  CURRENCIES,
+  assetTypes,
+  debtTypes,
+} from "@/types";
+import { useAccountDialogStore } from "@/store/account-dialog-store";
 
 interface AddAccountDialogProps {
-  onAddAccount: (account: Omit<Account, "id">) => void;
-  onEditAccount?: (account: Account) => void;
-  account?: Account;
   trigger?: React.ReactNode;
   className?: string;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
 }
 
-const CURRENCIES = [
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-] as const;
-
-type Currency = (typeof CURRENCIES)[number]["code"];
-
-const assetTypes: AssetType[] = [
-  "Checking",
-  "Savings",
-  "Brokerage",
-  "Retirement",
-  "401K",
-  "Car",
-  "Real Estate",
-];
-
-const debtTypes: DebtType[] = ["Credit Card", "Loan", "Mortgage"];
-
 export function AddAccountDialog({
-  onAddAccount,
-  onEditAccount,
-  account,
   trigger,
   className,
-  open: controlledOpen,
-  onOpenChange,
 }: AddAccountDialogProps) {
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-
-  // Use controlled state if provided, otherwise use local state
-  const isControlled = controlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolledOpen;
-
-  // Create a unified handler for open state changes
-  const handleOpenChange = (newOpenState: boolean) => {
-    console.log("Dialog open change", {
-      oldState: open,
-      newState: newOpenState,
-      isControlled,
-    });
-
-    if (isControlled) {
-      onOpenChange?.(newOpenState);
-    } else {
-      setUncontrolledOpen(newOpenState);
-    }
-  };
+  // Get dialog state and actions from the store
+  const { isOpen, accountToEdit, closeDialog, addAccount, editAccount } =
+    useAccountDialogStore();
 
   const [name, setName] = useState("");
   const [type, setType] = useState<AssetType | DebtType>("Checking");
   const [balance, setBalance] = useState("");
-  const [currency, setCurrency] = useState<Currency>("USD");
+  const [currency, setCurrency] = useState<CurrencyCode>("USD");
   const [isDebt, setIsDebt] = useState(false);
-
-  console.log("Dialog render", {
-    open,
-    account: account?.name,
-    isEdit: !!account,
+  const [touched, setTouched] = useState({
+    name: false,
+    balance: false,
   });
 
   // Reset form when dialog opens and when account changes
   useEffect(() => {
-    console.log("useEffect triggered", { open, account: account?.name });
-
-    if (open) {
-      if (account) {
-        console.log("Populating edit form", { account });
-        setName(account.name);
-        setType(account.type);
-        setBalance(Math.abs(account.balance).toString());
-        setCurrency(account.currency);
-        setIsDebt(account.isDebt ?? false);
+    if (isOpen) {
+      if (accountToEdit) {
+        setName(accountToEdit.name);
+        setType(accountToEdit.type);
+        setBalance(Math.abs(accountToEdit.balance).toString());
+        setCurrency(accountToEdit.currency as CurrencyCode);
+        setIsDebt(accountToEdit.isDebt ?? false);
       } else {
         setName("");
         setType("Checking");
@@ -116,23 +69,13 @@ export function AddAccountDialog({
       }
       setTouched({ name: false, balance: false });
     }
-  }, [open, account]);
-
-  const [touched, setTouched] = useState({
-    name: false,
-    balance: false,
-  });
+  }, [isOpen, accountToEdit]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    console.log("Form submit attempt", { name, account: account?.name });
     e.preventDefault();
 
     // Validate required fields
     if (!name.trim() || !balance.trim()) {
-      console.log("Validation failed", {
-        name: name.trim(),
-        balance: balance.trim(),
-      });
       setTouched({ name: true, balance: true });
       return;
     }
@@ -153,28 +96,17 @@ export function AddAccountDialog({
       currency,
     };
 
-    console.log("Submitting form", {
-      isEdit: !!account,
-      accountData,
-    });
-
-    if (account && onEditAccount) {
-      onEditAccount({ ...accountData, id: account.id });
+    if (accountToEdit) {
+      editAccount({ ...accountData, id: accountToEdit.id });
     } else {
-      onAddAccount(accountData);
+      addAccount(accountData);
     }
 
-    handleOpenChange(false);
-    setName("");
-    setType("Checking");
-    setBalance("0");
-    setCurrency("USD");
-    setIsDebt(false);
-    setTouched({ name: false, balance: false });
+    // Form will be reset by the useEffect when isOpen changes
   };
 
   const handleDebtToggle = (checked: boolean) => {
-    if (!account) {
+    if (!accountToEdit) {
       setIsDebt(checked);
       setType(checked ? debtTypes[0] : assetTypes[0]);
     }
@@ -187,18 +119,10 @@ export function AddAccountDialog({
   // Get available account types based on whether it's an asset or liability
   const availableTypes = isDebt ? debtTypes : assetTypes;
 
-  const handleTriggerClick = (e: React.MouseEvent) => {
-    console.log("Trigger clicked", {
-      isEdit: !!account,
-      currentOpenState: open,
-    });
-    // No need to do anything else, the DialogTrigger handles toggling
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && closeDialog()}>
       <DialogTrigger asChild>
-        <div onClick={handleTriggerClick}>
+        <div>
           {trigger ?? (
             <Button variant="outline" className={className}>
               Add Account
@@ -209,11 +133,11 @@ export function AddAccountDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {account ? "Edit Account" : "Add New Account"}
+            {accountToEdit ? "Edit Account" : "Add New Account"}
           </DialogTitle>
           <DialogDescription>
-            {account ? "Edit" : "Add a new"} {isDebt ? "liability" : "asset"}{" "}
-            account to track your net worth.
+            {accountToEdit ? "Edit" : "Add a new"}{" "}
+            {isDebt ? "liability" : "asset"} account to track your net worth.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
@@ -222,7 +146,7 @@ export function AddAccountDialog({
               id="debt-mode"
               checked={isDebt}
               onCheckedChange={handleDebtToggle}
-              disabled={!!account}
+              disabled={!!accountToEdit}
             />
             <Label htmlFor="debt-mode">This is a liability</Label>
           </div>
@@ -270,7 +194,7 @@ export function AddAccountDialog({
             <Label htmlFor="currency">Currency</Label>
             <Select
               value={currency}
-              onValueChange={(value) => setCurrency(value as Currency)}
+              onValueChange={(value) => setCurrency(value as CurrencyCode)}
             >
               <SelectTrigger className="bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] focus-visible:shadow-[0_0_0_1px_hsl(var(--primary))]">
                 <SelectValue placeholder="Select currency" />
@@ -309,7 +233,7 @@ export function AddAccountDialog({
           </div>
 
           <Button type="submit" disabled={!isValid}>
-            {account ? "Save Changes" : "Add Account"}
+            {accountToEdit ? "Save Changes" : "Add Account"}
           </Button>
         </form>
       </DialogContent>

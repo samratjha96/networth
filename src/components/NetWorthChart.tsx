@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { CurrencyCode } from "@/types";
+import { CurrencyCode, CURRENCY_SYMBOLS } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAdaptiveNetWorthHistory } from "@/hooks/use-adaptive-networth-history";
 import { TimeRange } from "@/types";
@@ -24,15 +24,6 @@ import {
 } from "./ui/tooltip";
 import { useTimeRange } from "@/hooks/use-time-range";
 import { useDatabase } from "@/hooks/use-database";
-
-const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  CAD: "C$",
-  AUD: "A$",
-};
 
 const LOCAL_STORAGE_TIME_RANGE_KEY = "networth-time-range";
 
