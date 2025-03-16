@@ -32,8 +32,14 @@ export function AddAccountDialog({
   className,
 }: AddAccountDialogProps) {
   // Get dialog state and actions from the store
-  const { isOpen, accountToEdit, closeDialog, addAccount, editAccount } =
-    useAccountDialogStore();
+  const {
+    isOpen,
+    accountToEdit,
+    defaultIsDebt,
+    closeDialog,
+    addAccount,
+    editAccount,
+  } = useAccountDialogStore();
 
   const [name, setName] = React.useState("");
   const [type, setType] = React.useState<AccountType>("Checking");
@@ -56,14 +62,14 @@ export function AddAccountDialog({
         setIsDebt(accountToEdit.isDebt ?? false);
       } else {
         setName("");
-        setType("Checking");
+        setType(defaultIsDebt ? debtTypes[0] : "Checking");
         setBalance("");
         setCurrency("USD");
-        setIsDebt(false);
+        setIsDebt(defaultIsDebt);
       }
       setTouched({ name: false, balance: false });
     }
-  }, [isOpen, accountToEdit]);
+  }, [isOpen, accountToEdit, defaultIsDebt]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,6 +217,7 @@ export function AddAccountDialog({
             <Input
               id="balance"
               type="number"
+              step="any"
               value={balance}
               onChange={(e) => setBalance(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, balance: true }))}

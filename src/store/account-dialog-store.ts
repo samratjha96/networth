@@ -6,9 +6,10 @@ interface AccountDialogState {
   // Dialog state
   isOpen: boolean;
   accountToEdit: Account | null;
+  defaultIsDebt: boolean;
 
   // Actions
-  openAddDialog: () => void;
+  openAddDialog: (options?: { isDebt?: boolean }) => void;
   openEditDialog: (account: Account) => void;
   closeDialog: () => void;
 
@@ -21,9 +22,15 @@ export const useAccountDialogStore = create<AccountDialogState>((set, get) => ({
   // Initial state
   isOpen: false,
   accountToEdit: null,
+  defaultIsDebt: false,
 
   // Dialog control actions
-  openAddDialog: () => set({ isOpen: true, accountToEdit: null }),
+  openAddDialog: (options?: { isDebt?: boolean }) =>
+    set({
+      isOpen: true,
+      accountToEdit: null,
+      defaultIsDebt: options?.isDebt ?? false,
+    }),
   openEditDialog: (account: Account) =>
     set({ isOpen: true, accountToEdit: account }),
   closeDialog: () => set({ isOpen: false, accountToEdit: null }),
