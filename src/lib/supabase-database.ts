@@ -95,10 +95,20 @@ export class SupabaseDatabase implements DatabaseProvider {
   }
 
   static getInstance(): SupabaseDatabase {
-    if (!SupabaseDatabase.instance) {
-      SupabaseDatabase.instance = new SupabaseDatabase();
+    try {
+      if (!this.instance) {
+        // Check if credentials are available before creating an instance
+        if (!supabaseUrl || !supabaseKey) {
+          console.warn("Supabase credentials missing, returning null instance");
+          return null;
+        }
+        this.instance = new SupabaseDatabase();
+      }
+      return this.instance;
+    } catch (error) {
+      console.error("Error creating Supabase instance:", error);
+      return null;
     }
-    return SupabaseDatabase.instance;
   }
 
   // Set the current user ID - call this after user authentication

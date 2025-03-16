@@ -9,8 +9,28 @@ export type DatabaseBackend = "local" | "supabase";
 const TEST_MODE_KEY = "networth_test_mode";
 
 // Use environment variable to determine the default backend
-const getDefaultBackend = (): DatabaseBackend =>
-  import.meta.env.VITE_USE_SUPABASE === "true" ? "supabase" : "local";
+const getDefaultBackend = (): DatabaseBackend => {
+  // Check if we should use Supabase according to env variable
+  const shouldUseSupabase = import.meta.env.VITE_USE_SUPABASE === "true";
+
+  // If we're supposed to use Supabase, verify that the necessary credentials exist
+  if (shouldUseSupabase) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    // If credentials are missing, fall back to local storage regardless of the setting
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn(
+        "Supabase credentials missing. Falling back to local storage backend.",
+      );
+      return "local";
+    }
+
+    return "supabase";
+  }
+
+  return "local";
+};
 
 // Current database backend (with default from environment)
 let currentBackend = getDefaultBackend();
@@ -27,7 +47,21 @@ export function getDatabase(): DatabaseProvider {
   if (getPersistedTestMode()) {
     return mockDb;
   }
-  return currentBackend === "supabase" ? supabaseDb : mockDb;
+
+  // If the current backend is supabase, check if we have a valid instance
+  if (currentBackend === "supabase") {
+    // If supabaseDb is null (which happens when credentials are missing), fall back to mockDb
+    if (!supabaseDb) {
+      console.warn(
+        "Supabase database unavailable, falling back to local storage",
+      );
+      return mockDb;
+    }
+    return supabaseDb;
+  }
+
+  // Default to mock database
+  return mockDb;
 }
 
 // Switch to a different backend (for testing or development)

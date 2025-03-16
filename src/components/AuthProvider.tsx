@@ -7,7 +7,10 @@ import { setDatabaseBackend, setGlobalTestMode } from "@/lib/database-factory";
 // Initialize Supabase client using Vite's environment variable approach
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Only create the Supabase client if the necessary credentials are available
+const supabase =
+  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Context type definition
 type AuthContextType = {
@@ -30,6 +33,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // If Supabase isn't available, fall back to local storage immediately
+    if (!supabase) {
+      console.warn(
+        "Supabase client not available, falling back to local storage",
+      );
+      setDatabaseBackend("local");
+      setGlobalTestMode(true);
+      setIsLoading(false);
+      return;
+    }
+
     // Get the initial session and set up auth subscription
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -60,7 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Update user ID in database when auth state changes
       if (session?.user) {
-        supabaseDb.setUserId(session.user.id);
+        supabaseDb?.setUserId(session.user.id);
         setDatabaseBackend("supabase");
         setGlobalTestMode(false);
       } else {
@@ -79,6 +93,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
+    if (!supabase) {
+      throw new Error(
+        "Authentication is not available. Supabase client not initialized.",
+      );
+    }
+
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -93,6 +113,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Sign up with email and password
   const signUp = async (email: string, password: string) => {
+    if (!supabase) {
+      throw new Error(
+        "Authentication is not available. Supabase client not initialized.",
+      );
+    }
+
     setIsLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });
     setIsLoading(false);
@@ -104,6 +130,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Sign out
   const signOut = async () => {
+    if (!supabase) {
+      // If supabase not available, just reset local state
+      setSession(null);
+      setUser(null);
+      setDatabaseBackend("local");
+      setGlobalTestMode(true);
+      return;
+    }
+
     setIsLoading(true);
     const { error } = await supabase.auth.signOut();
     setIsLoading(false);
@@ -115,9 +150,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Sign in with Google OAuth
   const signInWithGoogle = async () => {
+    if (!supabase) {
+      throw new Error(
+        "Authentication is not available. Supabase client not initialized.",
+      );
+    }
+
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
         redirectTo: `${window.location.origin}/`,
       },

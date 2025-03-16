@@ -7,13 +7,11 @@ export const SignInButton = ({ showLabel = true }: { showLabel?: boolean }) => {
   return (
     <div className="flex items-center gap-2">
       {showLabel && (
-        <span className="text-xs text-muted-foreground mr-2">
-          Demo Mode
-        </span>
+        <span className="text-xs text-muted-foreground mr-2">Demo Mode</span>
       )}
-      <Button 
-        onClick={signInWithGoogle} 
-        variant="default" 
+      <Button
+        onClick={signInWithGoogle}
+        variant="default"
         disabled={isLoading}
         className="flex items-center gap-2"
       >
@@ -43,4 +41,4 @@ export const SignInButton = ({ showLabel = true }: { showLabel?: boolean }) => {
       </Button>
     </div>
   );
-}; 
+};

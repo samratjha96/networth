@@ -7,7 +7,7 @@ import { useDatabase } from "@/lib/database-context";
 export const Header = () => {
   const { user, signOut } = useAuth();
   const { isTestMode, toggleTestMode } = useDatabase();
-  
+
   return (
     <div className="flex justify-between items-center">
       <div className="flex flex-col">
@@ -18,14 +18,12 @@ export const Header = () => {
           Your all-seeing financial guardian
         </p>
       </div>
-      
+
       <div className="flex items-center gap-4">
         {user ? (
           // Authenticated user view
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {user.email}
-            </span>
+            <span className="text-sm text-muted-foreground">{user.email}</span>
             <Button variant="outline" size="sm" onClick={signOut}>
               Sign out
             </Button>
@@ -34,10 +32,10 @@ export const Header = () => {
           // Demo mode view with sign in button
           <SignInButton />
         )}
-        
+
         {/* Only show test mode toggle for authenticated users */}
         {user && <TestModeToggle />}
       </div>
     </div>
   );
-}; 
+};
