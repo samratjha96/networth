@@ -1,6 +1,5 @@
 import { useAuth } from "./AuthProvider";
 import { Button } from "./ui/button";
-import { TestModeToggle } from "./TestModeToggle";
 import { SignInDialog } from "./SignInDialog";
 import { useDatabase } from "@/lib/database-context";
 
@@ -8,9 +7,12 @@ export const Header = () => {
   const { user, signOut, isLoading } = useAuth();
 
   const handleSignOut = async () => {
-    await signOut();
-    // Refresh the page after signing out
-    window.location.reload();
+    try {
+      await signOut();
+      window.location.reload();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   return (
@@ -31,8 +33,13 @@ export const Header = () => {
           // Authenticated user view
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{user.email}</span>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              Sign out
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing out..." : "Sign out"}
             </Button>
           </div>
         ) : (
@@ -42,9 +49,6 @@ export const Header = () => {
             <SignInDialog />
           </div>
         )}
-
-        {/* Only show test mode toggle for authenticated users */}
-        {!isLoading && user && <TestModeToggle />}
       </div>
     </div>
   );

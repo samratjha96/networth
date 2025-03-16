@@ -3,19 +3,17 @@ import { Account } from "@/types";
 import { useDatabase } from "@/lib/database-context";
 
 export function useAccounts() {
-  const { db } = useDatabase();
+  const { db, currentBackend, initialized } = useDatabase();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Load accounts on mount
-  useEffect(() => {
-    loadAccounts();
-  }, []);
+  const loadAccounts = useCallback(async () => {
+    if (!initialized) return;
 
-  const loadAccounts = async () => {
     try {
       setIsLoading(true);
+      setAccounts([]); // Clear accounts while loading new ones
       const loadedAccounts = await db.getAllAccounts();
       setAccounts(loadedAccounts);
       setError(null);
@@ -23,13 +21,21 @@ export function useAccounts() {
       setError(
         err instanceof Error ? err : new Error("Failed to load accounts"),
       );
+      setAccounts([]); // Clear accounts on error
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [db, initialized]);
+
+  // Load accounts when database is initialized or backend changes
+  useEffect(() => {
+    loadAccounts();
+  }, [loadAccounts, currentBackend, initialized]);
 
   const addAccount = useCallback(
     async (newAccount: Omit<Account, "id">) => {
+      if (!initialized) throw new Error("Database not initialized");
+
       try {
         const account = await db.insertAccount(newAccount);
         setAccounts((prev) => [...prev, account]);
@@ -42,11 +48,13 @@ export function useAccounts() {
         throw error;
       }
     },
-    [db],
+    [db, initialized],
   );
 
   const updateAccount = useCallback(
     async (account: Account) => {
+      if (!initialized) throw new Error("Database not initialized");
+
       try {
         await db.updateAccount(account);
         setAccounts((prev) =>
@@ -60,11 +68,13 @@ export function useAccounts() {
         throw error;
       }
     },
-    [db],
+    [db, initialized],
   );
 
   const deleteAccount = useCallback(
     async (id: string) => {
+      if (!initialized) throw new Error("Database not initialized");
+
       try {
         await db.deleteAccount(id);
         setAccounts((prev) => prev.filter((a) => a.id !== id));
@@ -76,7 +86,7 @@ export function useAccounts() {
         throw error;
       }
     },
-    [db],
+    [db, initialized],
   );
 
   return {

@@ -3,15 +3,17 @@ import { NetworthHistory } from "@/types";
 import { useDatabase } from "@/lib/database-context";
 
 export function useNetworthHistory(days: number, refreshDependency?: unknown) {
-  const { db, isTestMode } = useDatabase();
+  const { db, currentBackend, initialized } = useDatabase();
   const [data, setData] = useState<NetworthHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchHistory = useCallback(async () => {
+    if (!initialized) return;
+
     try {
       setIsLoading(true);
-      // Get history data for the specified time period
+      setData([]); // Clear data while loading new history
       const history = await db.getNetworthHistory(days);
       setData(history);
       setError(null);
@@ -19,14 +21,15 @@ export function useNetworthHistory(days: number, refreshDependency?: unknown) {
       setError(
         err instanceof Error ? err : new Error("Failed to fetch history"),
       );
+      setData([]); // Clear data on error
     } finally {
       setIsLoading(false);
     }
-  }, [days, db]);
+  }, [days, db, initialized]);
 
   useEffect(() => {
     fetchHistory();
-  }, [fetchHistory, refreshDependency]);
+  }, [fetchHistory, currentBackend, initialized, refreshDependency]);
 
   return {
     data,

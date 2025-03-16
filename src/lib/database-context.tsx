@@ -12,7 +12,7 @@ import {
   setGlobalTestMode,
   isGlobalTestMode,
 } from "./database-factory";
-import type { DatabaseProvider as DbProvider } from "./types";
+import type { DatabaseProvider as DbProvider } from "@/types";
 import type { DatabaseBackend } from "./database-factory";
 
 interface DatabaseContextType {
@@ -28,7 +28,6 @@ const DatabaseContext = createContext<DatabaseContextType | undefined>(
 );
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
-  // Initialize state from localStorage/factory
   const [db, setDb] = useState(getDatabase());
   const [currentBackend, setCurrentBackend] = useState(getDatabaseBackend());
   const [isTestMode, setIsTestMode] = useState(isGlobalTestMode());
@@ -36,70 +35,56 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
 
   // Initialize test mode on the actual database instance to match global setting
   useEffect(() => {
-    // When component mounts, ensure db instance has the correct test mode
     if (isGlobalTestMode() !== db.isTestModeEnabled()) {
       db.setTestMode(isGlobalTestMode());
       setIsTestMode(isGlobalTestMode());
     }
-  }, []);
+  }, [db]);
 
-  // Check if the database backend has changed and update accordingly
+  // Combined effect for handling backend changes and initialization
   useEffect(() => {
-    const newBackend = getDatabaseBackend();
-    if (newBackend !== currentBackend) {
-      setCurrentBackend(newBackend);
-      setDb(getDatabase());
-      setInitialized(false); // Reset initialized state when backend changes
-    }
-  }, [currentBackend]);
+    const initializeDatabase = async () => {
+      const newBackend = getDatabaseBackend();
 
-  // Initialize database and sync test mode state on mount or when db changes
-  useEffect(() => {
-    const initDb = async () => {
-      if (!initialized) {
-        await db.initialize();
-        // Get initial test mode state
+      // If backend changed, update the database instance
+      if (newBackend !== currentBackend) {
+        setInitialized(false);
+        setCurrentBackend(newBackend);
+        const newDb = getDatabase();
+        setDb(newDb);
+
+        // Initialize the new database instance
+        await newDb.initialize();
         setIsTestMode(isGlobalTestMode());
-
-        // Run initial synchronization
+        await newDb.synchronizeNetworthHistory();
+        setInitialized(true);
+      } else if (!initialized) {
+        // If backend hasn't changed but we're not initialized, initialize current db
+        await db.initialize();
+        setIsTestMode(isGlobalTestMode());
         await db.synchronizeNetworthHistory();
-
         setInitialized(true);
       }
     };
 
-    initDb();
-
-    // Cleanup on unmount
-    return () => {
-      // Close database connection if needed
-    };
-  }, [db, initialized]);
+    initializeDatabase();
+  }, [currentBackend, db, initialized]);
 
   const toggleTestMode = async () => {
+    setInitialized(false);
     const newTestMode = !isTestMode;
 
-    // First update the database instance
+    // Update the database instance
     db.setTestMode(newTestMode);
-
-    // Then update the global factory state
     setGlobalTestMode(newTestMode);
-
-    // Update the local state
     setIsTestMode(newTestMode);
 
-    // Get the possibly new database instance
+    // Get and initialize the new database instance
     const newDb = getDatabase();
-    if (newDb !== db) {
-      setDb(newDb);
-      await newDb.initialize();
-    }
-
-    // Re-sync history data when test mode changes
+    setDb(newDb);
+    await newDb.initialize();
     await newDb.synchronizeNetworthHistory();
-
-    // Force page reload to refresh all components with new data
-    window.location.reload();
+    setInitialized(true);
   };
 
   return (
