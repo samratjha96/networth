@@ -1,34 +1,47 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getDatabase } from './database-factory';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { getDatabase, getDatabaseBackend } from './database-factory';
 import type { DatabaseProvider as DbProvider } from './types';
+import type { DatabaseBackend } from './database-factory';
 
 interface DatabaseContextType {
   db: DbProvider;
   isTestMode: boolean;
   toggleTestMode: () => Promise<void>;
   initialized: boolean;
+  currentBackend: DatabaseBackend;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
-  // Use a simple state with the function call to get the current DB
-  // No need to track the DB as state since the factory handles the switching
-  const db = getDatabase();
+  const [db, setDb] = useState(getDatabase());
+  const [currentBackend, setCurrentBackend] = useState(getDatabaseBackend());
   const [isTestMode, setIsTestMode] = useState(false);
   const [initialized, setInitialized] = useState(false);
   
-  // Initialize database and sync test mode state on mount
+  // Check if the database backend has changed and update accordingly
+  useEffect(() => {
+    const newBackend = getDatabaseBackend();
+    if (newBackend !== currentBackend) {
+      setCurrentBackend(newBackend);
+      setDb(getDatabase());
+      setInitialized(false); // Reset initialized state when backend changes
+    }
+  }, [currentBackend]);
+  
+  // Initialize database and sync test mode state on mount or when db changes
   useEffect(() => {
     const initDb = async () => {
-      await db.initialize();
-      // Get initial test mode state
-      setIsTestMode(db.isTestModeEnabled());
-      
-      // Run initial synchronization
-      await db.synchronizeNetworthHistory();
-      
-      setInitialized(true);
+      if (!initialized) {
+        await db.initialize();
+        // Get initial test mode state
+        setIsTestMode(db.isTestModeEnabled());
+        
+        // Run initial synchronization
+        await db.synchronizeNetworthHistory();
+        
+        setInitialized(true);
+      }
     };
     
     initDb();
@@ -37,7 +50,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     return () => {
       // Close database connection if needed
     };
-  }, [db]);
+  }, [db, initialized]);
   
   const toggleTestMode = async () => {
     const newTestMode = !isTestMode;
@@ -52,7 +65,13 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   };
   
   return (
-    <DatabaseContext.Provider value={{ db, isTestMode, toggleTestMode, initialized }}>
+    <DatabaseContext.Provider value={{ 
+      db, 
+      isTestMode, 
+      toggleTestMode, 
+      initialized,
+      currentBackend 
+    }}>
       {children}
     </DatabaseContext.Provider>
   );

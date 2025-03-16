@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseDb } from '@/lib/supabase-database';
-import { databaseFactory } from '@/lib/database-factory';
+import { setDatabaseBackend } from '@/lib/database-factory';
 
 // Initialize Supabase client using Vite's environment variable approach
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -39,10 +39,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         supabaseDb.setUserId(session.user.id);
         
         // Switch to Supabase backend
-        databaseFactory.setBackend('supabase');
+        setDatabaseBackend('supabase');
       } else {
         // No user, fall back to local storage
-        databaseFactory.setBackend('local');
+        setDatabaseBackend('local');
       }
       
       setIsLoading(false);
@@ -57,9 +57,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Update user ID in database when auth state changes
         if (session?.user) {
           supabaseDb.setUserId(session.user.id);
-          databaseFactory.setBackend('supabase');
+          setDatabaseBackend('supabase');
         } else {
-          databaseFactory.setBackend('local');
+          setDatabaseBackend('local');
         }
         
         setIsLoading(false);
