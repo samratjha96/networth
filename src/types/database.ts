@@ -20,18 +20,6 @@ export interface DatabaseProvider extends DatabaseOperations {
   synchronizeNetworthHistory(): Promise<void>;
 }
 
-export interface DatabaseProviderAdapter {
-  // Database methods
-  initialize: () => Promise<void>;
-  addAccount: (account: Account) => Promise<Account>;
-  getAccounts: () => Promise<Account[]>;
-  updateAccount: (account: Account) => Promise<void>;
-  deleteAccount: (id: string) => Promise<void>;
-  getNetworthHistory: (days?: number) => Promise<NetworthHistory[]>;
-  addNetworthSnapshot: (value: number) => Promise<void>;
-  synchronizeNetworthHistory: () => Promise<void>;
-}
-
 export interface DatabaseState {
   // State
   currentBackend: "local" | "supabase";
