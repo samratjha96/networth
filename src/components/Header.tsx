@@ -1,10 +1,10 @@
 import { Button } from "./ui/button";
 import { SignInDialog } from "./SignInDialog";
 import { useCallback } from "react";
-import { useAuthStore } from "@/store/auth-store";
+import { useAuth } from "./AuthProvider";
 
 export const Header = () => {
-  const { user, signOut, isLoading } = useAuthStore();
+  const { user, signOut, isLoading } = useAuth();
 
   const handleSignOut = useCallback(async () => {
     try {

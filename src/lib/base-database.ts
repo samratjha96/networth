@@ -6,7 +6,6 @@ import { Account, DatabaseProvider, NetworthHistory } from "@/types";
  */
 export abstract class BaseDatabase implements DatabaseProvider {
   protected isInitialized: boolean = false;
-  protected testMode: boolean = false;
 
   // Abstract methods that must be implemented by subclasses
   abstract initialize(): Promise<void>;
@@ -22,16 +21,6 @@ export abstract class BaseDatabase implements DatabaseProvider {
   // Networth history operations
   abstract getNetworthHistory(days: number): Promise<NetworthHistory[]>;
   abstract addNetworthSnapshot(value: number): Promise<void>;
-
-  // Test mode operations - may be overridden by subclasses if needed
-  isTestModeEnabled(): boolean {
-    return this.testMode;
-  }
-
-  setTestMode(enabled: boolean): void {
-    this.testMode = enabled;
-    console.log(`Test mode ${enabled ? "enabled" : "disabled"}`);
-  }
 
   // Common functionality
   async synchronizeNetworthHistory(): Promise<void> {

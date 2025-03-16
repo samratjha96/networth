@@ -1,24 +1,27 @@
 import { useState, useEffect, useCallback } from "react";
 import { NetworthHistory } from "@/types";
-import { useAuthStore } from "@/store/auth-store";
 import { useDatabase } from "@/hooks/use-database";
+import { useAuth } from "@/components/AuthProvider";
 
 export function useNetworthHistory(days: number, refreshDependency?: unknown) {
-  // Destructure only what we need from hooks
-  const { db } = useDatabase();
-  const { user, isLoading: isAuthLoading, databaseMode } = useAuthStore();
+  // Use auth from AuthProvider and simplified database hook
+  const { db, backendType } = useDatabase();
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   const [data, setData] = useState<NetworthHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchHistory = useCallback(async () => {
-    // Don't try to fetch history if auth is still loading or user isn't set
-    if (isAuthLoading || (!user && databaseMode === "supabase")) {
+    // Only wait for auth if using Supabase
+    const isUsingSupabase = backendType === "supabase";
+
+    // Don't try to fetch history if auth is still loading or user isn't set when using Supabase
+    if (isAuthLoading || (!user && isUsingSupabase)) {
       console.debug("Skipping networth history fetch - waiting for auth", {
         isAuthLoading,
         hasUser: !!user,
-        mode: databaseMode,
+        backendType,
         days,
       });
       return;
@@ -26,12 +29,20 @@ export function useNetworthHistory(days: number, refreshDependency?: unknown) {
 
     console.debug("Fetching networth history:", {
       days,
-      mode: databaseMode,
+      backendType,
+      userId: user?.id,
     });
     try {
       setIsLoading(true);
       const history = await db.getNetworthHistory(days);
-      console.debug("Fetched history:", { length: history?.length ?? 0 });
+      console.debug("Fetched history:", {
+        length: history?.length ?? 0,
+        firstValue: history && history.length > 0 ? history[0].value : null,
+        lastValue:
+          history && history.length > 0
+            ? history[history.length - 1].value
+            : null,
+      });
 
       // Only update state if the data is valid
       if (history) {
@@ -50,11 +61,11 @@ export function useNetworthHistory(days: number, refreshDependency?: unknown) {
     } finally {
       setIsLoading(false);
     }
-  }, [days, db, databaseMode, user, isAuthLoading]);
+  }, [days, db, backendType, user, isAuthLoading]);
 
   useEffect(() => {
     fetchHistory();
-  }, [fetchHistory, databaseMode, refreshDependency, user]);
+  }, [fetchHistory, backendType, refreshDependency, user]);
 
   // Compute a value to pass to chart components
   const chartData = data.map((item) => ({

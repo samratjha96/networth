@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseDb } from "@/lib/supabase-database";
-import { db as mockDb } from "@/lib/database";
-import { forceMockDatabaseForDevelopment } from "@/lib/database-factory";
 import { useDatabaseStore } from "./database-store";
 
 // Initialize Supabase client using Vite's environment variable approach
@@ -40,12 +37,6 @@ type AuthActions = {
   handleAuthStateChange: (session: Session | null) => Promise<void>;
 };
 
-// Initialize mock data when using local storage
-const initializeMockData = async () => {
-  mockDb.setTestMode(true);
-  await mockDb.initialize();
-};
-
 export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // Initial state
   session: null,
@@ -57,13 +48,13 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // Set database mode (local or supabase)
   setDatabaseMode: async (mode: DatabaseMode, userId?: string) => {
     set({ isLoading: true });
+    const dbStore = useDatabaseStore.getState();
 
     if (mode === "local") {
       // Switch to local storage mode
-      forceMockDatabaseForDevelopment(true);
-      await initializeMockData();
+      dbStore.setBackend("local");
 
-      // Update auth state
+      // Update auth state to reflect no user
       set({
         databaseMode: "local",
         session: null,
@@ -75,14 +66,13 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         throw new Error("User ID is required when setting Supabase mode");
       }
 
-      forceMockDatabaseForDevelopment(false);
+      // Use our new setUserId method which handles everything
+      await dbStore.setUserId(userId);
 
-      // Keep auth state (already set by caller)
+      // Update auth state to reflect the database mode
       set({ databaseMode: "supabase" });
     }
 
-    // Refresh the database store
-    await useDatabaseStore.getState().refreshDatabase();
     set({ isLoading: false });
   },
 

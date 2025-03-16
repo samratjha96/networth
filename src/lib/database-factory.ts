@@ -5,53 +5,64 @@ import { supabaseDb, useSupabase } from "@/lib/supabase-database";
 // Database backend types
 export type DatabaseBackend = "local" | "supabase";
 
-// Check if user is signed in to Supabase
-const isUserAuthenticated = (): boolean => {
-  if (!supabaseDb) return false;
-  return supabaseDb.hasUserId();
-};
-
-// Track the current backend state
-let currentBackend: DatabaseBackend = "local"; // Start with local until authentication is confirmed
-
-// Get the current database provider based on authentication state
-export function getDatabase(): DatabaseProvider {
-  // Set the current backend based on authentication state
-  currentBackend = isUserAuthenticated() && useSupabase ? "supabase" : "local";
-
-  // Return the appropriate database provider
-  if (currentBackend === "supabase" && supabaseDb) {
+/**
+ * Get a database instance for a specific backend type
+ * @param backend The backend type to get an instance for
+ * @returns The database provider instance for the specified backend
+ */
+export function getDatabaseInstance(
+  backend: DatabaseBackend,
+): DatabaseProvider {
+  if (backend === "supabase" && supabaseDb) {
+    console.debug("Using Supabase database from getDatabaseInstance");
     return supabaseDb;
   }
 
-  // Fall back to mock database when not authenticated or supabaseDb is unavailable
+  console.debug("Using local mock database from getDatabaseInstance");
   return mockDb;
 }
 
-// Get the current backend
-export function getDatabaseBackend(): DatabaseBackend {
-  // Always return the current actual state, which is based on authentication
-  return isUserAuthenticated() && useSupabase ? "supabase" : "local";
+/**
+ * @deprecated Use the database store instead of this function
+ * The function exists for backward compatibility only
+ */
+export function getDatabase(): DatabaseProvider {
+  console.warn("getDatabase is deprecated, use the useDatabaseStore instead");
+  // Import dynamically to avoid circular dependency
+  const { useDatabaseStore } = require("@/store/database-store");
+  return useDatabaseStore.getState().db;
 }
 
-// For development purposes only: force using local storage
-// This should not be used in production scenarios
-export function forceMockDatabaseForDevelopment(enabled: boolean): void {
-  if (enabled) {
-    console.warn(
-      "⚠️ DEVELOPMENT MODE: Forcing use of mock database regardless of auth state",
-    );
-    currentBackend = "local";
-  } else {
-    // Reset to the correct state based on authentication
-    currentBackend =
-      isUserAuthenticated() && useSupabase ? "supabase" : "local";
-  }
-
-  // Force a dispatch of a custom event to help components react to the change
-  window.dispatchEvent(
-    new CustomEvent("database-backend-changed", {
-      detail: { backend: currentBackend },
-    }),
+/**
+ * @deprecated Use the database store instead of this function
+ * The function exists for backward compatibility only
+ */
+export function getDatabaseBackend(): DatabaseBackend {
+  console.warn(
+    "getDatabaseBackend is deprecated, use the useDatabaseStore instead",
   );
+  // Import dynamically to avoid circular dependency
+  const { useDatabaseStore } = require("@/store/database-store");
+  return useDatabaseStore.getState().backend;
+}
+
+/**
+ * @deprecated Use useDatabaseStore.setBackend("local") instead
+ */
+export function forceMockDatabaseForDevelopment(enabled: boolean): void {
+  console.warn(
+    "forceMockDatabaseForDevelopment is deprecated, use useDatabaseStore.setBackend instead",
+  );
+
+  // Import dynamically to avoid circular dependency
+  const { useDatabaseStore } = require("@/store/database-store");
+
+  if (enabled) {
+    useDatabaseStore.getState().setBackend("local");
+  } else {
+    // Get current user ID
+    const userId = supabaseDb?.hasUserId() ? "has-user" : null;
+    const backend = userId && useSupabase ? "supabase" : "local";
+    useDatabaseStore.getState().setBackend(backend);
+  }
 }

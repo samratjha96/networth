@@ -1,18 +1,23 @@
 import { useDatabaseStore } from "@/store/database-store";
 import type { DatabaseProvider } from "@/types";
-import { useAuthStore } from "@/store/auth-store";
+
+// Simple enum for database backend type
+export type BackendType = "local" | "supabase";
 
 export function useDatabase() {
-  // Select only the database instance from store
-  const db = useDatabaseStore((state) => state.db) as DatabaseProvider;
-  const toggleTestMode = useDatabaseStore((state) => state.toggleTestMode);
-  const refreshDatabase = useDatabaseStore((state) => state.refreshDatabase);
-  const { databaseMode } = useAuthStore();
+  // Get only what we need from database store
+  const db = useDatabaseStore((state) => state.db);
+  const backend = useDatabaseStore((state) => state.backend);
+  const setUserId = useDatabaseStore((state) => state.setUserId);
 
   return {
+    // Core database access
     db,
-    toggleTestMode,
-    refreshDatabase,
-    databaseMode,
+
+    // Simple status properties
+    backendType: backend as BackendType,
+
+    // Essential action
+    setUserId,
   };
 }

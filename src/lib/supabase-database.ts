@@ -106,7 +106,16 @@ export class SupabaseDatabase implements DatabaseProvider {
 
   // Set the current user ID - called from outside
   setUserId(userId: string | null): void {
-    this.currentUserId = userId;
+    // Check if user ID has changed
+    if (this.currentUserId !== userId) {
+      console.debug(`Changing user ID from ${this.currentUserId} to ${userId}`);
+      this.currentUserId = userId;
+
+      // Reset initialized state so we reinitialize with the new user
+      if (userId !== null) {
+        this.isInitialized = false;
+      }
+    }
   }
 
   // Check if a user ID is available
@@ -596,10 +605,18 @@ export class SupabaseDatabase implements DatabaseProvider {
         );
         return;
       }
+
+      console.log(
+        "Synchronizing networth history for user:",
+        this.currentUserId,
+      );
       const currentNetworth = await this.calculateCurrentNetworth();
+      console.log("Current networth calculated:", currentNetworth);
       await this.addNetworthSnapshot(currentNetworth);
+      console.log("Networth snapshot added successfully");
     } catch (error) {
       console.error("Error in synchronizeNetworthHistory:", error);
+      // Don't rethrow the error to prevent disrupting the user experience
     }
   }
 

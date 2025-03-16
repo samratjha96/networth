@@ -2,13 +2,13 @@ import React from "react";
 import { NetWorthChart } from "./NetWorthChart";
 import { useDatabase } from "@/hooks/use-database";
 import { useNetworthHistory } from "@/hooks/use-networth-history";
-import { CurrencyCode, TimeRange } from "@/types";
+import { TimeRange } from "@/types";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useAuth } from "@/components/AuthProvider";
 
 export function NetWorthChartContainer() {
   const [timeRange, setTimeRange] = React.useState<TimeRange>(7); // Default to 1W
-  const { isTestMode, db, currentBackend } = useDatabase();
+  const { db, backendType } = useDatabase();
   const { user, isLoading: isAuthLoading } = useAuth();
   const { data } = useNetworthHistory(timeRange);
   const { accounts, isLoading: accountsLoading } = useAccounts();
@@ -30,13 +30,13 @@ export function NetWorthChartContainer() {
       !isAuthLoading &&
       !accountsLoading &&
       accounts.length > 0 &&
-      (user || currentBackend !== "supabase");
+      (user || backendType !== "supabase");
 
     if (shouldSync) {
       console.debug("Synchronizing networth history", {
         accountCount: accounts.length,
         currentNetWorth,
-        backend: currentBackend,
+        backend: backendType,
       });
       db.synchronizeNetworthHistory();
     }
@@ -46,7 +46,7 @@ export function NetWorthChartContainer() {
     db,
     isAuthLoading,
     user,
-    currentBackend,
+    backendType,
     currentNetWorth,
   ]);
 

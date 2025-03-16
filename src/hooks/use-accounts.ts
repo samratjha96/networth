@@ -4,7 +4,7 @@ import { Account } from "@/types";
 import { useAuthStore } from "@/store/auth-store";
 
 export function useAccounts() {
-  const { db, databaseMode } = useDatabase();
+  const { db, backendType } = useDatabase();
   const { user, isLoading: isAuthLoading } = useAuthStore();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -12,18 +12,18 @@ export function useAccounts() {
 
   const loadAccounts = useCallback(async () => {
     // Only skip loading if auth is still loading AND we're using Supabase
-    if (isAuthLoading && databaseMode === "supabase") {
+    if (isAuthLoading && backendType === "supabase") {
       console.debug("Skipping account load - waiting for auth", {
         isAuthLoading,
         hasUser: !!user,
-        mode: databaseMode,
+        mode: backendType,
       });
       return;
     }
 
     try {
       setIsLoading(true);
-      console.debug("Loading accounts with mode:", databaseMode);
+      console.debug("Loading accounts with mode:", backendType);
       const loadedAccounts = await db.getAllAccounts();
       console.debug(`Loaded ${loadedAccounts.length} accounts`);
 
@@ -38,12 +38,12 @@ export function useAccounts() {
     } finally {
       setIsLoading(false);
     }
-  }, [db, databaseMode, isAuthLoading, user]);
+  }, [db, backendType, isAuthLoading, user]);
 
   // Load accounts when database mode changes or auth state changes
   useEffect(() => {
     loadAccounts();
-  }, [loadAccounts, databaseMode, user]);
+  }, [loadAccounts, backendType, user]);
 
   // Function to add a new account
   const addAccount = useCallback(

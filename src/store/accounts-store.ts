@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { Account } from "@/types";
 import { useDatabaseStore } from "./database-store";
+import { useAuth } from "@/components/AuthProvider";
+import { useEffect } from "react";
 
 interface AccountsState {
   // State
@@ -33,7 +35,9 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
       try {
         set({ isLoading: true });
         const db = getDb();
+        console.debug("Loading accounts from database");
         const accounts = await db.getAllAccounts();
+        console.debug(`Loaded ${accounts.length} accounts`);
         set({ accounts, isLoading: false, error: null });
       } catch (err) {
         console.error("Error loading accounts:", err);
@@ -104,3 +108,15 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
     },
   };
 });
+
+// Hook to auto-reload accounts when user changes
+export function useAccountsAutoReload() {
+  const { user } = useAuth();
+  const loadAccounts = useAccountsStore((state) => state.loadAccounts);
+
+  useEffect(() => {
+    // Reload accounts whenever the user changes
+    console.debug("User changed, reloading accounts");
+    loadAccounts();
+  }, [user, loadAccounts]);
+}

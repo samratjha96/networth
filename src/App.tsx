@@ -4,20 +4,23 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import { AuthProvider } from "@/components/AuthProvider";
-import { useEffect } from "react";
-import { useAuthStore } from "@/store/auth-store";
+import { AppProvider } from "@/components/AppProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { DebugAuthStatus } from "@/components/DebugAuthStatus";
 
 const queryClient = new QueryClient();
 
-// Initialize authentication when the app starts
+// App content with authentication awareness
 function AppContent() {
-  const initialize = useAuthStore((state) => state.initialize);
+  const { isLoading } = useAuth();
 
-  // Initialize auth once when app mounts
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,6 +31,7 @@ function AppContent() {
           <Route path="/" element={<Index />} />
         </Routes>
       </BrowserRouter>
+      <DebugAuthStatus />
     </div>
   );
 }
@@ -35,9 +39,9 @@ function AppContent() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
+      <AppProvider>
         <AppContent />
-      </AuthProvider>
+      </AppProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

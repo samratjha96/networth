@@ -7,18 +7,33 @@ import { AddAccountDialog } from "./AddAccountDialog";
 import { Button } from "@/components/ui/button";
 import { getAccountColor } from "@/lib/utils";
 import { AccountType } from "@/types";
-import { useAccountsStore } from "@/store/accounts-store";
+import {
+  useAccountsStore,
+  useAccountsAutoReload,
+} from "@/store/accounts-store";
 import { useAccountDialogStore } from "@/store/account-dialog-store";
+import { useDatabase } from "@/hooks/use-database";
+import { useAuth } from "@/components/AuthProvider";
 
 export function AccountsList() {
   const [view, setView] = useState<"assets" | "liabilities">("assets");
   const { accounts, loadAccounts, isLoading } = useAccountsStore();
   const { openAddDialog } = useAccountDialogStore();
+  const { backendType } = useDatabase();
+  const { user } = useAuth();
 
-  // Load accounts when component mounts
+  // Use the auto-reload hook to ensure accounts are loaded when the user changes
+  useAccountsAutoReload();
+
+  // Load accounts when component mounts or backend/user changes
   useEffect(() => {
+    console.debug("Loading accounts - backend or user changed", {
+      backendType,
+      userId: user?.id,
+      accountsCount: accounts.length,
+    });
     loadAccounts();
-  }, [loadAccounts]);
+  }, [loadAccounts, backendType, user]);
 
   // No need for dialog open state or account to edit - all managed by the store now
 

@@ -1,48 +1,75 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { getDatabase } from "@/lib/database-factory";
+import { DatabaseBackend, getDatabaseInstance } from "@/lib/database-factory";
 import { DatabaseProvider } from "@/types";
+import { supabaseDb, useSupabase } from "@/lib/supabase-database";
+import { db as mockDb } from "@/lib/database";
 
-// Simple focused store that purely manages database operations
+// Extended type for database store with backend state
 type DatabaseState = {
   // Core state
+  backend: DatabaseBackend;
   db: DatabaseProvider;
+
+  // Backend selection
+  setBackend: (backend: DatabaseBackend) => void;
 
   // Actions
   refreshDatabase: () => Promise<void>;
-  toggleTestMode: () => Promise<void>;
+
+  // Auth related helpers
+  setUserId: (userId: string | null) => Promise<void>;
 };
 
 export const useDatabaseStore = create<DatabaseState>()(
   devtools(
     (set, get) => ({
-      // Database instance is the only state we need
-      db: getDatabase(),
+      // Initial state - start with local backend
+      backend: "local",
+      db: mockDb,
+
+      // Set which backend to use
+      setBackend: (backend: DatabaseBackend) => {
+        const db = backend === "supabase" && supabaseDb ? supabaseDb : mockDb;
+        console.log(`Setting database backend to ${backend}`);
+
+        set({ backend, db }, false, `setBackend_${backend}`);
+      },
+
+      // Set user ID and switch to appropriate backend
+      setUserId: async (userId: string | null) => {
+        // Always update the user ID in Supabase provider
+        if (supabaseDb) {
+          supabaseDb.setUserId(userId);
+        }
+
+        // Determine appropriate backend
+        const shouldUseSupabase = userId !== null && useSupabase;
+        const newBackend: DatabaseBackend = shouldUseSupabase
+          ? "supabase"
+          : "local";
+
+        // Update backend if changed
+        if (newBackend !== get().backend) {
+          get().setBackend(newBackend);
+        }
+
+        // Refresh to update data
+        await get().refreshDatabase();
+      },
 
       // Refresh database instance
       refreshDatabase: async () => {
-        // Get fresh database instance
-        const db = getDatabase();
+        // Get the current backend and instance
+        const { backend } = get();
+        const db = getDatabaseInstance(backend);
 
-        // Update the store
+        // Update the store with fresh instance
         set({ db }, false, "refreshDatabase");
 
-        // Initialize
+        // Initialize and synchronize
         await db.initialize();
         await db.synchronizeNetworthHistory();
-      },
-
-      // Toggle test mode
-      toggleTestMode: async () => {
-        const { db } = get();
-        const currentTestMode = db.isTestModeEnabled();
-        const newTestMode = !currentTestMode;
-
-        // Update test mode in database instance
-        db.setTestMode(newTestMode);
-
-        // Refresh the database to get the new test mode database
-        await get().refreshDatabase();
       },
     }),
     { name: "database-store" },

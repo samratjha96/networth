@@ -133,8 +133,6 @@ export interface DatabaseProvider extends DatabaseOperations {
   initialize(): Promise<void>;
   close(): Promise<void>;
   synchronizeNetworthHistory(): Promise<void>;
-  isTestModeEnabled(): boolean;
-  setTestMode(enabled: boolean): void;
 }
 
 // Supabase Database Types
@@ -333,22 +331,16 @@ export interface DatabaseProviderAdapter {
   getNetworthHistory: (days?: number) => Promise<NetworthHistory[]>;
   addNetworthSnapshot: (value: number) => Promise<void>;
   synchronizeNetworthHistory: () => Promise<void>;
-
-  // Test mode
-  isTestModeEnabled: () => boolean;
-  setTestMode: (enabled: boolean) => void;
 }
 
 // Database state for Zustand store
 export interface DatabaseState {
   // State
   currentBackend: "local" | "supabase";
-  isTestMode: boolean;
   db: DatabaseProvider;
 
   // Actions
   setBackend: (backend: "local" | "supabase") => Promise<void>;
-  toggleTestMode: () => Promise<void>;
   refreshDatabase: () => Promise<void>;
 
   // Authentication-related helpers
