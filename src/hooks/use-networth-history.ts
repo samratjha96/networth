@@ -1,24 +1,16 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NetworthHistory } from "@/lib/types";
-import { getDatabase } from "@/lib/database-factory";
+import { useDatabase } from "@/lib/database-context";
 
 export function useNetworthHistory(days: number, refreshDependency?: unknown) {
+  const { db, isTestMode } = useDatabase();
   const [data, setData] = useState<NetworthHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Use a ref to store test mode status to avoid re-renders
-  const isTestModeRef = useRef(getDatabase().isTestModeEnabled());
-
   const fetchHistory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const db = getDatabase();
-
-      // Always synchronize history to ensure we have updated data
-      // whether in test mode or not
-      await db.synchronizeNetworthHistory();
-
       // Get history data for the specified time period
       const history = await db.getNetworthHistory(days);
       setData(history);
@@ -28,7 +20,7 @@ export function useNetworthHistory(days: number, refreshDependency?: unknown) {
     } finally {
       setIsLoading(false);
     }
-  }, [days]);
+  }, [days, db]);
 
   useEffect(() => {
     fetchHistory();

@@ -7,14 +7,6 @@ export interface AccountStorage {
   deleteAccount(id: string): Promise<void>;
 }
 
-// Legacy interface for backward compatibility
-export interface SyncAccountStorage {
-  getAccounts(): Account[];
-  addAccount(account: Omit<Account, "id">): Account;
-  updateAccount(account: Account): void;
-  deleteAccount(id: string): void;
-}
-
 export interface NetworthHistory {
   date: string;
   value: number;

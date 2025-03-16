@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   name TEXT NOT NULL,
   type TEXT NOT NULL,
   balance NUMERIC(15, 2) NOT NULL, -- Supports positive and negative values
-  isDebt BOOLEAN NOT NULL DEFAULT FALSE,
-  color TEXT,
+  is_debt BOOLEAN DEFAULT FALSE,
+  currency TEXT NOT NULL DEFAULT 'USD',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

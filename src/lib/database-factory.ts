@@ -11,8 +11,8 @@ export class DatabaseFactory {
   private currentBackend: DatabaseBackend = 'local';
   
   private constructor() {
-    // Check environment variables to determine default backend
-    const useSupabase = process.env.NEXT_PUBLIC_USE_SUPABASE === 'true';
+    // Access Vite environment variables directly
+    const useSupabase = import.meta.env.VITE_USE_SUPABASE === 'true';
     console.log('useSupabase', useSupabase);
     this.currentBackend = useSupabase ? 'supabase' : 'local';
   }

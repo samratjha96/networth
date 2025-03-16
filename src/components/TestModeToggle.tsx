@@ -1,19 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
-import { getDatabase } from "@/lib/database-factory";
 import { useToast } from "@/hooks/use-toast";
+import { useDatabase } from "@/lib/database-context";
 
 export function TestModeToggle() {
   const { toast } = useToast();
-  const isTestMode = getDatabase().isTestModeEnabled();
+  const { isTestMode, toggleTestMode } = useDatabase();
 
-  const handleToggleTestMode = () => {
+  const handleToggleTestMode = async () => {
     try {
-      const db = getDatabase();
-      db.setTestMode(!isTestMode);
-
-      // Force page reload to apply test mode changes
-      window.location.reload();
+      await toggleTestMode();
+      // Note: toggleTestMode already handles the page reload
     } catch (error) {
       toast({
         title: "Error",

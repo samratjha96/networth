@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, useRef } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useNetworthHistory } from "@/hooks/use-networth-history";
 import { useAccountPerformance } from "@/hooks/use-account-performance";
@@ -7,27 +7,17 @@ import { NetWorthChart } from "@/components/NetWorthChart";
 import { AccountsList, Account, CurrencyCode } from "@/components/AccountsList";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { TestModeToggle } from "@/components/TestModeToggle";
-import { getDatabase } from "@/lib/database-factory";
+import { useDatabase } from "@/lib/database-context";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const Index = () => {
   // Default time period for consistency between summary and chart
   const [selectedTimePeriod, setSelectedTimePeriod] = useState(30); // Default to month view
-
-  // Use a ref to track initialization to prevent multiple calls
-  const initializedRef = useRef(false);
+  const { db, isTestMode } = useDatabase();
 
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";
-
-    // Synchronize the networth history with current account data on initial load
-    // Only do this once to prevent infinite updates
-    if (!initializedRef.current) {
-      const db = getDatabase();
-      db.synchronizeNetworthHistory();
-      initializedRef.current = true;
-    }
   }, []);
 
   const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts();
@@ -84,13 +74,12 @@ const Index = () => {
 
   // When accounts change, update the networth snapshot
   useEffect(() => {
-    const db = getDatabase();
     // Only update if we have accounts and not in test mode
-    if (accounts.length > 0 && !db.isTestModeEnabled()) {
+    if (accounts.length > 0 && !isTestMode) {
       // Ensure the current net worth is reflected in history
       db.addNetworthSnapshot(currentNetWorth);
     }
-  }, [accounts, currentNetWorth]);
+  }, [accounts, currentNetWorth, db, isTestMode]);
 
   // Find the value from the exact start of the selected time period
   const previousNetWorth = useMemo(() => {

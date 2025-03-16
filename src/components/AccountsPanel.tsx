@@ -6,7 +6,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import { formatCurrency, accountTypeEmojis } from "@/lib/utils";
+import { formatCurrency, accountTypeEmojis, getAccountColor } from "@/lib/utils";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -108,13 +108,7 @@ export function AccountsPanel({
           </div>
           <div className="p-2.5 space-y-2">
             {accounts.map((account) => {
-              const isNegative = account.balance < 0;
-              const accountColor =
-                isNegative && type === "assets"
-                  ? "text-red-500"
-                  : type === "assets"
-                    ? "text-green-500"
-                    : "text-orange-500";
+              const colors = getAccountColor(account.type as AccountType, account.isDebt, account.balance);
 
               return (
                 <div
@@ -122,11 +116,7 @@ export function AccountsPanel({
                   className={cn(
                     "flex items-center justify-between p-3 border rounded-md bg-card hover:bg-accent/10 transition-colors",
                     "border-l-4",
-                    isNegative && type === "assets"
-                      ? "border-l-red-500/80"
-                      : type === "assets"
-                        ? "border-l-green-500/80"
-                        : "border-l-orange-500/80",
+                    colors.borderColor
                   )}
                 >
                   <div className="flex flex-col min-w-0">
@@ -143,7 +133,7 @@ export function AccountsPanel({
                     </div>
                     <div className="flex items-center mt-1.5">
                       <p
-                        className={`text-base font-medium ${accountColor} truncate`}
+                        className={`text-base font-medium ${colors.textColor} truncate`}
                       >
                         {formatAccountBalance(account)}
                       </p>
