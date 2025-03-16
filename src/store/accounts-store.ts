@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Account } from "@/types";
+import { Account } from "@/types/accounts";
 import { useDatabaseStore } from "./database-store";
 import { useAuth } from "@/components/AuthProvider";
 import { useEffect, useRef } from "react";

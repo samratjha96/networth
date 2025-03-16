@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Account } from "@/types";
+import { Account } from "@/types/accounts";
 import { useAccountsStore } from "./accounts-store";
 
 interface AccountDialogState {

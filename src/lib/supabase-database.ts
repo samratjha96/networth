@@ -1,15 +1,9 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import {
-  Database,
-  Tables,
-  TablesInsert,
-  TablesUpdate,
-  Account,
-  AccountType,
-  CurrencyCode,
-  DatabaseProvider,
-  NetworthHistory,
-} from "@/types";
+import { Database, Tables, TablesInsert, TablesUpdate } from "@/types/supabase";
+import { Account, AccountType } from "@/types/accounts";
+import { CurrencyCode } from "@/types/currency";
+import { DatabaseProvider } from "@/types/database";
+import { NetworthHistory } from "@/types/networth";
 
 // Access environment variables using Vite's import.meta.env approach
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;

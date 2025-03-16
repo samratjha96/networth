@@ -1,4 +1,4 @@
-import { TimeRange } from "@/types";
+import { TimeRange } from "@/types/networth";
 
 /**
  * Format a date string based on the selected time range

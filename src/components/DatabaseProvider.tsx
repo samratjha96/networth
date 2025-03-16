@@ -6,7 +6,7 @@ import {
   ReactNode,
 } from "react";
 import { useDatabaseStore, LS_BACKEND_TYPE_KEY } from "@/store/database-store";
-import { DatabaseProvider as DatabaseProviderType } from "@/types";
+import { DatabaseProvider as DatabaseProviderType } from "@/types/database";
 import { DatabaseBackend } from "@/lib/database-factory";
 
 // Context type

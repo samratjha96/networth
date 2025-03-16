@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "../ui/button";
-import { TimeRange } from "@/types";
+import { TimeRange } from "@/types/networth";
 
 const TIME_RANGES = [
   { label: "1D", days: 1 },

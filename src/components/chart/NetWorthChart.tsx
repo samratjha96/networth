@@ -9,9 +9,9 @@ import {
   YAxis,
   ReferenceDot,
 } from "recharts";
-import { CurrencyCode } from "@/types";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { TimeRange } from "@/types";
+import { CurrencyCode } from "@/types/currency";
+import { useIsMobile } from "@/hooks/ui/use-mobile";
+import { TimeRange } from "@/types/networth";
 import { Info } from "lucide-react";
 import {
   Tooltip as UITooltip,
@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { useTimeRange } from "@/hooks/use-time-range";
+import { useTimeRange } from "@/hooks/networth/use-time-range";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { useNetWorthChart } from "@/hooks/use-net-worth-chart";
 import { formatDateByRange } from "@/lib/date-formatters";

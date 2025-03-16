@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useAdaptiveNetWorthHistory } from "./use-adaptive-networth-history";
-import { TimeRange } from "@/types";
+import { useAdaptiveNetWorthHistory } from "@/hooks/networth/use-adaptive-networth-history";
+import { TimeRange } from "@/types/networth";
 
 // Minimal account interface needed for the chart
 type ChartAccount = {

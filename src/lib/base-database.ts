@@ -1,4 +1,6 @@
-import { Account, DatabaseProvider, NetworthHistory } from "@/types";
+import { Account } from "@/types/accounts";
+import { NetworthHistory } from "@/types/networth";
+import { DatabaseProvider } from "@/types/database";
 
 /**
  * Abstract base class for database implementations

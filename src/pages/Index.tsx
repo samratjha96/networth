@@ -1,16 +1,17 @@
 import { useMemo, useEffect } from "react";
-import { useNetworthHistory } from "@/hooks/use-networth-history";
-import { useAccountPerformance } from "@/hooks/use-account-performance";
+import { useNetworthHistory } from "@/hooks/networth/use-networth-history";
+import { useAccountPerformance } from "@/hooks/accounts/use-account-performance";
 import { NetWorthSummary } from "@/components/NetWorthSummary";
 import { NetWorthChart } from "@/components/chart/NetWorthChart";
 import { AccountsList } from "@/components/AccountsList";
-import { CurrencyCode, TimeRange } from "@/types";
+import { CurrencyCode } from "@/types/currency";
+import { TimeRange } from "@/types/networth";
 import { Header } from "@/components/Header";
 import {
   useAccountsStore,
   useAccountsAutoReload,
 } from "@/store/accounts-store";
-import { useTimeRange } from "@/hooks/use-time-range";
+import { useTimeRange } from "@/hooks/networth/use-time-range";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 

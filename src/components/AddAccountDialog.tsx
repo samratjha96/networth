@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,6 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -14,18 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  AssetType,
-  DebtType,
-  CurrencyCode,
-  CURRENCIES,
-  assetTypes,
-  debtTypes,
-} from "@/types";
+import { AccountType, assetTypes, debtTypes } from "@/types/accounts";
+import { CURRENCIES, CurrencyCode } from "@/types/currency";
 import { useAccountDialogStore } from "@/store/account-dialog-store";
 
 interface AddAccountDialogProps {
@@ -41,12 +35,12 @@ export function AddAccountDialog({
   const { isOpen, accountToEdit, closeDialog, addAccount, editAccount } =
     useAccountDialogStore();
 
-  const [name, setName] = useState("");
-  const [type, setType] = useState<AssetType | DebtType>("Checking");
-  const [balance, setBalance] = useState("");
-  const [currency, setCurrency] = useState<CurrencyCode>("USD");
-  const [isDebt, setIsDebt] = useState(false);
-  const [touched, setTouched] = useState({
+  const [name, setName] = React.useState("");
+  const [type, setType] = React.useState<AccountType>("Checking");
+  const [balance, setBalance] = React.useState("");
+  const [currency, setCurrency] = React.useState<CurrencyCode>("USD");
+  const [isDebt, setIsDebt] = React.useState(false);
+  const [touched, setTouched] = React.useState({
     name: false,
     balance: false,
   });
@@ -175,7 +169,7 @@ export function AddAccountDialog({
             <Label htmlFor="type">Account Type</Label>
             <Select
               value={type}
-              onValueChange={(value) => setType(value as AssetType | DebtType)}
+              onValueChange={(value) => setType(value as AccountType)}
             >
               <SelectTrigger className="bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] focus-visible:shadow-[0_0_0_1px_hsl(var(--primary))]">
                 <SelectValue placeholder="Select account type" />

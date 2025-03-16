@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { Session, User } from "@supabase/supabase-js";
-import { createClient } from "@supabase/supabase-js";
+import { Session, User, createClient } from "@supabase/supabase-js";
 import { useDatabaseStore } from "./database-store";
 
 // Initialize Supabase client using Vite's environment variable approach

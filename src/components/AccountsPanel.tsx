@@ -1,4 +1,5 @@
-import { Account, AccountType, CurrencyCode, CURRENCY_SYMBOLS } from "@/types";
+import { Account, AccountType } from "@/types/accounts";
+import { CurrencyCode, CURRENCY_SYMBOLS } from "@/types/currency";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   PlusCircle,
@@ -10,10 +11,10 @@ import {
   formatCurrency,
   accountTypeEmojis,
   getAccountColor,
+  cn,
 } from "@/lib/utils";
 import { AddAccountDialog } from "@/components/AddAccountDialog";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,

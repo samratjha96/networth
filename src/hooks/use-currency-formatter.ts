@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/lib/utils";
-import { CurrencyCode, CURRENCY_SYMBOLS } from "@/types";
+import { CurrencyCode, CURRENCY_SYMBOLS } from "@/types/currency";
+import { useMemo } from "react";
 
 interface FormattingOptions {
   showSign?: boolean;

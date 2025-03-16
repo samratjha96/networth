@@ -1,6 +1,6 @@
 import React from "react";
 import { formatTooltipDate } from "@/lib/date-formatters";
-import { TimeRange } from "@/types";
+import { TimeRange } from "@/types/networth";
 import { TooltipProps } from "recharts";
 import {
   ValueType,

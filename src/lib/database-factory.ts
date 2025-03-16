@@ -1,4 +1,4 @@
-import { DatabaseProvider } from "@/types";
+import { DatabaseProvider } from "@/types/database";
 import { db as mockDb } from "@/lib/database";
 import { supabaseDb, useSupabase } from "@/lib/supabase-database";
 

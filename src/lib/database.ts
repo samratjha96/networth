@@ -1,4 +1,6 @@
-import { Account, DatabaseProvider, NetworthHistory } from "@/types";
+import { Account } from "@/types/accounts";
+import { DatabaseProvider } from "@/types/database";
+import { NetworthHistory } from "@/types/networth";
 import {
   generateMockAccounts,
   generateMockNetworthHistory,

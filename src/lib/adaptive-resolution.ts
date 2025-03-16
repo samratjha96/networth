@@ -1,4 +1,4 @@
-import { NetWorthDataPoint } from "@/types";
+import { NetWorthDataPoint } from "@/types/networth";
 
 /**
  * Maximum number of data points to display in a chart for optimal performance

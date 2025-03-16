@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
-import { CurrencyCode, TimeRange } from "@/types";
-import { useTimeRange } from "@/hooks/use-time-range";
+import { CurrencyCode } from "@/types/currency";
+import { TimeRange } from "@/types/networth";
+import { useTimeRange } from "@/hooks/networth/use-time-range";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 
 const getPeriodLabel = (days: TimeRange) => {
