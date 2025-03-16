@@ -12,7 +12,9 @@ interface DatabaseContextType {
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
-  const [db] = useState(() => getDatabase());
+  // Use a simple state with the function call to get the current DB
+  // No need to track the DB as state since the factory handles the switching
+  const db = getDatabase();
   const [isTestMode, setIsTestMode] = useState(false);
   const [initialized, setInitialized] = useState(false);
   
@@ -33,8 +35,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     
     // Cleanup on unmount
     return () => {
-      // Note: in a real app, you might want to call db.close() here
-      // But for SPA that runs for the lifetime of the page, this may not be necessary
+      // Close database connection if needed
     };
   }, [db]);
   

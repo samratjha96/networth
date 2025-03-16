@@ -5,52 +5,25 @@ import { supabaseDb } from "@/lib/supabase-database";
 // Database backend types
 export type DatabaseBackend = 'local' | 'supabase';
 
-// Database factory to get the appropriate database implementation
-export class DatabaseFactory {
-  private static instance: DatabaseFactory | null = null;
-  private currentBackend: DatabaseBackend = 'local';
-  
-  private constructor() {
-    // Access Vite environment variables directly
-    const useSupabase = import.meta.env.VITE_USE_SUPABASE === 'true';
-    console.log('useSupabase', useSupabase);
-    this.currentBackend = useSupabase ? 'supabase' : 'local';
-  }
+// Use environment variable to determine the default backend
+const getDefaultBackend = (): DatabaseBackend => 
+  import.meta.env.VITE_USE_SUPABASE === 'true' ? 'supabase' : 'local';
 
-  static getInstance(): DatabaseFactory {
-    if (!DatabaseFactory.instance) {
-      DatabaseFactory.instance = new DatabaseFactory();
-    }
-    return DatabaseFactory.instance;
-  }
+// Current database backend (with default from environment)
+let currentBackend = getDefaultBackend();
 
-  // Get the current database provider based on selected backend
-  getDatabase(): DatabaseProvider {
-    switch (this.currentBackend) {
-      case 'supabase':
-        return supabaseDb;
-      case 'local':
-      default:
-        return mockDb;
-    }
-  }
-
-  // Switch to a different backend (for testing or development)
-  setBackend(backend: DatabaseBackend): void {
-    this.currentBackend = backend;
-    console.log(`Switched to ${backend} database backend`);
-  }
-
-  // Get the current backend
-  getCurrentBackend(): DatabaseBackend {
-    return this.currentBackend;
-  }
+// Get the current database provider based on selected backend
+export function getDatabase(): DatabaseProvider {
+  return currentBackend === 'supabase' ? supabaseDb : mockDb;
 }
 
-// Export singleton instance
-export const databaseFactory = DatabaseFactory.getInstance();
+// Switch to a different backend (for testing or development)
+export function setDatabaseBackend(backend: DatabaseBackend): void {
+  currentBackend = backend;
+  console.log(`Switched to ${backend} database backend`);
+}
 
-// Export a convenience function to get the current database
-export function getDatabase(): DatabaseProvider {
-  return databaseFactory.getDatabase();
+// Get the current backend
+export function getDatabaseBackend(): DatabaseBackend {
+  return currentBackend;
 } 

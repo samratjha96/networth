@@ -1,5 +1,13 @@
-import { ReactNode, useState } from "react";
-import { TestModeContext } from "./test-mode-context-utils";
+import { ReactNode, createContext, useContext, useState } from "react";
+
+export interface TestModeContextType {
+  isTestMode: boolean;
+  toggleTestMode: () => void;
+}
+
+export const TestModeContext = createContext<TestModeContextType | undefined>(
+  undefined,
+);
 
 export function TestModeProvider({ children }: { children: ReactNode }) {
   const [isTestMode, setIsTestMode] = useState(false);
@@ -13,4 +21,12 @@ export function TestModeProvider({ children }: { children: ReactNode }) {
       {children}
     </TestModeContext.Provider>
   );
+}
+
+export function useTestMode() {
+  const context = useContext(TestModeContext);
+  if (context === undefined) {
+    throw new Error("useTestMode must be used within a TestModeProvider");
+  }
+  return context;
 }
