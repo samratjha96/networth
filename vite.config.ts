@@ -31,18 +31,12 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.VITE_USE_SUPABASE": JSON.stringify(
         env.VITE_USE_SUPABASE,
       ),
-      // Replace console.debug with empty function in production
-      ...(isProd ? { "console.debug": "(() => {})" } : {})
+    },
+    esbuild: {
+      pure: mode === 'production' ? ['console.log'] : [],
     },
     build: {
-      // In production, also remove console.debug when minifying
-      minify: isProd,
-      terserOptions: isProd ? {
-        compress: {
-          drop_console: false, // Don't drop all console statements
-          pure_funcs: ['console.debug'], // Only remove console.debug
-        }
-      } : undefined,
-    },
+      minify: isProd
+    }
   };
 });
