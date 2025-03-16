@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import {
   Area,
@@ -7,12 +7,16 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  ReferenceDot,
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { CurrencyCode } from "./AccountsList";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useNetworthHistory } from "@/hooks/use-networth-history";
+import { useAdaptiveNetWorthHistory } from "@/hooks/use-adaptive-networth-history";
+import { TimeRange } from "@/types/networth";
+import { Info } from "lucide-react";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",
@@ -27,7 +31,7 @@ interface NetWorthChartProps {
   currency: CurrencyCode;
   currentNetWorth: number;
   onTimeRangeChange?: (days: number) => void;
-  initialTimeRange?: number;
+  initialTimeRange?: TimeRange;
 }
 
 const TIME_RANGES = [
@@ -42,14 +46,18 @@ export function NetWorthChart({
   currency,
   currentNetWorth,
   onTimeRangeChange,
-  initialTimeRange = 7,
+  initialTimeRange = 7 as TimeRange,
 }: NetWorthChartProps) {
-  const [selectedRange, setSelectedRange] = React.useState(initialTimeRange);
+  const [selectedRange, setSelectedRange] = React.useState<TimeRange>(initialTimeRange);
   const isMobile = useIsMobile();
-  const { data, isLoading } = useNetworthHistory(selectedRange);
-  console.log("data is ", data, " and selected range is ", selectedRange);
-
-  const handleRangeChange = (days: number) => {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  
+  const { data, events, isLoading, error } = useAdaptiveNetWorthHistory(selectedRange, {
+    includeEvents: true,
+    eventThreshold: 3.0, // Only show events with 3% or more change
+  });
+  
+  const handleRangeChange = (days: TimeRange) => {
     setSelectedRange(days);
     if (onTimeRangeChange) onTimeRangeChange(days);
   };
@@ -69,30 +77,22 @@ export function NetWorthChart({
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-
+    
     if (selectedRange >= 365 || selectedRange === 0) {
-      return date.toLocaleDateString(undefined, {
-        month: "short",
-        year: "2-digit",
-      });
+      return date.toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
     }
-
+    
     if (selectedRange >= 7) {
-      return date.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      });
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
-
-    return date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    
+    return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   };
 
   // Chart color based on net worth
-  const chartColor =
-    currentNetWorth < 0 ? "hsl(var(--destructive))" : "hsl(var(--primary))";
+  const chartColor = currentNetWorth < 0 
+    ? "hsl(var(--destructive))" 
+    : "hsl(var(--primary))";
 
   return (
     <Card className="col-span-4">
@@ -106,7 +106,7 @@ export function NetWorthChart({
                 variant={selectedRange === range.days ? "default" : "outline"}
                 size="sm"
                 className="px-2 sm:px-4"
-                onClick={() => handleRangeChange(range.days)}
+                onClick={() => handleRangeChange(range.days as TimeRange)}
               >
                 {range.label}
               </Button>
@@ -115,10 +115,14 @@ export function NetWorthChart({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
+        <div className="h-[400px]" ref={chartContainerRef}>
           {isLoading ? (
             <div className="flex h-full items-center justify-center">
               <div className="text-muted-foreground">Loading...</div>
+            </div>
+          ) : error ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-destructive">Error loading data</div>
             </div>
           ) : data.length === 0 ? (
             <div className="flex h-full items-center justify-center">
@@ -144,7 +148,11 @@ export function NetWorthChart({
                       stopColor={chartColor}
                       stopOpacity={0.8}
                     />
-                    <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                    <stop
+                      offset="95%"
+                      stopColor={chartColor}
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -212,10 +220,38 @@ export function NetWorthChart({
                   fillOpacity={1}
                   fill="url(#colorValue)"
                 />
+                {events && events.length > 0 && events.map((event, index) => (
+                  <ReferenceDot
+                    key={`event-${index}`}
+                    x={event.date}
+                    y={event.value}
+                    r={6}
+                    fill={chartColor}
+                    stroke="white"
+                  />
+                ))}
               </AreaChart>
             </ResponsiveContainer>
           )}
         </div>
+        
+        {events && events.length > 0 && (
+          <div className="mt-2 flex items-center text-xs text-muted-foreground">
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center cursor-help">
+                    <Info className="h-3 w-3 mr-1" />
+                    <span>Dots represent significant changes in net worth</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px]">
+                  <p>These points indicate significant changes in your net worth (3% or more) that might represent notable financial events.</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
