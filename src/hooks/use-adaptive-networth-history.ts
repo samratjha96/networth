@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from './use-mobile';
-import { NetWorthDataPoint, TimeRange, NetWorthEvent } from '@/types/networth';
+import { NetWorthDataPoint, TimeRange, NetWorthEvent } from '@/types';
 import { getOptimalResolution, sampleDataPoints, getSignificantEvents } from '@/lib/adaptive-resolution';
 import { useNetworthHistory } from './use-networth-history';
 

@@ -14,7 +14,7 @@ import { Button } from "./ui/button";
 import { CurrencyCode } from "./AccountsList";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAdaptiveNetWorthHistory } from "@/hooks/use-adaptive-networth-history";
-import { TimeRange } from "@/types/networth";
+import { TimeRange } from "@/types";
 import { Info } from "lucide-react";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { getDatabase, getDatabaseBackend } from './database-factory';
+import { getDatabase, getDatabaseBackend, setGlobalTestMode, isGlobalTestMode } from './database-factory';
 import type { DatabaseProvider as DbProvider } from './types';
 import type { DatabaseBackend } from './database-factory';
 
@@ -14,10 +14,20 @@ interface DatabaseContextType {
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
+  // Initialize state from localStorage/factory
   const [db, setDb] = useState(getDatabase());
   const [currentBackend, setCurrentBackend] = useState(getDatabaseBackend());
-  const [isTestMode, setIsTestMode] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(isGlobalTestMode());
   const [initialized, setInitialized] = useState(false);
+  
+  // Initialize test mode on the actual database instance to match global setting
+  useEffect(() => {
+    // When component mounts, ensure db instance has the correct test mode
+    if (isGlobalTestMode() !== db.isTestModeEnabled()) {
+      db.setTestMode(isGlobalTestMode());
+      setIsTestMode(isGlobalTestMode());
+    }
+  }, []);
   
   // Check if the database backend has changed and update accordingly
   useEffect(() => {
@@ -35,7 +45,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       if (!initialized) {
         await db.initialize();
         // Get initial test mode state
-        setIsTestMode(db.isTestModeEnabled());
+        setIsTestMode(isGlobalTestMode());
         
         // Run initial synchronization
         await db.synchronizeNetworthHistory();
@@ -54,11 +64,25 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   
   const toggleTestMode = async () => {
     const newTestMode = !isTestMode;
+    
+    // First update the database instance
     db.setTestMode(newTestMode);
+    
+    // Then update the global factory state
+    setGlobalTestMode(newTestMode);
+    
+    // Update the local state
     setIsTestMode(newTestMode);
     
+    // Get the possibly new database instance
+    const newDb = getDatabase();
+    if (newDb !== db) {
+      setDb(newDb);
+      await newDb.initialize();
+    }
+    
     // Re-sync history data when test mode changes
-    await db.synchronizeNetworthHistory();
+    await newDb.synchronizeNetworthHistory();
     
     // Force page reload to refresh all components with new data
     window.location.reload();

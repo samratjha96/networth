@@ -401,11 +401,14 @@ export class SupabaseDatabase implements DatabaseProvider {
   // Test mode methods are not implemented for Supabase
   // as they don't make sense in a production environment
   isTestModeEnabled(): boolean {
-    return false;
+    return false; // Supabase implementation always returns false
   }
   
-  setTestMode(): void {
-    console.warn('Test mode is not available in Supabase implementation');
+  setTestMode(enabled: boolean): void {
+    if (enabled) {
+      console.warn('Test mode is not directly supported in Supabase implementation. The application will switch to the mock database implementation.');
+    }
+    // No need to do anything here, since the factory handles switching implementations
   }
 }
 
