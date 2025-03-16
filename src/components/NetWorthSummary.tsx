@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
-import { CurrencyCode } from "./AccountsList";
+import { CurrencyCode, TimeRange } from "@/types";
+import { useTimeRange } from "@/hooks/use-time-range";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",
@@ -12,12 +13,22 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   AUD: "A$",
 };
 
+const getPeriodLabel = (days: TimeRange) => {
+  switch (days) {
+    case 1: return "24 hours";
+    case 7: return "week";
+    case 30: return "month";
+    case 365: return "year";
+    case 0: return "all time";
+    default: return `${days} days`;
+  }
+};
+
 interface NetWorthSummaryProps {
   currentNetWorth: number;
   previousNetWorth: number;
   netWorthChange: number;
   changePercentage: number;
-  period: string;
   currency: CurrencyCode;
   bestPerformingAccount?: {
     name: string;
@@ -30,18 +41,14 @@ export function NetWorthSummary({
   previousNetWorth,
   netWorthChange,
   changePercentage,
-  period,
   currency,
   bestPerformingAccount,
 }: NetWorthSummaryProps) {
+  const [timeRange] = useTimeRange();
   const isPositiveNetWorth = currentNetWorth >= 0;
-
-  // For negative net worth, the interpretation is different:
-  // - If absolute value decreases (gets less negative), it's positive
-  // - If absolute value increases (gets more negative), it's negative
   const isPositiveChange = isPositiveNetWorth
-    ? netWorthChange > 0 // For positive net worth, higher is better
-    : netWorthChange > 0; // For negative net worth, less negative is better
+    ? netWorthChange > 0
+    : netWorthChange > 0;
 
   const formatWithCurrency = (value: number) => {
     const symbol = CURRENCY_SYMBOLS[currency];
@@ -79,9 +86,7 @@ export function NetWorthSummary({
               {formatWithCurrency(Math.abs(netWorthChange))}
             </span>
             <span className="ml-1">
-              {period === "all"
-                ? "since tracking began"
-                : `over the last ${period}`}
+              over the last {getPeriodLabel(timeRange)}
             </span>
           </p>
         </CardContent>
@@ -104,10 +109,7 @@ export function NetWorthSummary({
                 <ArrowUpRight className="h-3 w-3 mr-0.5" />
                 {bestPerformingAccount.changePercentage.toFixed(2)}%
               </span>
-              growth{" "}
-              {period === "all"
-                ? "since tracking began"
-                : `over the last ${period}`}
+              growth over the last {getPeriodLabel(timeRange)}
             </p>
           </CardContent>
         </Card>

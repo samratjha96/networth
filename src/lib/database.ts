@@ -53,7 +53,8 @@ export class MockDatabase implements DatabaseProvider {
     if (savedTestMode) {
       // Generate new mock data on every page load when in test mode
       this.mockAccounts = generateMockAccounts();
-      this.mockHistory = generateMockNetworthHistory();
+      const startValue = this.mockAccounts.reduce((sum, account) => sum + account.balance, 0);
+      this.mockHistory = generateMockNetworthHistory(startValue);
       console.log(
         "Mock database initialized in TEST MODE with fresh mock data",
       );
@@ -121,7 +122,8 @@ export class MockDatabase implements DatabaseProvider {
 
     // Always generate fresh mock data for demo mode on every page load
     this.mockAccounts = generateMockAccounts();
-    this.mockHistory = generateMockNetworthHistory();
+    const startValue = this.mockAccounts.reduce((sum, account) => sum + account.balance, 0);
+    this.mockHistory = generateMockNetworthHistory(startValue);
 
     // We don't store the mock data in localStorage anymore
     // to ensure we get different data on every refresh
@@ -264,21 +266,31 @@ export class MockDatabase implements DatabaseProvider {
   // Networth history operations
   async getNetworthHistory(days: number): Promise<NetworthHistory[]> {
     const history = this.getStoredHistory();
+    const currentNetWorth = await this.calculateCurrentNetworth();
+    const today = new Date();
 
     // Special handling for test mode to ensure we always have data with proper time ranges
     if (this.testMode && this.mockHistory && this.mockHistory.length > 0) {
       // For "ALL", return complete mock history
       if (days === 0) {
-        return this.mockHistory;
+        const result = [...this.mockHistory];
+        // Ensure the last point matches current net worth
+        if (result.length > 0) {
+          result[result.length - 1] = {
+            date: today.toISOString(),
+            value: currentNetWorth,
+          };
+        }
+        return result;
       }
 
       // For specific ranges, filter by date to get the correct days
-      const endDate = new Date();
+      const endDate = today;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
       // Filter mock history to the requested time period and ensure proper sorting
-      const filteredHistory = this.mockHistory
+      let filteredHistory = this.mockHistory
         .filter((entry) => {
           const entryDate = new Date(entry.date);
           return entryDate >= startDate && entryDate <= endDate;
@@ -289,6 +301,14 @@ export class MockDatabase implements DatabaseProvider {
 
       // Return filtered history if we have enough points
       if (filteredHistory.length >= 2) {
+        // Ensure the last point matches current net worth
+        if (filteredHistory.length > 0) {
+          // Replace the last entry with today's date and current net worth
+          filteredHistory[filteredHistory.length - 1] = {
+            date: today.toISOString(),
+            value: currentNetWorth,
+          };
+        }
         return filteredHistory;
       }
 
@@ -297,13 +317,19 @@ export class MockDatabase implements DatabaseProvider {
       const newHistory: NetworthHistory[] = [];
       const currentDate = new Date(startDate);
 
-      while (currentDate <= endDate) {
+      while (currentDate < endDate) {
         newHistory.push({
           date: currentDate.toISOString(),
           value: lastAvailablePoint.value,
         });
         currentDate.setDate(currentDate.getDate() + 1);
       }
+      
+      // Add today's value as the last point
+      newHistory.push({
+        date: today.toISOString(),
+        value: currentNetWorth,
+      });
 
       return newHistory;
     }
@@ -312,18 +338,42 @@ export class MockDatabase implements DatabaseProvider {
 
     // For "ALL", return complete history
     if (days === 0) {
-      return history;
+      const result = [...history];
+      // Ensure the last point matches current net worth
+      if (result.length > 0) {
+        result[result.length - 1] = {
+          date: today.toISOString(),
+          value: currentNetWorth,
+        };
+      }
+      return result;
     }
 
     // For specific ranges, filter by date
-    const endDate = new Date();
+    const endDate = today;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    return history.filter((entry) => {
+    const filteredHistory = history.filter((entry) => {
       const entryDate = new Date(entry.date);
       return entryDate >= startDate && entryDate <= endDate;
     });
+    
+    // Ensure the last point matches current net worth
+    if (filteredHistory.length > 0) {
+      filteredHistory[filteredHistory.length - 1] = {
+        date: today.toISOString(),
+        value: currentNetWorth,
+      };
+    } else if (filteredHistory.length === 0 && history.length > 0) {
+      // If we filtered out all entries, at least include the current value
+      filteredHistory.push({
+        date: today.toISOString(),
+        value: currentNetWorth,
+      });
+    }
+
+    return filteredHistory;
   }
 
   async addNetworthSnapshot(value: number): Promise<void> {

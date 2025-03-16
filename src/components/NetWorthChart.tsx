@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { CurrencyCode } from "./AccountsList";
+import { CurrencyCode } from "@/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAdaptiveNetWorthHistory } from "@/hooks/use-adaptive-networth-history";
 import { TimeRange } from "@/types";
@@ -22,6 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { useTimeRange } from "@/hooks/use-time-range";
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",
@@ -31,6 +32,8 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   CAD: "C$",
   AUD: "A$",
 };
+
+const LOCAL_STORAGE_TIME_RANGE_KEY = "networth-time-range";
 
 interface NetWorthChartProps {
   currency: CurrencyCode;
@@ -53,8 +56,7 @@ export function NetWorthChart({
   onTimeRangeChange,
   initialTimeRange = 7 as TimeRange,
 }: NetWorthChartProps) {
-  const [selectedRange, setSelectedRange] =
-    React.useState<TimeRange>(initialTimeRange);
+  const [selectedRange, setSelectedRange] = useTimeRange(initialTimeRange);
   const isMobile = useIsMobile();
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
@@ -70,13 +72,6 @@ export function NetWorthChart({
     setSelectedRange(days);
     if (onTimeRangeChange) onTimeRangeChange(days);
   };
-
-  // Only sync from parent when initialTimeRange changes
-  React.useEffect(() => {
-    if (initialTimeRange !== selectedRange) {
-      setSelectedRange(initialTimeRange);
-    }
-  }, [initialTimeRange]); // Intentionally exclude selectedRange
 
   const formatWithCurrency = (value: number) => {
     const symbol = CURRENCY_SYMBOLS[currency];
