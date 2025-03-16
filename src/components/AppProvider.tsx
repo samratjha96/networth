@@ -1,28 +1,29 @@
 import { ReactNode, useEffect } from "react";
 import { AuthProvider, useAuth } from "./AuthProvider";
 import { useDatabaseStore } from "@/store/database-store";
+import { DatabaseProvider } from "./DatabaseProvider";
 
-// DatabaseInitializer component - connects auth to database
-const DatabaseInitializer = ({ children }: { children: ReactNode }) => {
+// Component to connect auth to database
+const AuthToDatabaseConnector = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const setUserId = useDatabaseStore((state) => state.setUserId);
 
-  // Simple rule:
-  // 1. If user session exists, use Supabase
-  // 2. Otherwise, use local mode
+  // Connect auth user to database when user changes
   useEffect(() => {
-    // This single call handles both setting the user ID and switching backend
+    console.log("User changed, updating database userId:", user?.id || null);
     setUserId(user?.id || null);
   }, [user, setUserId]);
 
   return <>{children}</>;
 };
 
-// Main app provider that combines authentication and database initialization
+// Main app provider that combines all app-wide state providers
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthProvider>
-      <DatabaseInitializer>{children}</DatabaseInitializer>
+      <AuthToDatabaseConnector>
+        <DatabaseProvider>{children}</DatabaseProvider>
+      </AuthToDatabaseConnector>
     </AuthProvider>
   );
 };

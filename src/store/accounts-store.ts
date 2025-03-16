@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { Account } from "@/types";
 import { useDatabaseStore } from "./database-store";
 import { useAuth } from "@/components/AuthProvider";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useDb } from "@/components/DatabaseProvider";
 
 interface AccountsState {
   // State
@@ -109,14 +110,18 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
   };
 });
 
-// Hook to auto-reload accounts when user changes
+// Hook to auto-reload accounts when auth state or database backend changes
 export function useAccountsAutoReload() {
   const { user } = useAuth();
   const loadAccounts = useAccountsStore((state) => state.loadAccounts);
+  const { backendType } = useDb();
 
+  // Load accounts when any dependency changes
   useEffect(() => {
-    // Reload accounts whenever the user changes
-    console.debug("User changed, reloading accounts");
+    console.debug("User or backend changed, reloading accounts", {
+      userId: user?.id,
+      backendType,
+    });
     loadAccounts();
-  }, [user, loadAccounts]);
+  }, [user, backendType, loadAccounts]);
 }

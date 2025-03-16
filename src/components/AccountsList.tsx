@@ -1,56 +1,34 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { AccountsPanel } from "./AccountsPanel";
 import { TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { Button } from "@/components/ui/button";
-import { getAccountColor } from "@/lib/utils";
-import { AccountType } from "@/types";
 import {
   useAccountsStore,
   useAccountsAutoReload,
 } from "@/store/accounts-store";
 import { useAccountDialogStore } from "@/store/account-dialog-store";
-import { useDatabase } from "@/hooks/use-database";
-import { useAuth } from "@/components/AuthProvider";
 
 export function AccountsList() {
   const [view, setView] = useState<"assets" | "liabilities">("assets");
-  const { accounts, loadAccounts, isLoading } = useAccountsStore();
+  const { accounts } = useAccountsStore();
   const { openAddDialog } = useAccountDialogStore();
-  const { backendType } = useDatabase();
-  const { user } = useAuth();
 
   // Use the auto-reload hook to ensure accounts are loaded when the user changes
   useAccountsAutoReload();
 
-  // Load accounts when component mounts or backend/user changes
-  useEffect(() => {
-    console.debug("Loading accounts - backend or user changed", {
-      backendType,
-      userId: user?.id,
-      accountsCount: accounts.length,
-    });
-    loadAccounts();
-  }, [loadAccounts, backendType, user]);
+  // Memoize account filtering and calculations
+  const { assetAccounts, liabilityAccounts } = useMemo(() => {
+    const assetAccounts = accounts.filter((a) => !a.isDebt);
+    const liabilityAccounts = accounts.filter((a) => a.isDebt);
 
-  // No need for dialog open state or account to edit - all managed by the store now
-
-  const assetAccounts = accounts.filter((a) => !a.isDebt);
-  const liabilityAccounts = accounts.filter((a) => a.isDebt);
-
-  const assetTotal = assetAccounts.reduce(
-    (sum, account) => sum + account.balance,
-    0,
-  );
-  const liabilityTotal = liabilityAccounts.reduce(
-    (sum, account) => sum + Math.abs(account.balance),
-    0,
-  );
-
-  // Calculate net worth
-  const netWorth = assetTotal - liabilityTotal;
+    return {
+      assetAccounts,
+      liabilityAccounts,
+    };
+  }, [accounts]);
 
   return (
     <>

@@ -51,14 +51,15 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     const dbStore = useDatabaseStore.getState();
 
     if (mode === "local") {
-      // Switch to local storage mode
-      dbStore.setBackend("local");
+      // Switch to local storage mode by setting userId to null
+      dbStore.setUserId(null);
 
       // Update auth state to reflect no user
       set({
         databaseMode: "local",
         session: null,
         user: null,
+        isLoading: false,
       });
     } else {
       // Switch to Supabase mode
@@ -66,14 +67,15 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         throw new Error("User ID is required when setting Supabase mode");
       }
 
-      // Use our new setUserId method which handles everything
-      await dbStore.setUserId(userId);
+      // Just set the user ID in the database store
+      dbStore.setUserId(userId);
 
       // Update auth state to reflect the database mode
-      set({ databaseMode: "supabase" });
+      set({
+        databaseMode: "supabase",
+        isLoading: false,
+      });
     }
-
-    set({ isLoading: false });
   },
 
   // Initialize authentication
@@ -116,11 +118,14 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
 
   // Handle auth state changes from Supabase
   handleAuthStateChange: async (session: Session | null) => {
+    const dbStore = useDatabaseStore.getState();
+
     if (session?.user) {
       set({ session, user: session.user });
-      await get().setDatabaseMode("supabase", session.user.id);
+      dbStore.setUserId(session.user.id);
     } else {
-      await get().setDatabaseMode("local");
+      dbStore.setUserId(null);
+      set({ session: null, user: null });
     }
   },
 
@@ -176,9 +181,17 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       }
     }
 
-    // Always transition to local mode after sign out
-    await get().setDatabaseMode("local");
-    set({ isLoading: false });
+    // Directly update database store and local state
+    const dbStore = useDatabaseStore.getState();
+    dbStore.setUserId(null);
+
+    // Update auth state
+    set({
+      session: null,
+      user: null,
+      databaseMode: "local",
+      isLoading: false,
+    });
   },
 
   // Sign in with Google OAuth

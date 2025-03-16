@@ -6,10 +6,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(value: number): string {
+interface FormatCurrencyOptions {
+  compact?: boolean;
+  currency?: string;
+}
+
+export function formatCurrency(
+  value: number,
+  options: FormatCurrencyOptions = {},
+): string {
+  const { compact = false, currency = "USD" } = options;
+
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
+    notation: compact ? "compact" : "standard",
   }).format(value);
 }
 

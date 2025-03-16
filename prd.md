@@ -139,7 +139,6 @@ The primary goals of Argos are to:
    - SignInButton - Authentication trigger
    - NetWorthSummary - Displays current net worth and change metrics
    - NetWorthChart - Visualizes net worth history over time with adaptive resolution
-   - NetWorthChartContainer - Wrapper for chart with additional controls
    - AccountsList - Displays all accounts with toggle between assets/liabilities
    - AccountsPanel - Renders the appropriate accounts based on selection
    - AddAccountDialog - Form for adding/editing accounts

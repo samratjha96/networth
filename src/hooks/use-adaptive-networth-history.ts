@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useIsMobile } from "./use-mobile";
 import { NetWorthDataPoint, TimeRange, NetWorthEvent } from "@/types";
 import {
@@ -22,6 +22,7 @@ interface UseAdaptiveNetWorthHistoryResult {
   events: NetWorthEvent[];
   isLoading: boolean;
   error: Error | null;
+  refreshData: () => void;
 }
 
 export function useAdaptiveNetWorthHistory(
@@ -39,7 +40,11 @@ export function useAdaptiveNetWorthHistory(
   const viewportWidth = isMobile ? window.innerWidth - 40 : 900; // Estimated default
 
   // Use the existing networth history hook to get data from your database
-  const { data, isLoading: isDataLoading } = useNetworthHistory(timeRange);
+  const {
+    data,
+    isLoading: isDataLoading,
+    refreshHistory,
+  } = useNetworthHistory(timeRange);
 
   // Debug logging
   useEffect(() => {
@@ -149,10 +154,16 @@ export function useAdaptiveNetWorthHistory(
     return () => window.removeEventListener("resize", handleResize);
   }, [data, timeRange, options.maxPoints, viewportWidth]);
 
+  // Function to refresh data
+  const refreshData = useCallback(() => {
+    refreshHistory();
+  }, [refreshHistory]);
+
   return {
     data: adaptedData,
     events,
     isLoading: isDataLoading || isProcessing,
     error,
+    refreshData,
   };
 }

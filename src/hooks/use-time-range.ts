@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { TimeRange } from "@/types";
+import { useDb } from "@/components/DatabaseProvider";
 
 const LOCAL_STORAGE_TIME_RANGE_KEY = "networth-time-range";
 
@@ -7,10 +8,18 @@ const LOCAL_STORAGE_TIME_RANGE_KEY = "networth-time-range";
 const TIME_RANGE_CHANGE_EVENT = "time-range-change";
 
 export const useTimeRange = (initialValue: TimeRange = 7) => {
+  const { backendType } = useDb();
+
   const [timeRange, setTimeRange] = useState<TimeRange>(() => {
     const savedRange = localStorage.getItem(LOCAL_STORAGE_TIME_RANGE_KEY);
     return savedRange ? (Number(savedRange) as TimeRange) : initialValue;
   });
+
+  // Reset to default time range when backend changes
+  useEffect(() => {
+    console.log(`Backend is ${backendType}, setting time range to default`);
+    updateTimeRange(initialValue);
+  }, [backendType, initialValue]);
 
   useEffect(() => {
     const handleTimeRangeChange = (event: CustomEvent) => {

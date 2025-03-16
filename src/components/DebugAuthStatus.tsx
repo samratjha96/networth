@@ -1,9 +1,9 @@
 import { useAuth } from "./AuthProvider";
-import { useDatabase } from "@/hooks/use-database";
+import { useDatabaseStore } from "@/store/database-store";
 
 export function DebugAuthStatus() {
   const { user, isLoading } = useAuth();
-  const { backendType } = useDatabase();
+  const backendType = useDatabaseStore((state) => state.backend);
 
   // Only show in development
   if (import.meta.env.PROD) {

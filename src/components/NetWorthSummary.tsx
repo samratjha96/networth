@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
 import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
-import { CurrencyCode, TimeRange, CURRENCY_SYMBOLS } from "@/types";
+import { CurrencyCode, TimeRange } from "@/types";
 import { useTimeRange } from "@/hooks/use-time-range";
-import { useDatabase } from "@/hooks/use-database";
+import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
@@ -44,15 +43,8 @@ export function NetWorthSummary({
 }: NetWorthSummaryProps) {
   const [timeRange] = useTimeRange();
   const isPositiveNetWorth = currentNetWorth >= 0;
-  const isPositiveChange = isPositiveNetWorth
-    ? netWorthChange > 0
-    : netWorthChange > 0;
-
-  const formatWithCurrency = (value: number) => {
-    const symbol = CURRENCY_SYMBOLS[currency];
-    const formatted = formatCurrency(Math.abs(value)).replace(/^\$/, "");
-    return value < 0 ? `-${symbol}${formatted}` : `${symbol}${formatted}`;
-  };
+  const isPositiveChange = netWorthChange > 0;
+  const { formatWithCurrency } = useCurrencyFormatter(currency);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -80,7 +72,7 @@ export function NetWorthSummary({
             <span
               className={isPositiveChange ? "text-primary" : "text-destructive"}
             >
-              {isPositiveChange ? "+" : "-"}
+              {isPositiveChange ? "+" : ""}
               {formatWithCurrency(Math.abs(netWorthChange))}
             </span>
             <span className="ml-1">
