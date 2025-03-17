@@ -7,21 +7,22 @@ import { AccountsList } from "@/components/AccountsList";
 import { CurrencyCode } from "@/types/currency";
 import { TimeRange } from "@/types/networth";
 import { Header } from "@/components/Header";
-import { useAccountsStore } from "@/store/accounts-store";
 import { useTimeRange } from "@/hooks/networth/use-time-range";
+import { useAccounts } from "@/hooks/accounts/use-accounts";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const Index = () => {
   const [selectedTimePeriod, setSelectedTimePeriod] = useTimeRange();
-  const { accounts } = useAccountsStore();
+  const { accounts, isLoading: accountsLoading } = useAccounts();
 
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";
   }, []);
 
   // Get account performance data
-  const { bestPerformer, isLoading } = useAccountPerformance(accounts, "month");
+  const { bestPerformer, isLoading: performanceLoading } =
+    useAccountPerformance(accounts, "month");
 
   // Calculate financial metrics
   const financialMetrics = useMemo(() => {
@@ -47,13 +48,14 @@ const Index = () => {
   const { currentNetWorth } = financialMetrics;
 
   // Fetch the net worth history
-  const { data: networthHistory } = useNetworthHistory(selectedTimePeriod);
+  const { data: networthHistory, isLoading: historyLoading } =
+    useNetworthHistory(selectedTimePeriod);
 
   // Calculate changes over the time period
   const changes = useMemo(() => {
     // Find the previous net worth from the history
     const previousNetWorth =
-      networthHistory.length > 1 ? networthHistory[0].value : currentNetWorth;
+      networthHistory?.length > 1 ? networthHistory[0].value : currentNetWorth;
 
     const netWorthChange = currentNetWorth - previousNetWorth;
     const changePercentage = previousNetWorth
@@ -71,6 +73,9 @@ const Index = () => {
   const handleTimeRangeChange = (days: number) => {
     setSelectedTimePeriod(days as TimeRange);
   };
+
+  // Check if still loading data
+  const isLoading = accountsLoading || performanceLoading || historyLoading;
 
   return (
     <div className="min-h-screen bg-background">

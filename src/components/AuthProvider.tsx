@@ -7,6 +7,7 @@ import {
 } from "react";
 import { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Initialize Supabase client using Vite's environment variable approach
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!supabase) {
@@ -110,6 +112,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       await supabase.auth.signOut();
+      // Reset cache for all queries when user signs out
+      queryClient.invalidateQueries();
+      console.log("Sign out successful, queries invalidated");
     } catch (error) {
       console.error("Error signing out:", error);
     }

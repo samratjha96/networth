@@ -21,7 +21,11 @@ export function useAccounts(): UseAccountsResult {
 
   async function fetchAccounts(): Promise<Account[]> {
     try {
+      console.log("Fetching accounts from database:", backendType);
       const accounts = await db.getAllAccounts();
+      console.log(
+        `Fetched ${accounts.length} accounts from ${backendType} backend`,
+      );
       useAccountsStore.setState({ accounts });
       return accounts;
     } catch (error) {
@@ -33,6 +37,8 @@ export function useAccounts(): UseAccountsResult {
   const query = useQuery<Account[]>({
     queryKey: ["accounts", backendType, db],
     queryFn: fetchAccounts,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     staleTime: 0,
     refetchInterval: 10000,
   });
