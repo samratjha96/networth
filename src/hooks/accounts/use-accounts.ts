@@ -1,9 +1,8 @@
 import { useCallback } from "react";
 import { Account } from "@/types/accounts";
-import {
-  useAccountsStore,
-  useAccountsAutoReload,
-} from "@/store/accounts-store";
+import { useAccountsStore } from "@/store/accounts-store";
+import { useQuery } from "@tanstack/react-query";
+import { useDb } from "@/components/DatabaseProvider";
 
 interface UseAccountsResult {
   accounts: Account[];
@@ -14,44 +13,42 @@ interface UseAccountsResult {
   addAccount: (account: Omit<Account, "id">) => Promise<Account>;
   updateAccount: (account: Account) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
-  refreshAccounts: () => Promise<void>;
 }
 
-/**
- * Hook for managing accounts with asset/liability categorization
- */
 export function useAccounts(): UseAccountsResult {
-  const {
-    accounts,
-    isLoading,
-    error,
-    addAccount,
-    updateAccount,
-    deleteAccount,
-    loadAccounts,
-  } = useAccountsStore();
+  const { addAccount, updateAccount, deleteAccount } = useAccountsStore();
+  const { db, backendType } = useDb();
 
-  // Use auto-reload to keep accounts in sync with auth/database changes
-  useAccountsAutoReload();
+  async function fetchAccounts(): Promise<Account[]> {
+    try {
+      const accounts = await db.getAllAccounts();
+      useAccountsStore.setState({ accounts });
+      return accounts;
+    } catch (error) {
+      console.error("Failed to load accounts:", error);
+      return [];
+    }
+  }
 
-  // Split accounts into assets and liabilities
+  const query = useQuery<Account[]>({
+    queryKey: ["accounts", backendType, db],
+    queryFn: fetchAccounts,
+    staleTime: 0,
+    refetchInterval: 10000,
+  });
+
+  const accounts = query.data ?? [];
   const assetsAccounts = accounts.filter((account) => !account.isDebt);
   const liabilitiesAccounts = accounts.filter((account) => account.isDebt);
-
-  // Function to refresh accounts data
-  const refreshAccounts = useCallback(async () => {
-    await loadAccounts();
-  }, [loadAccounts]);
 
   return {
     accounts,
     assetsAccounts,
     liabilitiesAccounts,
-    isLoading,
-    error,
+    isLoading: query.isLoading,
+    error: query.error instanceof Error ? query.error : null,
     addAccount,
     updateAccount,
     deleteAccount,
-    refreshAccounts,
   };
 }

@@ -7,10 +7,7 @@ import { AccountsList } from "@/components/AccountsList";
 import { CurrencyCode } from "@/types/currency";
 import { TimeRange } from "@/types/networth";
 import { Header } from "@/components/Header";
-import {
-  useAccountsStore,
-  useAccountsAutoReload,
-} from "@/store/accounts-store";
+import { useAccountsStore } from "@/store/accounts-store";
 import { useTimeRange } from "@/hooks/networth/use-time-range";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
@@ -18,9 +15,6 @@ const DEFAULT_CURRENCY: CurrencyCode = "USD";
 const Index = () => {
   const [selectedTimePeriod, setSelectedTimePeriod] = useTimeRange();
   const { accounts } = useAccountsStore();
-
-  // Use the auto-reload hook to ensure accounts are loaded
-  useAccountsAutoReload();
 
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";

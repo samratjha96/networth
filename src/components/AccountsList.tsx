@@ -5,21 +5,14 @@ import { AccountsPanel } from "./AccountsPanel";
 import { TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { Button } from "@/components/ui/button";
-import {
-  useAccountsStore,
-  useAccountsAutoReload,
-} from "@/store/accounts-store";
 import { useAccountDialogStore } from "@/store/account-dialog-store";
+import { useAccounts } from "@/hooks/accounts/use-accounts";
 
 export function AccountsList() {
   const [view, setView] = useState<"assets" | "liabilities">("assets");
-  const { accounts } = useAccountsStore();
+  const { accounts } = useAccounts();
   const { openAddDialog } = useAccountDialogStore();
 
-  // Use the auto-reload hook to ensure accounts are loaded when the user changes
-  useAccountsAutoReload();
-
-  // Memoize account filtering and calculations
   const { assetAccounts, liabilityAccounts } = useMemo(() => {
     const assetAccounts = accounts.filter((a) => !a.isDebt);
     const liabilityAccounts = accounts.filter((a) => a.isDebt);

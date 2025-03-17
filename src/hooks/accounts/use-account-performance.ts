@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDb } from "@/components/DatabaseProvider";
 import { Account } from "@/types/accounts";
 import { PerformanceData, PerformancePeriod } from "@/types/performance";
@@ -11,42 +11,30 @@ export function useAccountPerformance(
   accounts: Account[],
   period: PerformancePeriod = "month",
 ): PerformanceData {
-  const { db, backendType } = useDb();
-  const [performance, setPerformance] = useState<PerformanceData>({
-    bestPerformer: null,
-    worstPerformer: null,
-    isLoading: true,
-    error: null,
-  });
+  const { db } = useDb();
 
-  const calculatePerformance = useCallback(async () => {
-    if (!accounts || accounts.length === 0) {
-      setPerformance({
-        bestPerformer: null,
-        worstPerformer: null,
-        isLoading: false,
-        error: null,
-      });
-      return;
-    }
-
-    try {
-      // Determine days based on period
-      let days = 30; // Default to month
-      switch (period) {
-        case "day":
-          days = 1;
-          break;
-        case "week":
-          days = 7;
-          break;
-        case "month":
-          days = 30;
-          break;
-        case "year":
-          days = 365;
-          break;
+  const query = useQuery({
+    queryKey: [
+      "accountPerformance",
+      { accountIds: accounts.map((a) => a.id), period },
+    ],
+    queryFn: async () => {
+      if (!accounts || accounts.length === 0) {
+        return {
+          bestPerformer: null,
+          worstPerformer: null,
+        };
       }
+
+      // Determine days based on period
+      const days =
+        period === "day"
+          ? 1
+          : period === "week"
+            ? 7
+            : period === "year"
+              ? 365
+              : 30;
 
       // Get performance data for each account
       const accountPerformance = await calculateAccountPerformance(
@@ -56,18 +44,13 @@ export function useAccountPerformance(
       );
 
       // Filter by asset and liability
-      const assetPerformance = accountPerformance.filter(
-        (account) => !account.isDebt,
-      );
-      const liabilityPerformance = accountPerformance.filter(
-        (account) => account.isDebt,
-      );
+      const assetPerformance = accountPerformance.filter((a) => !a.isDebt);
+      const liabilityPerformance = accountPerformance.filter((a) => a.isDebt);
 
       let bestPerformer = null;
       let worstPerformer = null;
 
       if (assetPerformance.length > 0) {
-        console.debug("Asset performance:", assetPerformance);
         // For assets, higher percentage is better
         bestPerformer = assetPerformance.reduce((best, current) =>
           current.changePercentage > best.changePercentage ? current : best,
@@ -81,29 +64,17 @@ export function useAccountPerformance(
         );
       }
 
-      setPerformance({
-        bestPerformer,
-        worstPerformer,
-        isLoading: false,
-        error: null,
-      });
-    } catch (err) {
-      setPerformance({
-        bestPerformer: null,
-        worstPerformer: null,
-        isLoading: false,
-        error:
-          err instanceof Error
-            ? err
-            : new Error("Failed to calculate account performance"),
-      });
-    }
-  }, [accounts, period, db]);
+      return { bestPerformer, worstPerformer };
+    },
+    // These options can be adjusted based on your needs
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: accounts.length > 0,
+  });
 
-  // Recalculate when dependencies change
-  useEffect(() => {
-    calculatePerformance();
-  }, [calculatePerformance]);
-
-  return performance;
+  return {
+    bestPerformer: query.data?.bestPerformer ?? null,
+    worstPerformer: query.data?.worstPerformer ?? null,
+    isLoading: query.isLoading,
+    error: query.error instanceof Error ? query.error : null,
+  };
 }
