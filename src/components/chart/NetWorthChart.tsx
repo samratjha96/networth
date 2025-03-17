@@ -39,7 +39,7 @@ export function NetWorthChart({
   currency,
   currentNetWorth,
   onTimeRangeChange,
-  initialTimeRange = 7 as TimeRange,
+  initialTimeRange = 365 as TimeRange,
   accounts,
 }: NetWorthChartProps) {
   const [selectedRange, setSelectedRange] = useTimeRange(initialTimeRange);
