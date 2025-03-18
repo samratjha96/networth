@@ -10,12 +10,14 @@ export const Header = () => {
   const handleSignOut = useCallback(async () => {
     try {
       console.log("Signing out");
-      await signOut();
+      // Show toast immediately before the page refreshes
       toast({
-        title: "Signed out successfully",
-        description: "You are now in demo mode with mock data.",
-        duration: 3000,
+        title: "Signing out...",
+        description: "Refreshing with demo mode data.",
+        duration: 1500,
       });
+      await signOut();
+      // Page will automatically refresh from auth state change
     } catch (error) {
       console.error("Error signing out:", error);
       toast({

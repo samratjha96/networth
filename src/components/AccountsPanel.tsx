@@ -1,7 +1,16 @@
-import { AccountType, AccountWithValue, AccountViewType } from "@/types/accounts";
+import {
+  AccountType,
+  AccountWithValue,
+  AccountViewType,
+} from "@/types/accounts";
 import { CURRENCY_SYMBOLS } from "@/types/currency";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PlusCircle, MoreHorizontal, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  PlusCircle,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import {
   formatCurrency,
   accountTypeEmojis,
@@ -29,9 +38,11 @@ type CollapsedSections = Record<string, boolean>;
 
 const useCollapsibleSections = (panelType: AccountViewType) => {
   const storageKey = `collapsed-sections-${panelType}`;
-  
-  const [collapsedSections, setCollapsedSections] = useState<CollapsedSections>({});
-  
+
+  const [collapsedSections, setCollapsedSections] = useState<CollapsedSections>(
+    {},
+  );
+
   useEffect(() => {
     try {
       const savedState = localStorage.getItem(storageKey);
@@ -39,25 +50,31 @@ const useCollapsibleSections = (panelType: AccountViewType) => {
         setCollapsedSections(JSON.parse(savedState));
       }
     } catch (error) {
-      console.error("Failed to load collapsed sections from localStorage:", error);
+      console.error(
+        "Failed to load collapsed sections from localStorage:",
+        error,
+      );
     }
   }, [storageKey]);
-  
+
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(collapsedSections));
     } catch (error) {
-      console.error("Failed to save collapsed sections to localStorage:", error);
+      console.error(
+        "Failed to save collapsed sections to localStorage:",
+        error,
+      );
     }
   }, [collapsedSections, storageKey]);
-  
+
   const toggleSection = (sectionType: string) => {
-    setCollapsedSections(prev => ({
+    setCollapsedSections((prev) => ({
       ...prev,
-      [sectionType]: !prev[sectionType]
+      [sectionType]: !prev[sectionType],
     }));
   };
-  
+
   return { collapsedSections, toggleSection };
 };
 
@@ -121,7 +138,7 @@ export function AccountsPanel({ accounts, type }: AccountsPanelProps) {
     <div className="space-y-4 p-3">
       {Object.entries(groupedAccounts).map(([type, accounts]) => (
         <div key={type} className="space-y-3">
-          <div 
+          <div
             className="flex items-center px-2 group cursor-pointer hover:bg-muted/50 rounded-md py-2 transition-colors"
             onClick={() => toggleSection(type)}
           >
@@ -131,14 +148,19 @@ export function AccountsPanel({ accounts, type }: AccountsPanelProps) {
               </span>
               <h3 className="font-medium">{type}</h3>
               <span className="text-xs text-muted-foreground">
-                {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
+                {accounts.length}{" "}
+                {accounts.length === 1 ? "account" : "accounts"}
               </span>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 p-0 ml-1 text-muted-foreground group-hover:text-foreground transition-transform duration-200"
-                aria-label={collapsedSections[type] ? "Expand section" : "Collapse section"}
+                aria-label={
+                  collapsedSections[type]
+                    ? "Expand section"
+                    : "Collapse section"
+                }
                 onClick={(e) => {
                   // Prevent triggering the parent's onClick
                   e.stopPropagation();
@@ -152,7 +174,7 @@ export function AccountsPanel({ accounts, type }: AccountsPanelProps) {
                 )}
               </Button>
             </div>
-            
+
             <div className="ml-auto">
               {/* Additional actions could go here if needed */}
             </div>

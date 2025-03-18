@@ -35,28 +35,43 @@ const convertTimeRangeToDays = (range: TimeRange): number => {
 export function useNetworthHistory(
   timeRange: TimeRange,
 ): UseNetworthHistoryResult {
-  const { db } = useDb();
+  const { db, isLoading: dbLoading, backendType } = useDb();
 
   const query = useQuery({
-    queryKey: ["networthHistory", timeRange],
+    queryKey: ["networthHistory", timeRange, backendType],
     queryFn: async () => {
-      if (!db) return [];
+      if (!db || !db.getNetworthHistory) {
+        console.log("Database not ready or missing getNetworthHistory method");
+        return [];
+      }
 
-      const days = convertTimeRangeToDays(timeRange);
-      const history = await db.getNetworthHistory(days);
+      try {
+        const days = convertTimeRangeToDays(timeRange);
+        console.log(
+          `Fetching networth history for ${days} days using ${backendType} backend`,
+        );
+        const history = await db.getNetworthHistory(days);
 
-      return history.map((item) => ({
-        date: item.date,
-        value: item.value,
-      }));
+        return history.map((item) => ({
+          date: item.date,
+          value: item.value,
+        }));
+      } catch (error) {
+        console.error("Error fetching networth history:", error);
+        return [];
+      }
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
-    enabled: !!db,
+    // Only enable the query when the database is available and not loading
+    enabled: !dbLoading && !!db && !!db.getNetworthHistory,
+    // When backend type changes, refetch data automatically
+    refetchOnWindowFocus: false,
   });
 
   return {
     data: query.data ?? [],
-    isLoading: query.isLoading,
+    // We're loading if the database is loading or the query is loading
+    isLoading: dbLoading || query.isLoading,
     error: query.error instanceof Error ? query.error : null,
     refreshHistory: () => query.refetch(),
   };

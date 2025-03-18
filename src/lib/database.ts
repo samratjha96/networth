@@ -151,6 +151,12 @@ export class MockDatabase implements DatabaseProvider {
     const currentNetWorth = await this.calculateCurrentNetworth();
     const today = new Date();
 
+    // If history is empty, generate some sample data
+    if (this.history.length === 0) {
+      console.log("No history data available, generating mock history data");
+      this.history = generateMockNetworthHistory(currentNetWorth);
+    }
+
     if (days === 0) {
       const result = [...this.history];
       if (result.length > 0) {
@@ -172,6 +178,40 @@ export class MockDatabase implements DatabaseProvider {
         return entryDate >= startDate && entryDate <= endDate;
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // If we don't have enough history for the requested time range, generate points
+    if (filteredHistory.length < 2) {
+      console.log(
+        `Not enough history data for ${days} days, generating additional points`,
+      );
+
+      // Generate points for the requested time range
+      const points: NetworthHistory[] = [];
+      for (let i = days; i >= 0; i -= Math.max(1, Math.floor(days / 10))) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+
+        // Create a simple curve
+        const factor = i / days;
+        const variation = (Math.random() - 0.5) * 0.05 * currentNetWorth; // 5% random variation
+        const value = currentNetWorth * (0.8 + 0.2 * (1 - factor)) + variation;
+
+        points.push({
+          date: date.toISOString(),
+          value,
+        });
+      }
+
+      // Ensure the last point has the current net worth
+      if (points.length > 0) {
+        points[points.length - 1] = {
+          date: today.toISOString(),
+          value: currentNetWorth,
+        };
+      }
+
+      return points;
+    }
 
     if (filteredHistory.length > 0) {
       filteredHistory[filteredHistory.length - 1] = {
@@ -211,7 +251,6 @@ export class MockDatabase implements DatabaseProvider {
       value: currentNetworth,
     };
   }
-
 
   // Cleanup resources when switching database providers
   cleanup(): void {

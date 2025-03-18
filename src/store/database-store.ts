@@ -23,7 +23,9 @@ export const useDatabaseStore = create<DatabaseState>()(
   devtools(
     (set, get) => ({
       // Initial state - don't create a DB provider yet
-      backend: (localStorage.getItem(LS_BACKEND_TYPE_KEY) as DatabaseBackend) || "local",
+      backend:
+        (localStorage.getItem(LS_BACKEND_TYPE_KEY) as DatabaseBackend) ||
+        "local",
       db: null,
       userId: null,
 
@@ -49,19 +51,25 @@ export const useDatabaseStore = create<DatabaseState>()(
 
         // Determine appropriate backend based on user state
         const shouldUseSupabase = userId !== null && useSupabase;
-        const newBackend: DatabaseBackend = shouldUseSupabase ? "supabase" : "local";
-        
-        console.debug(`Setting userId to ${userId}, using ${newBackend} database`);
-        
+        const newBackend: DatabaseBackend = shouldUseSupabase
+          ? "supabase"
+          : "local";
+
+        console.debug(
+          `Setting userId to ${userId}, using ${newBackend} database`,
+        );
+
         // Cleanup current database if needed
         if (currentDb && currentBackend !== newBackend) {
-          console.debug(`Cleaning up ${currentBackend} database before switching to ${newBackend}`);
+          console.debug(
+            `Cleaning up ${currentBackend} database before switching to ${newBackend}`,
+          );
           // Allow the database to clean up any resources
-          if (typeof currentDb.cleanup === 'function') {
+          if (typeof currentDb.cleanup === "function") {
             currentDb.cleanup();
           }
         }
-        
+
         // Create appropriate database provider
         const db = DatabaseFactory.createProvider(newBackend, userId);
 
@@ -70,10 +78,10 @@ export const useDatabaseStore = create<DatabaseState>()(
           {
             userId,
             backend: newBackend,
-            db
+            db,
           },
           false,
-          `setUserId_${newBackend}`
+          `setUserId_${newBackend}`,
         );
 
         // Store in local storage

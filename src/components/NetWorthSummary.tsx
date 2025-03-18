@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
-import { CurrencyCode } from "@/types/currency";
 import { TimeRange } from "@/types/networth";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/components/AuthProvider";
+import { useNetWorthSummary } from "@/hooks/networth/use-networth-summary";
 
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
@@ -23,64 +24,72 @@ const getPeriodLabel = (days: TimeRange) => {
   }
 };
 
-interface NetWorthSummaryProps {
-  currentNetWorth: number;
-  netWorthChange: number;
-  changePercentage: number;
-  currency: CurrencyCode;
-  bestPerformingAccount?: {
-    name: string;
-    changePercentage: number;
-  };
-  isLoading?: boolean;
-}
+export function NetWorthSummary() {
+  const {
+    currentNetWorth,
+    netWorthChange,
+    changePercentage,
+    currency,
+    bestPerformingAccount,
+    isLoading,
+  } = useNetWorthSummary();
 
-export function NetWorthSummary({
-  currentNetWorth,
-  netWorthChange,
-  changePercentage,
-  currency,
-  bestPerformingAccount,
-  isLoading = false,
-}: NetWorthSummaryProps) {
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const isPositiveNetWorth = currentNetWorth >= 0;
   const isPositiveChange = netWorthChange > 0;
   const { formatWithCurrency } = useCurrencyFormatter(currency);
+  const { user } = useAuth();
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card className="w-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Net Worth</CardTitle>
-          <span
-            className={`flex items-center text-sm ${isPositiveChange ? "text-primary" : "text-destructive"}`}
-          >
-            {isPositiveChange ? (
-              <ArrowUpRight className="h-4 w-4 mr-1" />
-            ) : (
-              <ArrowDownRight className="h-4 w-4 mr-1" />
-            )}
-            {Math.abs(changePercentage).toFixed(2)}%
-          </span>
+          {!isLoading && (
+            <span
+              className={`flex items-center text-sm ${
+                isPositiveChange ? "text-primary" : "text-destructive"
+              }`}
+            >
+              {isPositiveChange ? (
+                <ArrowUpRight className="h-4 w-4 mr-1" />
+              ) : (
+                <ArrowDownRight className="h-4 w-4 mr-1" />
+              )}
+              {Math.abs(changePercentage).toFixed(2)}%
+            </span>
+          )}
         </CardHeader>
         <CardContent>
-          <div
-            className={`text-2xl font-bold ${!isPositiveNetWorth ? "text-destructive" : ""}`}
-          >
-            {formatWithCurrency(currentNetWorth)}
-          </div>
-          <p className="text-xs text-muted-foreground flex items-center">
-            <span
-              className={isPositiveChange ? "text-primary" : "text-destructive"}
-            >
-              {isPositiveChange ? "+" : ""}
-              {formatWithCurrency(Math.abs(netWorthChange))}
-            </span>
-            <span className="ml-1">
-              over the last {getPeriodLabel(timeRange)}
-            </span>
-          </p>
+          {isLoading ? (
+            <>
+              <Skeleton className="h-8 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-2/3" />
+            </>
+          ) : (
+            <>
+              <div
+                className={`text-2xl font-bold ${
+                  !isPositiveNetWorth ? "text-destructive" : ""
+                }`}
+              >
+                {formatWithCurrency(currentNetWorth)}
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center">
+                <span
+                  className={
+                    isPositiveChange ? "text-primary" : "text-destructive"
+                  }
+                >
+                  {isPositiveChange ? "+" : ""}
+                  {formatWithCurrency(Math.abs(netWorthChange))}
+                </span>
+                <span className="ml-1">
+                  over the last {getPeriodLabel(timeRange)}
+                </span>
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -112,8 +121,14 @@ export function NetWorthSummary({
             </>
           ) : (
             <>
-              <Skeleton className="h-8 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-2/3" />
+              <div className="text-2xl font-bold text-muted-foreground">
+                {user ? "No accounts" : "Sign in"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {user
+                  ? "Add accounts to see performance"
+                  : "Sign in to see your data"}
+              </p>
             </>
           )}
         </CardContent>

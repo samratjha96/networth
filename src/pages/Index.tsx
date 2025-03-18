@@ -1,96 +1,52 @@
-import { useMemo, useEffect } from "react";
-import { useNetworthHistory } from "@/hooks/networth/use-networth-history";
-import { useAccountPerformance } from "@/hooks/accounts/use-account-performance";
+import { useEffect } from "react";
 import { NetWorthSummary } from "@/components/NetWorthSummary";
 import { NetWorthChart } from "@/components/chart/NetWorthChart";
 import { AccountsList } from "@/components/AccountsList";
 import { CurrencyCode } from "@/types/currency";
-import { TimeRange } from "@/types/networth";
 import { Header } from "@/components/Header";
-import { useTimeRangeStore } from "@/store/time-range-store";
 import { useAccounts } from "@/hooks/accounts/use-accounts";
+import { useAuth } from "@/components/AuthProvider";
+import { useDatabaseStore } from "@/store/database-store";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNetWorthSummary } from "@/hooks/networth/use-networth-summary";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const Index = () => {
-  const timeRange = useTimeRangeStore((state) => state.timeRange);
-  const { accounts, isLoading: accountsLoading } = useAccounts();
+  const { accounts } = useAccounts();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { setUserId } = useDatabaseStore();
+  const { currentNetWorth, isLoading } = useNetWorthSummary();
 
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";
   }, []);
 
-  // Get account performance data
-  const { bestPerformer, isLoading: performanceLoading } =
-    useAccountPerformance(accounts, timeRange);
+  // Set user ID in database store and invalidate queries when user changes
+  useEffect(() => {
+    // Update database store with user ID
+    setUserId(user?.id || null);
 
-  // Calculate financial metrics
-  const financialMetrics = useMemo(() => {
-    const assetsAccounts = accounts.filter((account) => !account.isDebt);
-    const liabilitiesAccounts = accounts.filter((account) => account.isDebt);
-
-    const assetsTotal = assetsAccounts.reduce(
-      (sum, account) => sum + account.balance,
-      0,
-    );
-    const liabilitiesTotal = liabilitiesAccounts.reduce(
-      (sum, account) => sum + Math.abs(account.balance),
-      0,
-    );
-
-    return {
-      currentNetWorth: assetsTotal - liabilitiesTotal,
-      assetsTotal,
-      liabilitiesTotal,
-    };
-  }, [accounts]);
-
-  const { currentNetWorth } = financialMetrics;
-
-  // Fetch the net worth history
-  const { data: networthHistory, isLoading: historyLoading } =
-    useNetworthHistory(timeRange);
-
-  // Calculate changes over the time period
-  const changes = useMemo(() => {
-    // Find the previous net worth from the history
-    const previousNetWorth =
-      networthHistory?.length > 1 ? networthHistory[0].value : currentNetWorth;
-
-    const netWorthChange = currentNetWorth - previousNetWorth;
-    const changePercentage = previousNetWorth
-      ? (netWorthChange / Math.abs(previousNetWorth)) * 100
-      : 0;
-
-    return {
-      previousNetWorth,
-      netWorthChange,
-      changePercentage,
-    };
-  }, [networthHistory, currentNetWorth]);
-
-  // Check if still loading data
-  const isLoading = accountsLoading || performanceLoading || historyLoading;
+    // Invalidate queries to trigger refetch with new user
+    queryClient.invalidateQueries({ queryKey: ["networthHistory"] });
+    queryClient.invalidateQueries({ queryKey: ["accountPerformance"] });
+    queryClient.invalidateQueries({ queryKey: ["accounts"] });
+  }, [user, queryClient, setUserId]);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-6 space-y-6">
         <Header />
 
-        <NetWorthSummary
-          currentNetWorth={currentNetWorth}
-          netWorthChange={changes.netWorthChange}
-          changePercentage={changes.changePercentage}
-          currency={DEFAULT_CURRENCY}
-          bestPerformingAccount={bestPerformer}
-          isLoading={isLoading}
-        />
+        <NetWorthSummary />
 
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
           <NetWorthChart
             currency={DEFAULT_CURRENCY}
             currentNetWorth={currentNetWorth}
             accounts={accounts}
+            isLoading={isLoading}
           />
         </div>
 

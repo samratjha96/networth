@@ -1,18 +1,31 @@
 import { useState, useEffect, useRef } from "react";
 import { useAdaptiveNetWorthHistory } from "@/hooks/networth/use-adaptive-networth-history";
 import { TimeRange } from "@/types/networth";
+import { useDb } from "@/components/DatabaseProvider";
 
-// Minimal account interface needed for the chart
-type ChartAccount = {
+interface ChartAccount {
   id: string;
   balance: number;
-};
+}
+
+interface UseNetWorthChartResult {
+  data: Array<{ date: string; value: number }>;
+  events: Array<{ date: string; value: number }>;
+  isLoading: boolean;
+  isEmpty: boolean;
+  error: Error | null;
+  backendType: string;
+}
+
+const LOADING_DELAY_MS = 300;
 
 export function useNetWorthChart(
   selectedRange: TimeRange,
   accounts: Array<ChartAccount>,
-) {
+): UseNetWorthChartResult {
+  const { backendType } = useDb();
   const [showLoading, setShowLoading] = useState(false);
+  const backendRef = useRef(backendType);
 
   // Get the chart data with events
   const {
@@ -26,6 +39,15 @@ export function useNetWorthChart(
     eventThreshold: 3.0, // Only show events with 3% or more change
   });
 
+  // Handle backend type changes
+  useEffect(() => {
+    if (backendRef.current !== backendType) {
+      backendRef.current = backendType;
+      refreshData();
+      setShowLoading(false);
+    }
+  }, [backendType, refreshData]);
+
   // Refresh data when accounts change
   useEffect(() => {
     refreshData();
@@ -33,24 +55,26 @@ export function useNetWorthChart(
 
   // Delayed loading state to prevent flickering
   useEffect(() => {
-    let timer: number;
-    if (dataIsLoading) {
-      timer = window.setTimeout(() => setShowLoading(true), 500);
-    } else {
+    const hasExistingData = data && data.length > 0;
+    const timer = dataIsLoading && !hasExistingData
+      ? window.setTimeout(() => setShowLoading(true), LOADING_DELAY_MS)
+      : undefined;
+
+    if (!dataIsLoading) {
       setShowLoading(false);
     }
-    return () => window.clearTimeout(timer);
-  }, [dataIsLoading]);
 
-  // Calculate loading and empty states
-  const isLoading = showLoading && dataIsLoading;
-  const isEmpty = !isLoading && (!data || data.length === 0);
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [dataIsLoading, data]);
 
   return {
-    data,
-    events,
-    isLoading,
-    isEmpty,
+    data: data || [],
+    events: events || [],
+    isLoading: showLoading && dataIsLoading,
+    isEmpty: !dataIsLoading && (!data || data.length === 0),
     error,
+    backendType,
   };
 }

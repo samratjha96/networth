@@ -45,6 +45,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
+  const { setUserId } = useDatabaseStore();
+
+  // Handle auth state changes and update related states
+  const handleAuthStateChange = (
+    event: AuthChangeEvent,
+    currentSession: Session | null,
+  ) => {
+    console.log(
+      "Auth event:",
+      event,
+      "User ID:",
+      currentSession?.user?.id || "none",
+    );
+
+    // Update the auth state
+    setSession(currentSession);
+    setUser(currentSession?.user ?? null);
+    setIsLoading(false);
+
+    // Update database user ID
+    setUserId(currentSession?.user?.id || null);
+
+    // Invalidate queries to refresh data based on new auth state
+    queryClient.invalidateQueries();
+  };
 
   useEffect(() => {
     if (!supabase) {
@@ -57,11 +82,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const getInitialSession = async () => {
       try {
         const { data } = await supabase.auth.getSession();
+
+        // Update the state directly for initial load instead of using handleAuthStateChange
         setSession(data.session);
         setUser(data.session?.user ?? null);
+        setIsLoading(false);
+
+        // Also update database user ID
+        setUserId(data.session?.user?.id || null);
       } catch (error) {
         console.error("Error getting initial session:", error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -71,23 +101,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth change subscription
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, currentSession) => {
-        console.debug("Auth event:", event, currentSession?.user?.id);
-
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        // Make sure we're not in loading state after auth changes
-        setIsLoading(false);
-      },
-    );
+    } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     // Clean up subscription
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
 
   // Sign in function
   const signIn = async (email: string, password: string) => {
@@ -95,6 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: new Error("Supabase client not initialized") };
 
     try {
+      console.log("Attempting to sign in with email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -112,15 +133,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!supabase) return;
 
     try {
-      await supabase.auth.signOut();
-      
-      // Explicitly reset database to use mock data
-      const { setUserId } = useDatabaseStore.getState();
-      setUserId(null);
-      
-      // Reset cache for all queries when user signs out
-      queryClient.invalidateQueries();
-      console.log("Sign out successful, database reset to mock, queries invalidated");
+      console.log("Attempting to sign out");
+
+      // Log out with Supabase
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error("Error during sign out:", error);
+        return;
+      }
+
+      // No need for page reload - auth state change handled by subscription
+      console.log("Sign out successful");
     } catch (error) {
       console.error("Error signing out:", error);
     }

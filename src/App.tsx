@@ -1,10 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import { useAuth } from "@/components/AuthProvider";
@@ -39,16 +36,10 @@ function AppInitializer({ children }) {
     if (!authLoading) {
       const userId = user?.id || null;
       console.debug("Auth state determined, setting database user:", userId);
-      
-      if (userId) {
-        // User is authenticated, use their database
-        setUserId(userId);
-      } else {
-        // User is signed out, explicitly reset to mock database
-        console.debug("User signed out or not authenticated, using mock database");
-        setUserId(null);
-      }
-      
+
+      // Set appropriate database state based on authentication
+      setUserId(userId);
+
       // We've done our initialization work
       setIsInitializing(false);
     }
@@ -56,16 +47,18 @@ function AppInitializer({ children }) {
 
   // Show loading indicator until everything is initialized
   const isLoading = authLoading || dbLoading || isInitializing;
-  
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Loading</h2>
           <p className="text-muted-foreground text-sm">
-            {authLoading ? "Checking authentication..." : 
-             dbLoading ? "Initializing database..." : 
-             "Preparing application..."}
+            {authLoading
+              ? "Checking authentication..."
+              : dbLoading
+                ? "Initializing database..."
+                : "Preparing application..."}
           </p>
         </div>
       </div>

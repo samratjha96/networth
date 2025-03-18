@@ -102,7 +102,7 @@ export function AddAccountDialog({
       };
 
       console.log("🔍 DIALOG: Submit with data:", accountData);
-      
+
       if (accountToEdit) {
         console.log("🔍 DIALOG: Editing existing account:", accountToEdit.id);
         await editAccount({ ...accountData, id: accountToEdit.id });
@@ -110,7 +110,7 @@ export function AddAccountDialog({
         console.log("🔍 DIALOG: Adding new account");
         await addAccount(accountData);
       }
-      
+
       console.log("🔍 DIALOG: Account operation completed");
 
       // Dialog will now be automatically closed by the store
@@ -249,10 +249,10 @@ export function AddAccountDialog({
           </div>
 
           <Button type="submit" disabled={!isValid || isSubmitting}>
-            {isSubmitting 
-              ? "Saving..." 
-              : accountToEdit 
-                ? "Save Changes" 
+            {isSubmitting
+              ? "Saving..."
+              : accountToEdit
+                ? "Save Changes"
                 : "Add Account"}
           </Button>
         </form>

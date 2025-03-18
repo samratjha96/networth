@@ -472,13 +472,13 @@ export class SupabaseDatabase implements DatabaseProvider {
         const userId = this.getUserId();
 
         // Format dates in ISO format without milliseconds to prevent URL encoding issues
-        const formattedStartDate = startDate.toISOString().split('.')[0]+'Z';
-        const formattedEndDate = endDate.toISOString().split('.')[0]+'Z';
-        
-        console.debug('Fetching account value history with date range:', {
+        const formattedStartDate = startDate.toISOString().split(".")[0] + "Z";
+        const formattedEndDate = endDate.toISOString().split(".")[0] + "Z";
+
+        console.debug("Fetching account value history with date range:", {
           start: formattedStartDate,
           end: formattedEndDate,
-          accountId
+          accountId,
         });
 
         const { data, error } = await this.supabase
@@ -491,7 +491,7 @@ export class SupabaseDatabase implements DatabaseProvider {
           .order("hour_start", { ascending: true });
 
         if (error) {
-          console.error('Error fetching account value history:', error);
+          console.error("Error fetching account value history:", error);
           throw error;
         }
 
@@ -772,13 +772,13 @@ export class SupabaseDatabase implements DatabaseProvider {
       const accountIds = accounts.map((a) => a.id);
 
       // Format dates in ISO format without milliseconds to prevent URL encoding issues
-      const formattedStartDate = startDate.toISOString().split('.')[0]+'Z';
-      const formattedEndDate = endDate.toISOString().split('.')[0]+'Z';
-      
-      console.debug('Fetching account history with date range:', {
+      const formattedStartDate = startDate.toISOString().split(".")[0] + "Z";
+      const formattedEndDate = endDate.toISOString().split(".")[0] + "Z";
+
+      console.debug("Fetching account history with date range:", {
         start: formattedStartDate,
         end: formattedEndDate,
-        accountCount: accountIds.length
+        accountCount: accountIds.length,
       });
 
       // Query first for the historical values
@@ -792,7 +792,7 @@ export class SupabaseDatabase implements DatabaseProvider {
         .order("hour_start", { ascending: true });
 
       if (historyError) {
-        console.error('Error fetching hourly account values:', historyError);
+        console.error("Error fetching hourly account values:", historyError);
         throw historyError;
       }
 

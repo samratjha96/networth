@@ -16,36 +16,47 @@ export const DatabaseFactory = {
    */
   createProvider(
     backendType: DatabaseBackend,
-    userId?: string | null
+    userId?: string | null,
   ): DatabaseProvider {
-    console.debug(`DatabaseFactory: Creating provider with backendType=${backendType}, userId=${userId || 'null'}, useSupabase=${useSupabase}`);
-    
+    console.debug(
+      `DatabaseFactory: Creating provider with backendType=${backendType}, userId=${userId || "null"}, useSupabase=${useSupabase}`,
+    );
+
     // If Supabase is explicitly requested and enabled in environment
     if (backendType === "supabase" && useSupabase) {
       // Only use Supabase if we have a valid user ID
       if (userId) {
-        console.debug("DatabaseFactory: Attempting to create Supabase database with userId:", userId);
+        console.debug(
+          "DatabaseFactory: Attempting to create Supabase database with userId:",
+          userId,
+        );
         const supabaseDb = SupabaseDatabase.getInstance();
-        
+
         // Set the user ID on the Supabase instance
         if (supabaseDb) {
           supabaseDb.setUserId(userId);
-          console.debug("DatabaseFactory: Successfully created Supabase database provider");
+          console.debug(
+            "DatabaseFactory: Successfully created Supabase database provider",
+          );
           return supabaseDb;
         }
       }
-      
+
       // If we couldn't create a Supabase instance, fall back to mock
       console.warn(
-        "DatabaseFactory: Supabase was requested but couldn't be initialized. Falling back to mock database."
+        "DatabaseFactory: Supabase was requested but couldn't be initialized. Falling back to mock database.",
       );
     } else {
-      console.debug(`DatabaseFactory: Using mock database (backendType=${backendType}, useSupabase=${useSupabase})`);
+      console.debug(
+        `DatabaseFactory: Using mock database (backendType=${backendType}, useSupabase=${useSupabase})`,
+      );
     }
-    
+
     // Default to mock database for local mode or when Supabase isn't available
     const mockDb = MockDatabase.getInstance();
-    console.debug("DatabaseFactory: Successfully created Mock database provider");
+    console.debug(
+      "DatabaseFactory: Successfully created Mock database provider",
+    );
     return mockDb;
-  }
-} 
+  },
+};
