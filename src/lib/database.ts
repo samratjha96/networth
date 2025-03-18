@@ -11,7 +11,6 @@ export class MockDatabase implements DatabaseProvider {
   private accounts: AccountWithValue[] = [];
   private history: NetworthHistory[] = [];
   private isInitialized: boolean = false;
-  private testMode: boolean = false;
 
   private constructor() {}
 

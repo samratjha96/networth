@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { DatabaseBackend, getDatabaseInstance } from "@/lib/database-factory";
+import { DatabaseBackend } from "@/lib/database-factory";
 import { DatabaseProvider } from "@/types/database";
 import { supabaseDb, useSupabase } from "@/lib/supabase-database";
 import { db as mockDb } from "@/lib/database";

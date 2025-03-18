@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useIsMobile } from "@/hooks/ui/use-mobile";
 import { TimeRange, NetWorthDataPoint, NetWorthEvent } from "@/types/networth";
-import { useNetworthHistory } from "./use-networth-history";
-import { useNetworthPoints } from "./use-networth-points";
-import { useNetworthEvents } from "./use-networth-events";
+import { useNetworthHistory } from "@/hooks/networth/use-networth-history";
+import { useNetworthPoints } from "@/hooks/networth/use-networth-points";
+import { useNetworthEvents } from "@/hooks/networth/use-networth-events";
 
 interface UseAdaptiveNetWorthHistoryOptions {
   // Allow overriding the max points for special cases
@@ -62,8 +62,8 @@ export function useAdaptiveNetWorthHistory(
 
     setIsProcessing(true);
     try {
-      // Calculate timeRangeDays for resolution
-      const timeRangeDays = timeRange === 0 ? 365 * 2 : timeRange;
+      // Convert timeRange to days
+      const timeRangeDays = convertTimeRangeToDays(timeRange);
 
       // Get optimized data points
       const sampledData = optimizeDataPoints(
@@ -97,6 +97,26 @@ export function useAdaptiveNetWorthHistory(
     getEvents,
   ]);
 
+  // Function to convert TimeRange to days
+  const convertTimeRangeToDays = (range: TimeRange): number => {
+    if (typeof range === "number") return range;
+
+    switch (range) {
+      case "day":
+        return 1;
+      case "week":
+        return 7;
+      case "month":
+        return 30;
+      case "year":
+        return 365;
+      case "all":
+        return 365 * 2; // Default for 'all'
+      default:
+        return 30; // Fallback
+    }
+  };
+
   // Effect to handle resize events
   useEffect(() => {
     const handleResize = () => {
@@ -105,7 +125,7 @@ export function useAdaptiveNetWorthHistory(
       const currentWidth = containerRef.current?.clientWidth || 0;
       // Only reprocess if the container size has changed significantly
       if (Math.abs(currentWidth - viewportWidth) > 100) {
-        const timeRangeDays = timeRange === 0 ? 365 * 2 : timeRange;
+        const timeRangeDays = convertTimeRangeToDays(timeRange);
 
         const sampledData = optimizeDataPoints(
           data,

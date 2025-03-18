@@ -9,6 +9,26 @@ interface UseNetworthHistoryResult {
   refreshHistory: () => void;
 }
 
+// Convert TimeRange to numerical days
+const convertTimeRangeToDays = (range: TimeRange): number => {
+  if (typeof range === "number") return range;
+
+  switch (range) {
+    case "day":
+      return 1;
+    case "week":
+      return 7;
+    case "month":
+      return 30;
+    case "year":
+      return 365;
+    case "all":
+      return 365 * 2;
+    default:
+      return 30;
+  }
+};
+
 /**
  * Hook to fetch networth history data for a specific time range
  */
@@ -22,7 +42,7 @@ export function useNetworthHistory(
     queryFn: async () => {
       if (!db) return [];
 
-      const days = timeRange === 0 ? 365 * 2 : timeRange;
+      const days = convertTimeRangeToDays(timeRange);
       const history = await db.getNetworthHistory(days);
 
       return history.map((item) => ({
