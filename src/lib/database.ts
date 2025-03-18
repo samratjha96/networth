@@ -212,10 +212,19 @@ export class MockDatabase implements DatabaseProvider {
     };
   }
 
-  // Enable/disable test mode for mock data generation
-  setTestMode(enabled: boolean): void {
-    this.testMode = enabled;
-    console.log(`Mock database test mode ${enabled ? "enabled" : "disabled"}`);
+
+  // Cleanup resources when switching database providers
+  cleanup(): void {
+    console.log("Cleaning up mock database resources");
+    // Reset any caches or ongoing operations
+    this.isInitialized = false;
+    // Optional: reset data to initial state
+    this.accounts = generateMockAccounts();
+    const startValue = this.accounts.reduce(
+      (sum, account) => sum + account.balance,
+      0,
+    );
+    this.history = generateMockNetworthHistory(startValue);
   }
 }
 

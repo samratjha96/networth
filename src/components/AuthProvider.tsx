@@ -8,6 +8,7 @@ import {
 import { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
+import { useDatabaseStore } from "@/store/database-store";
 
 // Initialize Supabase client using Vite's environment variable approach
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -112,9 +113,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       await supabase.auth.signOut();
+      
+      // Explicitly reset database to use mock data
+      const { setUserId } = useDatabaseStore.getState();
+      setUserId(null);
+      
       // Reset cache for all queries when user signs out
       queryClient.invalidateQueries();
-      console.log("Sign out successful, queries invalidated");
+      console.log("Sign out successful, database reset to mock, queries invalidated");
     } catch (error) {
       console.error("Error signing out:", error);
     }

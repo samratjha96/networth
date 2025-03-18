@@ -2,26 +2,26 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), "");
   const isProd = mode === "production";
+  process.env.NODE_ENV = isProd ? "production" : "development";
 
   return {
     server: {
       host: "::",
       port: 8080,
     },
-    plugins: [react()].filter(Boolean),
+    plugins: [
+      react()
+    ].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
     },
-    // Define env variables to be used in client-side code
     define: {
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
         env.VITE_SUPABASE_URL,
       ),
@@ -33,11 +33,20 @@ export default defineConfig(({ mode }) => {
       ),
     },
     esbuild: {
-      pure: mode === 'production' ? ['console.log'] : [],
+      pure: isProd ? [
+        'console.log', 
+        'console.info', 
+        'console.debug', 
+        // Keep error and warning logs for debugging
+        // 'console.warn',
+        // 'console.error',
+        'console.trace'
+      ] : [],
       logLevel: "error"
     },
     build: {
-      minify: isProd
+      minify: isProd,
+      drop: isProd ? ['debugger'] : [] // Keep console logs for debugging
     }
   };
 });

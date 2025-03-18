@@ -2,6 +2,7 @@ import { AccountWithValue } from "@/types/accounts";
 import { useAccountsStore } from "@/store/accounts-store";
 import { useQuery } from "@tanstack/react-query";
 import { useDb } from "@/components/DatabaseProvider";
+import React from "react";
 
 interface UseAccountsResult {
   accounts: AccountWithValue[];
@@ -16,35 +17,48 @@ interface UseAccountsResult {
   deleteAccount: (id: string) => Promise<void>;
 }
 
+// Helper for logging with timestamps
+const log = (message: string, data?: any) => {
+  const timestamp = new Date().toISOString().substring(11, 23); // HH:MM:SS.mmm
+  console.log(`TESTING: [${timestamp}] ${message}`, data ? data : '');
+};
+
 export function useAccounts(): UseAccountsResult {
-  const { addAccount, updateAccount, deleteAccount } = useAccountsStore();
+  const { 
+    addAccount, 
+    updateAccount, 
+    deleteAccount, 
+    accounts: storeAccounts,
+    isLoading: storeIsLoading,
+    error: storeError,
+  } = useAccountsStore();
   const { db, backendType } = useDb();
-
-  async function fetchAccounts(): Promise<AccountWithValue[]> {
-    try {
-      console.log("Fetching accounts from database:", backendType);
-      const accounts = await db.getAllAccounts();
-      console.log(
-        `Fetched ${accounts.length} accounts from ${backendType} backend`,
-      );
-      useAccountsStore.setState({ accounts });
-      return accounts;
-    } catch (error) {
-      console.error("Failed to load accounts:", error);
-      return [];
-    }
-  }
-
-  const query = useQuery<AccountWithValue[]>({
-    queryKey: ["accounts", backendType, db],
-    queryFn: fetchAccounts,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-    refetchInterval: 10000,
-  });
-
-  const accounts = query.data ?? [];
+  
+  React.useEffect(() => {
+    // Fetch accounts on mount or when dependencies change
+    const fetchAccounts = async () => {
+      // Only fetch if the store doesn't already have accounts
+      if (storeAccounts.length === 0 && !storeIsLoading) {
+        log(`🔄 Initial fetch of accounts from database: ${backendType}`);
+        try {
+          const accounts = await db.getAllAccounts();
+          log(`✅ Fetched ${accounts.length} accounts from ${backendType} backend`);
+          useAccountsStore.setState({ accounts, isLoading: false });
+        } catch (error) {
+          log(`❌ Error fetching accounts:`, error);
+          useAccountsStore.setState({ 
+            error: error instanceof Error ? error : new Error(String(error)),
+            isLoading: false
+          });
+        }
+      }
+    };
+    
+    fetchAccounts();
+  }, [db, backendType, storeAccounts.length, storeIsLoading]);
+  
+  // Process account data for derived states
+  const accounts = storeAccounts;
   const assetsAccounts = accounts.filter((account) => !account.isDebt);
   const liabilitiesAccounts = accounts.filter((account) => account.isDebt);
 
@@ -52,8 +66,8 @@ export function useAccounts(): UseAccountsResult {
     accounts,
     assetsAccounts,
     liabilitiesAccounts,
-    isLoading: query.isLoading,
-    error: query.error instanceof Error ? query.error : null,
+    isLoading: storeIsLoading,
+    error: storeError,
     addAccount,
     updateAccount,
     deleteAccount,

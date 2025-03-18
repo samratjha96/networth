@@ -5,13 +5,14 @@ import { AccountsPanel } from "./AccountsPanel";
 import { TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { Button } from "@/components/ui/button";
-import { useAccountDialogStore } from "@/store/account-dialog-store";
+import { useAccountsStore } from "@/store/accounts-store";
 import { useAccounts } from "@/hooks/accounts/use-accounts";
+import { AccountViewType } from "@/types/accounts";
 
 export function AccountsList() {
-  const [view, setView] = useState<"assets" | "liabilities">("assets");
+  const [view, setView] = useState<AccountViewType>("assets");
   const { accounts } = useAccounts();
-  const { openAddDialog } = useAccountDialogStore();
+  const { openAddDialog } = useAccountsStore();
 
   const { assetAccounts, liabilityAccounts } = useMemo(() => {
     const assetAccounts = accounts.filter((a) => !a.isDebt);
@@ -53,7 +54,7 @@ export function AccountsList() {
               type="single"
               defaultValue="assets"
               value={view}
-              onValueChange={(v) => v && setView(v as "assets" | "liabilities")}
+              onValueChange={(v) => v && setView(v as AccountViewType)}
               className="bg-muted/50 p-0.5 rounded-md"
             >
               <ToggleGroupItem

@@ -471,16 +471,29 @@ export class SupabaseDatabase implements DatabaseProvider {
       async () => {
         const userId = this.getUserId();
 
+        // Format dates in ISO format without milliseconds to prevent URL encoding issues
+        const formattedStartDate = startDate.toISOString().split('.')[0]+'Z';
+        const formattedEndDate = endDate.toISOString().split('.')[0]+'Z';
+        
+        console.debug('Fetching account value history with date range:', {
+          start: formattedStartDate,
+          end: formattedEndDate,
+          accountId
+        });
+
         const { data, error } = await this.supabase
           .from("hourly_account_values")
           .select("*")
           .eq("account_id", accountId)
           .eq("user_id", userId)
-          .gte("hour_start", startDate.toISOString())
-          .lte("hour_start", endDate.toISOString())
+          .gte("hour_start", formattedStartDate)
+          .lte("hour_start", formattedEndDate)
           .order("hour_start", { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching account value history:', error);
+          throw error;
+        }
 
         return (data || []).map(dbAccountValueToAccountValue);
       },
@@ -664,15 +677,6 @@ export class SupabaseDatabase implements DatabaseProvider {
     return false; // Supabase implementation always returns false
   }
 
-  setTestMode(enabled: boolean): void {
-    if (enabled) {
-      console.warn(
-        "Test mode is not directly supported in Supabase implementation. The application will switch to the mock database implementation.",
-      );
-    }
-    // No need to do anything here, since the factory handles switching implementations
-  }
-
   /**
    * Gets account performance data based on historical records
    * @param account The account to get performance data for
@@ -767,17 +771,30 @@ export class SupabaseDatabase implements DatabaseProvider {
       // Fetch historical values for accounts
       const accountIds = accounts.map((a) => a.id);
 
+      // Format dates in ISO format without milliseconds to prevent URL encoding issues
+      const formattedStartDate = startDate.toISOString().split('.')[0]+'Z';
+      const formattedEndDate = endDate.toISOString().split('.')[0]+'Z';
+      
+      console.debug('Fetching account history with date range:', {
+        start: formattedStartDate,
+        end: formattedEndDate,
+        accountCount: accountIds.length
+      });
+
       // Query first for the historical values
       const { data: historyData, error: historyError } = await this.supabase
         .from("hourly_account_values")
         .select("account_id, hour_start, value")
         .in("account_id", accountIds)
         .eq("user_id", userId)
-        .gte("hour_start", startDate.toISOString())
-        .lte("hour_start", endDate.toISOString())
+        .gte("hour_start", formattedStartDate)
+        .lte("hour_start", formattedEndDate)
         .order("hour_start", { ascending: true });
 
-      if (historyError) throw historyError;
+      if (historyError) {
+        console.error('Error fetching hourly account values:', historyError);
+        throw historyError;
+      }
 
       if (historyData && historyData.length > 0) {
         // Group by account_id
@@ -889,6 +906,15 @@ export class SupabaseDatabase implements DatabaseProvider {
       console.error("Error calculating account performance:", error);
       return [];
     }
+  }
+
+  // Cleanup resources when switching database providers
+  cleanup(): void {
+    console.log("Cleaning up Supabase database resources");
+    // Reset user context
+    this.currentUserId = null;
+    // Reset initialization flag
+    this.isInitialized = false;
   }
 }
 

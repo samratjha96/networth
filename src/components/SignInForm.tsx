@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "./AuthProvider";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/ui/use-toast";
 
 export const SignInForm = () => {
   const [email, setEmail] = useState("");

@@ -2,6 +2,7 @@ import { Button } from "./ui/button";
 import { SignInDialog } from "./SignInDialog";
 import { useCallback } from "react";
 import { useAuth } from "./AuthProvider";
+import { toast } from "@/hooks/ui/use-toast";
 
 export const Header = () => {
   const { user, signOut, isLoading } = useAuth();
@@ -10,8 +11,19 @@ export const Header = () => {
     try {
       console.log("Signing out");
       await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You are now in demo mode with mock data.",
+        duration: 3000,
+      });
     } catch (error) {
       console.error("Error signing out:", error);
+      toast({
+        title: "Sign out failed",
+        description: "Please try again",
+        variant: "destructive",
+        duration: 3000,
+      });
     }
   }, [signOut]);
 

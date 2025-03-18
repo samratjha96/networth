@@ -13,12 +13,14 @@ import { DatabaseBackend } from "@/lib/database-factory";
 type DatabaseContextType = {
   db: DatabaseProviderType;
   backendType: DatabaseBackend;
+  isLoading: boolean;
 };
 
 // Create context with default values
 const DatabaseContext = createContext<DatabaseContextType>({
   db: {} as DatabaseProviderType,
   backendType: "local",
+  isLoading: true,
 });
 
 // Custom hook to use the database context
@@ -31,6 +33,17 @@ interface DatabaseProviderProps {
 export function DatabaseProvider({ children }: DatabaseProviderProps) {
   // Get database-related state from store
   const { db: storeDb, backend } = useDatabaseStore();
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Mark loading as false when we have a database
+  useEffect(() => {
+    if (storeDb) {
+      console.debug(`Database provider initialized: ${backend}`);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+  }, [storeDb, backend]);
 
   // Listen for local storage changes from other tabs/windows
   useEffect(() => {
@@ -49,8 +62,9 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
 
   // Value to provide to context consumers
   const contextValue = {
-    db: storeDb,
+    db: storeDb || ({} as DatabaseProviderType),
     backendType: backend,
+    isLoading,
   };
 
   return (

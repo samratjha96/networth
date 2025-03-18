@@ -28,6 +28,7 @@ export interface DatabaseProvider extends DatabaseOperations {
   initialize(): Promise<void>;
   close(): Promise<void>;
   synchronizeNetworthHistory(): Promise<void>;
+  cleanup?(): void;
 }
 
 export interface DatabaseState {

@@ -20,7 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AccountType, assetTypes, debtTypes } from "@/types/accounts";
 import { CURRENCIES, CurrencyCode } from "@/types/currency";
-import { useAccountDialogStore } from "@/store/account-dialog-store";
+import { useAccountsStore } from "@/store/accounts-store";
 
 interface AddAccountDialogProps {
   trigger?: React.ReactNode;
@@ -31,15 +31,15 @@ export function AddAccountDialog({
   trigger,
   className,
 }: AddAccountDialogProps) {
-  // Get dialog state and actions from the store
+  // Get dialog state and actions from the unified store
   const {
-    isOpen,
+    isDialogOpen: isOpen,
     accountToEdit,
     defaultIsDebt,
     closeDialog,
     addAccount,
-    editAccount,
-  } = useAccountDialogStore();
+    updateAccount: editAccount,
+  } = useAccountsStore();
 
   const [name, setName] = React.useState("");
   const [type, setType] = React.useState<AccountType>("Checking");
@@ -50,6 +50,7 @@ export function AddAccountDialog({
     name: false,
     balance: false,
   });
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Reset form when dialog opens and when account changes
   useEffect(() => {
@@ -68,10 +69,11 @@ export function AddAccountDialog({
         setIsDebt(defaultIsDebt);
       }
       setTouched({ name: false, balance: false });
+      setIsSubmitting(false);
     }
   }, [isOpen, accountToEdit, defaultIsDebt]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate required fields
@@ -80,29 +82,42 @@ export function AddAccountDialog({
       return;
     }
 
-    // Convert balance to number
-    let numericBalance = parseFloat(balance) || 0;
+    setIsSubmitting(true);
 
-    // For liability accounts, ensure the balance is negative
-    if (isDebt && numericBalance > 0) {
-      numericBalance = -numericBalance;
+    try {
+      // Convert balance to number
+      let numericBalance = parseFloat(balance) || 0;
+
+      // For liability accounts, ensure the balance is negative
+      if (isDebt && numericBalance > 0) {
+        numericBalance = -numericBalance;
+      }
+
+      const accountData = {
+        name: name.trim(),
+        type,
+        balance: numericBalance,
+        isDebt,
+        currency,
+      };
+
+      console.log("🔍 DIALOG: Submit with data:", accountData);
+      
+      if (accountToEdit) {
+        console.log("🔍 DIALOG: Editing existing account:", accountToEdit.id);
+        await editAccount({ ...accountData, id: accountToEdit.id });
+      } else {
+        console.log("🔍 DIALOG: Adding new account");
+        await addAccount(accountData);
+      }
+      
+      console.log("🔍 DIALOG: Account operation completed");
+
+      // Dialog will now be automatically closed by the store
+    } catch (error) {
+      console.error("Error submitting account:", error);
+      setIsSubmitting(false);
     }
-
-    const accountData = {
-      name: name.trim(),
-      type,
-      balance: numericBalance,
-      isDebt,
-      currency,
-    };
-
-    if (accountToEdit) {
-      editAccount({ ...accountData, id: accountToEdit.id });
-    } else {
-      addAccount(accountData);
-    }
-
-    // Form will be reset by the useEffect when isOpen changes
   };
 
   const handleDebtToggle = (checked: boolean) => {
@@ -233,8 +248,12 @@ export function AddAccountDialog({
             )}
           </div>
 
-          <Button type="submit" disabled={!isValid}>
-            {accountToEdit ? "Save Changes" : "Add Account"}
+          <Button type="submit" disabled={!isValid || isSubmitting}>
+            {isSubmitting 
+              ? "Saving..." 
+              : accountToEdit 
+                ? "Save Changes" 
+                : "Add Account"}
           </Button>
         </form>
       </DialogContent>

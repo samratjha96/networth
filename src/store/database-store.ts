@@ -1,10 +1,8 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { DatabaseBackend } from "@/lib/database-factory";
+import { DatabaseBackend, DatabaseFactory } from "@/lib/database-factory";
 import { DatabaseProvider } from "@/types/database";
-import { supabaseDb, useSupabase } from "@/lib/supabase-database";
-import { db as mockDb } from "@/lib/database";
-import { useDb } from "@/components/DatabaseProvider";
+import { useSupabase } from "@/lib/supabase-database";
 
 // Local storage key for persisting backend type
 export const LS_BACKEND_TYPE_KEY = "argos-db-backend-type";
@@ -13,7 +11,8 @@ export const LS_BACKEND_TYPE_KEY = "argos-db-backend-type";
 type DatabaseState = {
   // Core state
   backend: DatabaseBackend;
-  db: DatabaseProvider;
+  db: DatabaseProvider | null;
+  userId: string | null;
 
   // Actions
   setBackend: (backend: DatabaseBackend) => void;
@@ -22,67 +21,63 @@ type DatabaseState = {
 
 export const useDatabaseStore = create<DatabaseState>()(
   devtools(
-    (set) => ({
-      // Initial state - get from local storage or default to local
-      backend:
-        (localStorage.getItem(LS_BACKEND_TYPE_KEY) as DatabaseBackend) ||
-        "local",
-      db:
-        localStorage.getItem(LS_BACKEND_TYPE_KEY) === "supabase" && supabaseDb
-          ? supabaseDb
-          : mockDb,
+    (set, get) => ({
+      // Initial state - don't create a DB provider yet
+      backend: (localStorage.getItem(LS_BACKEND_TYPE_KEY) as DatabaseBackend) || "local",
+      db: null,
+      userId: null,
 
-      // Set which backend to use - purely declarative
+      // Set which backend to use
       setBackend: (backend: DatabaseBackend) => {
-        const db = backend === "supabase" && supabaseDb ? supabaseDb : mockDb;
+        const { userId } = get();
         console.log(`Setting database backend to ${backend}`);
 
         // Store in local storage for persistence
         localStorage.setItem(LS_BACKEND_TYPE_KEY, backend);
 
-        // Update state with new backend and db
-        set({ backend, db }, false, `setBackend_${backend}`);
+        // Create appropriate database provider
+        const db = DatabaseFactory.createProvider(backend, userId);
 
-        // If switching to local mode, enable test mode to generate mock data
-        if (backend === "local" && mockDb) {
-          mockDb.setTestMode(true);
-          console.log("Database store: Test mode enabled for local database");
-        }
+        // Update state
+        set({ backend, db }, false, `setBackend_${backend}`);
       },
 
       // Set user ID and switch to appropriate backend
       setUserId: (userId: string | null) => {
-        // Update the user ID in Supabase provider
-        if (supabaseDb) {
-          supabaseDb.setUserId(userId);
-        }
+        // Get current state for cleanup
+        const { db: currentDb, backend: currentBackend } = get();
 
-        // Determine appropriate backend
+        // Determine appropriate backend based on user state
         const shouldUseSupabase = userId !== null && useSupabase;
-        const newBackend: DatabaseBackend = shouldUseSupabase
-          ? "supabase"
-          : "local";
-
-        // Update backend if changed
-        if (newBackend !== "supabase" || supabaseDb) {
-          set(
-            {
-              backend: newBackend,
-              db: newBackend === "supabase" ? supabaseDb : mockDb,
-            },
-            false,
-            `setUserId_${newBackend}`,
-          );
-
-          // Store in local storage
-          localStorage.setItem(LS_BACKEND_TYPE_KEY, newBackend);
-
-          // If switching to local mode, enable test mode to generate mock data
-          if (newBackend === "local" && mockDb) {
-            mockDb.setTestMode(true);
-            console.log("Database store: Test mode enabled for local database");
+        const newBackend: DatabaseBackend = shouldUseSupabase ? "supabase" : "local";
+        
+        console.debug(`Setting userId to ${userId}, using ${newBackend} database`);
+        
+        // Cleanup current database if needed
+        if (currentDb && currentBackend !== newBackend) {
+          console.debug(`Cleaning up ${currentBackend} database before switching to ${newBackend}`);
+          // Allow the database to clean up any resources
+          if (typeof currentDb.cleanup === 'function') {
+            currentDb.cleanup();
           }
         }
+        
+        // Create appropriate database provider
+        const db = DatabaseFactory.createProvider(newBackend, userId);
+
+        // Update state
+        set(
+          {
+            userId,
+            backend: newBackend,
+            db
+          },
+          false,
+          `setUserId_${newBackend}`
+        );
+
+        // Store in local storage
+        localStorage.setItem(LS_BACKEND_TYPE_KEY, newBackend);
       },
     }),
     { name: "database-store" },

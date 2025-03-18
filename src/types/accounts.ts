@@ -14,6 +14,9 @@ export type DebtType = "Credit Card" | "Loan" | "Mortgage";
 
 export type AccountType = AssetType | DebtType;
 
+// View type for UI components
+export type AccountViewType = "assets" | "liabilities";
+
 // Common type collections for reuse
 export const assetTypes: AssetType[] = [
   "Checking",

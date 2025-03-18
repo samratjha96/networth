@@ -4,35 +4,79 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   QueryClient,
   QueryClientProvider,
-  useQueryClient,
 } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import { AppProvider } from "@/components/AppProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { DebugAuthStatus } from "@/components/DebugAuthStatus";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { AuthProvider } from "@/components/AuthProvider";
+import { DatabaseProvider } from "@/components/DatabaseProvider";
+import { useDatabaseStore } from "@/store/database-store";
+import { useDb } from "@/components/DatabaseProvider";
 
-const queryClient = new QueryClient();
+// Create the QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Don't refetch on window focus for better user experience
+      refetchOnWindowFocus: false,
+      // Cache data for longer to reduce unnecessary loading
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
-// App content with authentication awareness
-function AppContent() {
-  const { isLoading } = useAuth();
-  const queryClient = useQueryClient();
+// App initialization wrapper that handles auth and database setup
+function AppInitializer({ children }) {
+  const { isLoading: authLoading, user } = useAuth();
+  const { setUserId } = useDatabaseStore();
+  const { isLoading: dbLoading } = useDb();
+  const [isInitializing, setIsInitializing] = useState(true);
 
+  // Set up user in database when auth state changes
   useEffect(() => {
-    // Reset cache when component mounts to ensure fresh data
-    queryClient.invalidateQueries({ queryKey: ["accounts"] });
-  }, [queryClient]);
+    if (!authLoading) {
+      const userId = user?.id || null;
+      console.debug("Auth state determined, setting database user:", userId);
+      
+      if (userId) {
+        // User is authenticated, use their database
+        setUserId(userId);
+      } else {
+        // User is signed out, explicitly reset to mock database
+        console.debug("User signed out or not authenticated, using mock database");
+        setUserId(null);
+      }
+      
+      // We've done our initialization work
+      setIsInitializing(false);
+    }
+  }, [authLoading, user, setUserId]);
 
+  // Show loading indicator until everything is initialized
+  const isLoading = authLoading || dbLoading || isInitializing;
+  
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        Loading...
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Loading</h2>
+          <p className="text-muted-foreground text-sm">
+            {authLoading ? "Checking authentication..." : 
+             dbLoading ? "Initializing database..." : 
+             "Preparing application..."}
+          </p>
+        </div>
       </div>
     );
   }
 
+  return <>{children}</>;
+}
+
+// App content with routes
+function AppContent() {
   return (
     <div className="min-h-screen bg-background">
       <Toaster />
@@ -50,9 +94,13 @@ function AppContent() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
+      <AuthProvider>
+        <DatabaseProvider>
+          <AppInitializer>
+            <AppContent />
+          </AppInitializer>
+        </DatabaseProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
