@@ -1,4 +1,4 @@
-import { Account } from "@/types/accounts";
+import { AccountValue, AccountWithValue } from "@/types/accounts";
 import { DatabaseProvider } from "@/types/database";
 import { NetworthHistory } from "@/types/networth";
 import {
@@ -8,9 +8,10 @@ import {
 
 export class MockDatabase implements DatabaseProvider {
   private static instance: MockDatabase | null = null;
-  private accounts: Account[] = [];
+  private accounts: AccountWithValue[] = [];
   private history: NetworthHistory[] = [];
   private isInitialized: boolean = false;
+  private testMode: boolean = false;
 
   private constructor() {}
 
@@ -45,16 +46,18 @@ export class MockDatabase implements DatabaseProvider {
     console.log("Mock database closed");
   }
 
-  async getAllAccounts(): Promise<Account[]> {
+  async getAllAccounts(): Promise<AccountWithValue[]> {
     return this.accounts;
   }
 
-  async getAccount(id: string): Promise<Account | undefined> {
+  async getAccount(id: string): Promise<AccountWithValue | undefined> {
     return this.accounts.find((account) => account.id === id);
   }
 
-  async insertAccount(accountData: Omit<Account, "id">): Promise<Account> {
-    const newAccount: Account = {
+  async insertAccount(
+    accountData: Omit<AccountWithValue, "id">,
+  ): Promise<AccountWithValue> {
+    const newAccount: AccountWithValue = {
       ...accountData,
       id: crypto.randomUUID(),
       balance: accountData.isDebt
@@ -67,7 +70,7 @@ export class MockDatabase implements DatabaseProvider {
     return newAccount;
   }
 
-  async updateAccount(account: Account): Promise<void> {
+  async updateAccount(account: AccountWithValue): Promise<void> {
     const index = this.accounts.findIndex((a) => a.id === account.id);
 
     if (index === -1) {
@@ -113,6 +116,36 @@ export class MockDatabase implements DatabaseProvider {
 
   async calculateCurrentNetworth(): Promise<number> {
     return this.accounts.reduce((sum, account) => sum + account.balance, 0);
+  }
+
+  async getAccountValue(accountId: string): Promise<number> {
+    const account = await this.getAccount(accountId);
+    return account?.balance || 0;
+  }
+
+  async getAccountValueHistory(
+    accountId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<AccountValue[]> {
+    const account = await this.getAccount(accountId);
+    if (!account) return [];
+
+    // For mock implementation, return simple history with two points
+    const history: AccountValue[] = [
+      {
+        accountId,
+        hourStart: startDate,
+        value: account.balance * 0.9, // 10% less at start date
+      },
+      {
+        accountId,
+        hourStart: endDate,
+        value: account.balance,
+      },
+    ];
+
+    return history;
   }
 
   async getNetworthHistory(days: number): Promise<NetworthHistory[]> {
@@ -178,6 +211,12 @@ export class MockDatabase implements DatabaseProvider {
       date: new Date().toISOString(),
       value: currentNetworth,
     };
+  }
+
+  // Enable/disable test mode for mock data generation
+  setTestMode(enabled: boolean): void {
+    this.testMode = enabled;
+    console.log(`Mock database test mode ${enabled ? "enabled" : "disabled"}`);
   }
 }
 

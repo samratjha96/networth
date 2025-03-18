@@ -1,17 +1,19 @@
 import { useCallback } from "react";
-import { Account } from "@/types/accounts";
+import { AccountWithValue } from "@/types/accounts";
 import { useAccountsStore } from "@/store/accounts-store";
 import { useQuery } from "@tanstack/react-query";
 import { useDb } from "@/components/DatabaseProvider";
 
 interface UseAccountsResult {
-  accounts: Account[];
-  assetsAccounts: Account[];
-  liabilitiesAccounts: Account[];
+  accounts: AccountWithValue[];
+  assetsAccounts: AccountWithValue[];
+  liabilitiesAccounts: AccountWithValue[];
   isLoading: boolean;
   error: Error | null;
-  addAccount: (account: Omit<Account, "id">) => Promise<Account>;
-  updateAccount: (account: Account) => Promise<void>;
+  addAccount: (
+    account: Omit<AccountWithValue, "id">,
+  ) => Promise<AccountWithValue>;
+  updateAccount: (account: AccountWithValue) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
 }
 
@@ -19,7 +21,7 @@ export function useAccounts(): UseAccountsResult {
   const { addAccount, updateAccount, deleteAccount } = useAccountsStore();
   const { db, backendType } = useDb();
 
-  async function fetchAccounts(): Promise<Account[]> {
+  async function fetchAccounts(): Promise<AccountWithValue[]> {
     try {
       console.log("Fetching accounts from database:", backendType);
       const accounts = await db.getAllAccounts();
@@ -34,7 +36,7 @@ export function useAccounts(): UseAccountsResult {
     }
   }
 
-  const query = useQuery<Account[]>({
+  const query = useQuery<AccountWithValue[]>({
     queryKey: ["accounts", backendType, db],
     queryFn: fetchAccounts,
     refetchOnMount: "always",

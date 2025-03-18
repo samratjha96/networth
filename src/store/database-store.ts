@@ -45,11 +45,8 @@ export const useDatabaseStore = create<DatabaseState>()(
 
         // If switching to local mode, enable test mode to generate mock data
         if (backend === "local" && mockDb) {
-          // Enable test mode to ensure mock data is generated
-          if (typeof mockDb.setTestMode === "function") {
-            mockDb.setTestMode(true);
-            console.log("Database store: Test mode enabled for local database");
-          }
+          mockDb.setTestMode(true);
+          console.log("Database store: Test mode enabled for local database");
         }
       },
 
@@ -82,13 +79,8 @@ export const useDatabaseStore = create<DatabaseState>()(
 
           // If switching to local mode, enable test mode to generate mock data
           if (newBackend === "local" && mockDb) {
-            // Enable test mode to ensure mock data is generated
-            if (typeof mockDb.setTestMode === "function") {
-              mockDb.setTestMode(true);
-              console.log(
-                "Database store: Test mode enabled for local database",
-              );
-            }
+            mockDb.setTestMode(true);
+            console.log("Database store: Test mode enabled for local database");
           }
         }
       },

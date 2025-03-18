@@ -1,21 +1,21 @@
 import { create } from "zustand";
-import { Account } from "@/types/accounts";
-import { useAccountsStore } from "./accounts-store";
+import { AccountWithValue } from "@/types/accounts";
+import { useAccountsStore } from "@/store/accounts-store";
 
 interface AccountDialogState {
   // Dialog state
   isOpen: boolean;
-  accountToEdit: Account | null;
+  accountToEdit: AccountWithValue | null;
   defaultIsDebt: boolean;
 
   // Actions
   openAddDialog: (options?: { isDebt?: boolean }) => void;
-  openEditDialog: (account: Account) => void;
+  openEditDialog: (account: AccountWithValue) => void;
   closeDialog: () => void;
 
   // Operation handlers
-  addAccount: (account: Omit<Account, "id">) => Promise<void>;
-  editAccount: (account: Account) => Promise<void>;
+  addAccount: (account: Omit<AccountWithValue, "id">) => Promise<void>;
+  editAccount: (account: AccountWithValue) => Promise<void>;
 }
 
 export const useAccountDialogStore = create<AccountDialogState>((set, get) => ({
@@ -31,12 +31,12 @@ export const useAccountDialogStore = create<AccountDialogState>((set, get) => ({
       accountToEdit: null,
       defaultIsDebt: options?.isDebt ?? false,
     }),
-  openEditDialog: (account: Account) =>
+  openEditDialog: (account: AccountWithValue) =>
     set({ isOpen: true, accountToEdit: account }),
   closeDialog: () => set({ isOpen: false, accountToEdit: null }),
 
   // Account operations
-  addAccount: async (accountData: Omit<Account, "id">) => {
+  addAccount: async (accountData: Omit<AccountWithValue, "id">) => {
     // Close the dialog
     set({ isOpen: false });
 
@@ -49,7 +49,7 @@ export const useAccountDialogStore = create<AccountDialogState>((set, get) => ({
     }
   },
 
-  editAccount: async (account: Account) => {
+  editAccount: async (account: AccountWithValue) => {
     // Close the dialog
     set({ isOpen: false, accountToEdit: null });
 

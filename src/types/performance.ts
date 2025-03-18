@@ -1,5 +1,3 @@
-export type PerformancePeriod = "day" | "week" | "month" | "year";
-
 export interface AccountPerformance {
   id: string;
   name: string;

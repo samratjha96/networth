@@ -1,4 +1,4 @@
-import { Account } from "@/types/accounts";
+import { AccountWithValue } from "@/types/accounts";
 import { NetworthHistory } from "@/types/networth";
 import { addDays, subDays } from "date-fns";
 
@@ -7,12 +7,12 @@ const randomFloat = (min: number, max: number) =>
   Math.round((Math.random() * (max - min) + min) * 100) / 100;
 
 // Generate mock accounts
-export const generateMockAccounts = (): Account[] => {
+export const generateMockAccounts = (): AccountWithValue[] => {
   // Randomly decide what kind of financial situation to simulate
   const financialProfile = Math.floor(Math.random() * 4); // 0-3 different profiles
 
   // Base accounts that will be included in all profiles
-  const accounts: Account[] = [
+  const accounts: AccountWithValue[] = [
     {
       id: "mock-checking",
       name: "Primary Checking",

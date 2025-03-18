@@ -1,15 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDb } from "@/components/DatabaseProvider";
-import { Account } from "@/types/accounts";
-import { PerformanceData, PerformancePeriod } from "@/types/performance";
+import { AccountWithValue } from "@/types/accounts";
+import { PerformanceData } from "@/types/performance";
 import { calculateAccountPerformance } from "./use-performance-calculator";
+import { TimeRange } from "@/types/networth";
 
 /**
  * Hook for calculating account performance metrics
  */
 export function useAccountPerformance(
-  accounts: Account[],
-  period: PerformancePeriod = "month",
+  accounts: AccountWithValue[],
+  period: TimeRange = "month",
 ): PerformanceData {
   const { db } = useDb();
 
@@ -28,19 +29,30 @@ export function useAccountPerformance(
 
       // Determine days based on period
       const days =
-        period === "day"
-          ? 1
-          : period === "week"
-            ? 7
-            : period === "year"
-              ? 365
-              : 30;
+        typeof period === "number"
+          ? period === 0
+            ? 365 * 10
+            : period // if 0 (ALL), use 10 years as default
+          : period === "day"
+            ? 1
+            : period === "week"
+              ? 7
+              : period === "year"
+                ? 365
+                : period === "all"
+                  ? 365 * 10
+                  : 30; // default to month (30 days)
 
       // Get performance data for each account
       const accountPerformance = await calculateAccountPerformance(
         accounts,
         days,
         db,
+      );
+
+      console.log(
+        "Account performance:",
+        JSON.stringify(accountPerformance, null, 2),
       );
 
       // Filter by asset and liability

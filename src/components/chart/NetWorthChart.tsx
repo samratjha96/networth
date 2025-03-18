@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { useTimeRange } from "@/hooks/networth/use-time-range";
+import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { useNetWorthChart } from "@/hooks/use-net-worth-chart";
 import { formatDateByRange } from "@/lib/date-formatters";
@@ -30,36 +30,24 @@ import { TimeRangeSelector } from "./TimeRangeSelector";
 interface NetWorthChartProps {
   currency: CurrencyCode;
   currentNetWorth: number;
-  onTimeRangeChange?: (days: number) => void;
-  initialTimeRange?: TimeRange;
   accounts: Array<{ id: string; balance: number }>;
 }
 
 export function NetWorthChart({
   currency,
   currentNetWorth,
-  onTimeRangeChange,
-  initialTimeRange = 365 as TimeRange,
   accounts,
 }: NetWorthChartProps) {
-  const [selectedRange, setSelectedRange] = useTimeRange(initialTimeRange);
+  const timeRange = useTimeRangeStore((state) => state.timeRange);
+
   const isMobile = useIsMobile();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const { formatWithCurrency } = useCurrencyFormatter(currency);
 
   // Use our custom hook to handle chart data
   const { data, events, isLoading, isEmpty, error } = useNetWorthChart(
-    selectedRange,
+    timeRange,
     accounts,
-  );
-
-  // Memoize the handler to prevent unnecessary recreations
-  const handleRangeChange = useCallback(
-    (days: TimeRange) => {
-      setSelectedRange(days);
-      if (onTimeRangeChange) onTimeRangeChange(days);
-    },
-    [onTimeRangeChange, setSelectedRange],
   );
 
   // Chart color based on net worth
@@ -68,8 +56,8 @@ export function NetWorthChart({
 
   // Format date using our helper
   const formatDate = useCallback(
-    (dateStr: string) => formatDateByRange(dateStr, selectedRange),
-    [selectedRange],
+    (dateStr: string) => formatDateByRange(dateStr, timeRange),
+    [timeRange],
   );
 
   return (
@@ -77,10 +65,7 @@ export function NetWorthChart({
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Net Worth Over Time</CardTitle>
-          <TimeRangeSelector
-            selectedRange={selectedRange}
-            onRangeChange={handleRangeChange}
-          />
+          <TimeRangeSelector />
         </div>
       </CardHeader>
       <CardContent>
@@ -133,7 +118,7 @@ export function NetWorthChart({
                   content={(props) => (
                     <ChartTooltip
                       {...props}
-                      selectedRange={selectedRange}
+                      selectedRange={timeRange}
                       formatValue={formatWithCurrency}
                     />
                   )}

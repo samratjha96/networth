@@ -9,14 +9,30 @@ export function formatDateByRange(
 ): string {
   const date = new Date(dateStr);
 
-  if (selectedRange >= 365 || selectedRange === 0) {
+  // Convert string range to number for comparison
+  const rangeValue =
+    typeof selectedRange === "number"
+      ? selectedRange
+      : selectedRange === "day"
+        ? 1
+        : selectedRange === "week"
+          ? 7
+          : selectedRange === "month"
+            ? 30
+            : selectedRange === "year"
+              ? 365
+              : selectedRange === "all"
+                ? 0
+                : 30; // Default to month
+
+  if (rangeValue >= 365 || rangeValue === 0) {
     return date.toLocaleDateString(undefined, {
       month: "short",
       year: "2-digit",
     });
   }
 
-  if (selectedRange >= 7) {
+  if (rangeValue >= 7) {
     return date.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
@@ -36,11 +52,19 @@ export function formatTooltipDate(
   date: Date,
   selectedRange: TimeRange,
 ): string {
+  // Convert string range to number for comparison
+  const rangeValue =
+    typeof selectedRange === "number"
+      ? selectedRange
+      : selectedRange === "day"
+        ? 1
+        : 30; // For tooltip, only need to know if it's a day view
+
   return date.toLocaleDateString(undefined, {
     day: "numeric",
     month: "short",
     year: "numeric",
-    hour: selectedRange === 1 ? "numeric" : undefined,
-    minute: selectedRange === 1 ? "numeric" : undefined,
+    hour: rangeValue === 1 ? "numeric" : undefined,
+    minute: rangeValue === 1 ? "numeric" : undefined,
   });
 }

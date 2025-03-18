@@ -1,13 +1,23 @@
-import { Account } from "./accounts";
+import { AccountValue, AccountWithValue } from "./accounts";
 import { NetworthHistory } from "./networth";
 
 export interface DatabaseOperations {
   // Account operations
-  getAllAccounts(): Promise<Account[]>;
-  getAccount(id: string): Promise<Account | undefined>;
-  insertAccount(accountData: Omit<Account, "id">): Promise<Account>;
-  updateAccount(account: Account): Promise<void>;
+  getAllAccounts(): Promise<AccountWithValue[]>;
+  getAccount(id: string): Promise<AccountWithValue | undefined>;
+  insertAccount(
+    accountData: Omit<AccountWithValue, "id">,
+  ): Promise<AccountWithValue>;
+  updateAccount(account: AccountWithValue): Promise<void>;
   deleteAccount(id: string): Promise<void>;
+
+  // Account value operations
+  getAccountValue(accountId: string): Promise<number>;
+  getAccountValueHistory(
+    accountId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<AccountValue[]>;
 
   // Networth history operations
   getNetworthHistory(days: number): Promise<NetworthHistory[]>;

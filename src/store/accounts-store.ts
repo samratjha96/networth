@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Account } from "@/types/accounts";
+import { AccountWithValue } from "@/types/accounts";
 import { useDatabaseStore } from "./database-store";
 import { useAuth } from "@/components/AuthProvider";
 import { useEffect, useRef } from "react";
@@ -7,13 +7,15 @@ import { useDb } from "@/components/DatabaseProvider";
 
 interface AccountsState {
   // State
-  accounts: Account[];
+  accounts: AccountWithValue[];
   isLoading: boolean;
   error: Error | null;
 
   // Actions
-  addAccount: (account: Omit<Account, "id">) => Promise<Account>;
-  updateAccount: (account: Account) => Promise<void>;
+  addAccount: (
+    account: Omit<AccountWithValue, "id">,
+  ) => Promise<AccountWithValue>;
+  updateAccount: (account: AccountWithValue) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
 }
 
@@ -31,7 +33,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
     error: null,
 
     // Add a new account
-    addAccount: async (accountData: Omit<Account, "id">) => {
+    addAccount: async (accountData: Omit<AccountWithValue, "id">) => {
       try {
         const db = getDb();
         const newAccount = await db.insertAccount(accountData);
@@ -51,7 +53,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
     },
 
     // Update an existing account
-    updateAccount: async (account: Account) => {
+    updateAccount: async (account: AccountWithValue) => {
       try {
         const db = getDb();
         await db.updateAccount(account);

@@ -1,13 +1,14 @@
-import { Account } from "@/types/accounts";
+import { AccountWithValue } from "@/types/accounts";
 import { AccountPerformance } from "@/types/performance";
 import { DatabaseProvider } from "@/types/database";
 import { SupabaseDatabase } from "@/lib/supabase-database";
+import { Functions } from "@/types/supabase";
 
 /**
  * Calculate performance metrics for a set of accounts
  */
 export async function calculateAccountPerformance(
-  accounts: Account[],
+  accounts: AccountWithValue[],
   days: number,
   db: DatabaseProvider,
 ): Promise<AccountPerformance[]> {
@@ -31,7 +32,7 @@ export async function calculateAccountPerformance(
  * For Supabase mode, use real historical account data to calculate performance
  */
 async function getAccountPerformanceFromHistory(
-  accounts: Account[],
+  accounts: AccountWithValue[],
   days: number,
   db: SupabaseDatabase,
 ): Promise<AccountPerformance[]> {
@@ -39,10 +40,6 @@ async function getAccountPerformanceFromHistory(
     "Using real historical account data for performance calculation",
     { accounts: accounts.length, days },
   );
-
-  // Get user ID for queries
-  const userId = (db as any).getUserId();
-  console.debug("Using user ID for performance queries:", userId);
 
   // Date range for historical data
   const endDate = new Date();
@@ -53,88 +50,50 @@ async function getAccountPerformanceFromHistory(
     endDate,
   });
 
-  const performanceResults: AccountPerformance[] = [];
+  try {
+    // Use the new getAccountsPerformanceData method that works with our hourly_account_values table
+    const performanceData = await (
+      db as SupabaseDatabase
+    ).getAccountsPerformanceData(accounts, days);
 
-  // Process each account to determine performance
-  for (const account of accounts) {
-    try {
-      console.debug(`Processing account ${account.name} (${account.type})`);
+    console.debug("Received performance data from database:", {
+      results: performanceData.length,
+    });
 
-      // Get historical data for this account
-      const historyData = await db.getAccountHistoricalData(account, days);
+    // Map results to the expected AccountPerformance format
+    return performanceData.map((item) => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      currentBalance: item.currentBalance,
+      previousBalance: item.previousBalance,
+      changeAmount: item.changeAmount,
+      changePercentage: item.changePercentage,
+      isDebt: item.isDebt,
+    }));
+  } catch (error) {
+    console.error("Error getting performance data:", error);
 
-      if (!historyData) {
-        console.debug(
-          `No historical data available for ${account.name}, using current data`,
-        );
-        performanceResults.push({
-          id: account.id,
-          name: account.name,
-          type: account.type,
-          currentBalance: account.balance,
-          previousBalance: account.balance,
-          changeAmount: 0,
-          changePercentage: 0,
-          isDebt: !!account.isDebt,
-        });
-        continue;
-      }
-
-      console.debug(`Account history data for ${account.name}:`, historyData);
-
-      // Calculate performance metrics
-      const { currentBalance, previousBalance } = historyData;
-      const changeAmount = currentBalance - previousBalance;
-      const changePercentage =
-        previousBalance !== 0
-          ? (changeAmount / Math.abs(previousBalance)) * 100
-          : 0;
-
-      console.debug(`Performance metrics for ${account.name}:`, {
-        currentBalance,
-        previousBalance,
-        changeAmount,
-        changePercentage,
-        currentDate: historyData.currentDate,
-        previousDate: historyData.previousDate,
-      });
-
-      performanceResults.push({
-        id: account.id,
-        name: account.name,
-        type: account.type,
-        currentBalance,
-        previousBalance,
-        changeAmount,
-        changePercentage,
-        isDebt: !!account.isDebt,
-      });
-    } catch (error) {
-      console.error(`Error processing account ${account.name}:`, error);
-      // Add a default entry for this account
-      performanceResults.push({
-        id: account.id,
-        name: account.name,
-        type: account.type,
-        currentBalance: account.balance,
-        previousBalance: account.balance,
-        changeAmount: 0,
-        changePercentage: 0,
-        isDebt: !!account.isDebt,
-      });
-    }
+    // Fallback to using current data with zero change
+    return accounts.map((account) => ({
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      currentBalance: account.balance,
+      previousBalance: account.balance,
+      changeAmount: 0,
+      changePercentage: 0,
+      isDebt: !!account.isDebt,
+    }));
   }
-
-  console.debug("Completed performance calculation:", {
-    results: performanceResults.length,
-  });
-  return performanceResults;
 }
 
 /**
  * Simulates account performance (local mode only)
  */
-function simulateAccountPerformance(accounts: Account[]): AccountPerformance[] {
+function simulateAccountPerformance(
+  accounts: AccountWithValue[],
+): AccountPerformance[] {
   // Growth rates for realistic account simulations by account type
   const growthRates: Record<string, number> = {
     "Real Estate": 5.0,

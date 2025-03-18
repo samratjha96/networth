@@ -7,13 +7,13 @@ import { AccountsList } from "@/components/AccountsList";
 import { CurrencyCode } from "@/types/currency";
 import { TimeRange } from "@/types/networth";
 import { Header } from "@/components/Header";
-import { useTimeRange } from "@/hooks/networth/use-time-range";
+import { useTimeRangeStore } from "@/store/time-range-store";
 import { useAccounts } from "@/hooks/accounts/use-accounts";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const Index = () => {
-  const [selectedTimePeriod, setSelectedTimePeriod] = useTimeRange();
+  const timeRange = useTimeRangeStore((state) => state.timeRange);
   const { accounts, isLoading: accountsLoading } = useAccounts();
 
   useEffect(() => {
@@ -22,7 +22,7 @@ const Index = () => {
 
   // Get account performance data
   const { bestPerformer, isLoading: performanceLoading } =
-    useAccountPerformance(accounts, "month");
+    useAccountPerformance(accounts, timeRange);
 
   // Calculate financial metrics
   const financialMetrics = useMemo(() => {
@@ -49,7 +49,7 @@ const Index = () => {
 
   // Fetch the net worth history
   const { data: networthHistory, isLoading: historyLoading } =
-    useNetworthHistory(selectedTimePeriod);
+    useNetworthHistory(timeRange);
 
   // Calculate changes over the time period
   const changes = useMemo(() => {
@@ -68,11 +68,6 @@ const Index = () => {
       changePercentage,
     };
   }, [networthHistory, currentNetWorth]);
-
-  // Handle time period changes from the chart
-  const handleTimeRangeChange = (days: number) => {
-    setSelectedTimePeriod(days as TimeRange);
-  };
 
   // Check if still loading data
   const isLoading = accountsLoading || performanceLoading || historyLoading;
@@ -95,8 +90,6 @@ const Index = () => {
           <NetWorthChart
             currency={DEFAULT_CURRENCY}
             currentNetWorth={currentNetWorth}
-            onTimeRangeChange={handleTimeRangeChange}
-            initialTimeRange={selectedTimePeriod}
             accounts={accounts}
           />
         </div>

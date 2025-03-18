@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
 import { CurrencyCode } from "@/types/currency";
 import { TimeRange } from "@/types/networth";
-import { useTimeRange } from "@/hooks/networth/use-time-range";
+import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -43,7 +43,7 @@ export function NetWorthSummary({
   bestPerformingAccount,
   isLoading = false,
 }: NetWorthSummaryProps) {
-  const [timeRange] = useTimeRange();
+  const timeRange = useTimeRangeStore((state) => state.timeRange);
   const isPositiveNetWorth = currentNetWorth >= 0;
   const isPositiveChange = netWorthChange > 0;
   const { formatWithCurrency } = useCurrencyFormatter(currency);
