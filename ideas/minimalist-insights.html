@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argos - Minimalist Insights</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      background-color: var(--primary-bg);
+      color: var(--text-primary);
+      font-family: var(--font-primary);
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+    }
+    
+    .light-theme {
+      --primary-bg: #F9FAFB;
+      --secondary-bg: #FFFFFF;
+      --card-bg: #FFFFFF;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --border-color: #E5E7EB;
+      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    /* Header */
+    .header {
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 0;
+    }
+    
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background-color: var(--accent-primary);
+      color: white;
+    }
+    
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      position: relative;
+      padding: 0.5rem 0;
+      transition: color 0.2s ease;
+    }
+    
+    .nav-link:hover, .nav-link.active {
+      color: var(--text-primary);
+    }
+    
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--accent-primary);
+    }
+    
+    .theme-toggle {
+      border: none;
+      background-color: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: background-color 0.2s ease;
+    }
+    
+    .theme-toggle:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .btn-primary {
+      background-color: var(--accent-primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1.25rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+      background-color: #0DA271;
+    }
+    
+    /* Hero Section */
+    .hero {
+      padding: 3rem 0;
+      text-align: center;
+    }
+    
+    .page-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    
+    .page-subtitle {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+    
+    /* Status Section */
+    .status-section {
+      background-color: var(--secondary-bg);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .status-tabs {
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .status-tab {
+      border: none;
+      background-color: transparent;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .status-tab:hover {
+      color: var(--text-primary);
+    }
+    
+    .status-tab.active {
+      background-color: var(--accent-primary);
+      color: white;
+    }
+    
+    .status-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .status-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    
+    .summary-item {
+      flex-basis: 33.33%;
+      padding-right: 2rem;
+    }
+    
+    .summary-label {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .summary-value {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      margin-bottom: 0.25rem;
+    }
+    
+    .summary-change {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .summary-change.positive {
+      color: var(--success);
+    }
+    
+    .summary-change.negative {
+      color: var(--danger);
+    }
+    
+    .status-chart {
+      width: 100%;
+      height: 300px;
+    }
+    
+    /* Insights Section */
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+    
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .insight-card {
+      background-color: var(--secondary-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .insight-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .insight-header {
+      padding: 1.5rem 1.5rem 0;
+      position: relative;
+    }
+    
+    .insight-type {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--accent-primary);
+      letter-spacing: 0.5px;
+    }
+    
+    .insight-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    .insight-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .insight-data {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 1.5rem 1.5rem;
+    }
+    
+    .insight-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+    
+    .insight-action {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--accent-primary);
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .insight-action:hover {
+      background-color: rgba(16, 185, 129, 0.2);
+    }
+    
+    /* Accounts Section */
+    .accounts-section {
+      background-color: var(--secondary-bg);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .accounts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .accounts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .account-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 8px;
+      background-color: var(--primary-bg);
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .account-item:hover {
+      transform: translateX(4px);
+    }
+    
+    .account-item-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .account-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--accent-primary);
+    }
+    
+    .account-icon.savings {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: var(--accent-secondary);
+    }
+    
+    .account-icon.brokerage {
+      background-color: rgba(236, 72, 153, 0.1);
+      color: var(--accent-tertiary);
+    }
+    
+    .account-icon.retirement {
+      background-color: rgba(249, 115, 22, 0.1);
+      color: #F97316;
+    }
+    
+    .account-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .account-name {
+      font-weight: 600;
+    }
+    
+    .account-type {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    
+    .account-item-right {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    
+    .account-balance {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      text-align: right;
+    }
+    
+    .account-growth {
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .account-growth.positive {
+      color: var(--success);
+    }
+    
+    .account-growth.negative {
+      color: var(--danger);
+    }
+    
+    /* Goals Section */
+    .goals-section {
+      margin-bottom: 3rem;
+    }
+    
+    .goals-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+    
+    .goal-card {
+      background-color: var(--secondary-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+    }
+    
+    .goal-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--accent-primary);
+    }
+    
+    .goal-info {
+      flex-grow: 1;
+      padding-left: 1rem;
+    }
+    
+    .goal-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .goal-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .goal-target {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .goal-target-value {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    .goal-progress-container {
+      height: 8px;
+      background-color: var(--primary-bg);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    
+    .goal-progress-bar {
+      height: 100%;
+      background-color: var(--accent-primary);
+      border-radius: 4px;
+    }
+    
+    .goal-progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+    }
+    
+    .goal-current {
+      font-weight: 500;
+    }
+    
+    .goal-percentage {
+      color: var(--accent-primary);
+      font-weight: 600;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .insights-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .insights-grid,
+      .goals-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .status-summary {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      
+      .summary-item {
+        padding-right: 0;
+      }
+      
+      .nav-desktop {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="fas fa-eye"></i>
+        </div>
+        <div class="logo-text">Argos</div>
+      </div>
+      
+      <div class="header-actions">
+        <nav class="nav-desktop">
+          <a href="#" class="nav-link active">Dashboard</a>
+          <a href="#" class="nav-link">Accounts</a>
+          <a href="#" class="nav-link">Transactions</a>
+          <a href="#" class="nav-link">Goals</a>
+          <a href="#" class="nav-link">Insights</a>
+        </nav>
+        
+        <button class="theme-toggle" id="theme-toggle">
+          <i class="fas fa-moon"></i>
+        </button>
+        
+        <button class="btn-primary">
+          <i class="fas fa-plus mr-2"></i> Add Account
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1 class="page-title">Financial Insights</h1>
+      <p class="page-subtitle">Get a clear picture of your finances and discover opportunities to improve your financial health.</p>
+    </section>
+    
+    <section class="status-section">
+      <div class="status-header">
+        <h2>Net Worth</h2>
+        <div class="status-tabs">
+          <button class="status-tab">1D</button>
+          <button class="status-tab">1W</button>
+          <button class="status-tab">1M</button>
+          <button class="status-tab">1Y</button>
+          <button class="status-tab active">ALL</button>
+        </div>
+      </div>
+      
+      <div class="status-content">
+        <div class="status-summary">
+          <div class="summary-item">
+            <div class="summary-label">Net Worth</div>
+            <div class="summary-value">-$110,190.51</div>
+            <div class="summary-change negative">
+              <i class="fas fa-arrow-down"></i>
+              <span>143.88% over all time</span>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <div class="summary-label">Total Assets</div>
+            <div class="summary-value">$196,645.88</div>
+            <div class="summary-change positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>18.4% over all time</span>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <div class="summary-label">Total Liabilities</div>
+            <div class="summary-value">$306,836.39</div>
+            <div class="summary-change negative">
+              <i class="fas fa-arrow-up"></i>
+              <span>34.2% over all time</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="status-chart">
+          <canvas id="netWorthChart"></canvas>
+        </div>
+      </div>
+    </section>
+    
+    <section class="insights-section">
+      <h2 class="section-title">Financial Insights</h2>
+      
+      <div class="insights-grid">
+        <div class="insight-card">
+          <div class="insight-header">
+            <div class="insight-type">Opportunity</div>
+            <h3 class="insight-title">Emergency Fund</h3>
+            <p class="insight-subtitle">Your emergency fund covers 2.1 months of expenses</p>
+          </div>
+          <div class="insight-data">
+            <div class="insight-value">$6,905.85</div>
+            <button class="insight-action">Boost Fund</button>
+          </div>
+        </div>
+        
+        <div class="insight-card">
+          <div class="insight-header">
+            <div class="insight-type">Savings</div>
+            <h3 class="insight-title">High-Yield Savings</h3>
+            <p class="insight-subtitle">You're earning 3.75% APY, beating inflation</p>
+          </div>
+          <div class="insight-data">
+            <div class="insight-value">$44,459.48</div>
+            <button class="insight-action">View Details</button>
+          </div>
+        </div>
+        
+        <div class="insight-card">
+          <div class="insight-header">
+            <div class="insight-type">Alert</div>
+            <h3 class="insight-title">HSA Contributions</h3>
+            <p class="insight-subtitle">You've used 42% of your annual contribution limit</p>
+          </div>
+          <div class="insight-data">
+            <div class="insight-value">$8,393.94</div>
+            <button class="insight-action">Contribute</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="accounts-section">
+      <div class="accounts-header">
+        <h2>Your Accounts</h2>
+        <button class="btn-primary">
+          <i class="fas fa-plus mr-2"></i> New Account
+        </button>
+      </div>
+      
+      <div class="accounts-list">
+        <div class="account-item">
+          <div class="account-item-left">
+            <div class="account-icon">
+              <i class="fas fa-university"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">Primary Checking</div>
+              <div class="account-type">Checking</div>
+            </div>
+          </div>
+          <div class="account-item-right">
+            <div class="account-growth positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>95.9%</span>
+            </div>
+            <div class="account-balance">$3,450.53</div>
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+        
+        <div class="account-item">
+          <div class="account-item-left">
+            <div class="account-icon savings">
+              <i class="fas fa-piggy-bank"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">High-Yield Savings</div>
+              <div class="account-type">Savings</div>
+            </div>
+          </div>
+          <div class="account-item-right">
+            <div class="account-growth positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>12.4%</span>
+            </div>
+            <div class="account-balance">$44,459.48</div>
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+        
+        <div class="account-item">
+          <div class="account-item-left">
+            <div class="account-icon savings">
+              <i class="fas fa-hand-holding-medical"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">Emergency Fund</div>
+              <div class="account-type">Savings</div>
+            </div>
+          </div>
+          <div class="account-item-right">
+            <div class="account-growth positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>5.2%</span>
+            </div>
+            <div class="account-balance">$6,905.85</div>
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+        
+        <div class="account-item">
+          <div class="account-item-left">
+            <div class="account-icon brokerage">
+              <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">Investment Portfolio</div>
+              <div class="account-type">Brokerage</div>
+            </div>
+          </div>
+          <div class="account-item-right">
+            <div class="account-growth positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>22.7%</span>
+            </div>
+            <div class="account-balance">$138,567.66</div>
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+        
+        <div class="account-item">
+          <div class="account-item-left">
+            <div class="account-icon retirement">
+              <i class="fas fa-building"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">401(k)</div>
+              <div class="account-type">Retirement</div>
+            </div>
+          </div>
+          <div class="account-item-right">
+            <div class="account-growth positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>15.8%</span>
+            </div>
+            <div class="account-balance">$105,360.04</div>
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="goals-section">
+      <div class="goals-header">
+        <h2 class="section-title">Financial Goals</h2>
+        <button class="btn-primary">
+          <i class="fas fa-plus mr-2"></i> New Goal
+        </button>
+      </div>
+      
+      <div class="goals-grid">
+        <div class="goal-card">
+          <div class="goal-header">
+            <div class="goal-icon">
+              <i class="fas fa-home"></i>
+            </div>
+            <div class="goal-info">
+              <h3 class="goal-title">Home Down Payment</h3>
+              <div class="goal-subtitle">Target date: Dec 2025</div>
+            </div>
+          </div>
+          
+          <div class="goal-target">
+            Target: <span class="goal-target-value">$60,000</span>
+          </div>
+          
+          <div class="goal-progress-container">
+            <div class="goal-progress-bar" style="width: 73%;"></div>
+          </div>
+          
+          <div class="goal-progress-info">
+            <div class="goal-current">$44,459.48</div>
+            <div class="goal-percentage">73% complete</div>
+          </div>
+        </div>
+        
+        <div class="goal-card">
+          <div class="goal-header">
+            <div class="goal-icon">
+              <i class="fas fa-umbrella-beach"></i>
+            </div>
+            <div class="goal-info">
+              <h3 class="goal-title">Vacation Fund</h3>
+              <div class="goal-subtitle">Target date: July 2024</div>
+            </div>
+          </div>
+          
+          <div class="goal-target">
+            Target: <span class="goal-target-value">$5,000</span>
+          </div>
+          
+          <div class="goal-progress-container">
+            <div class="goal-progress-bar" style="width: 45%;"></div>
+          </div>
+          
+          <div class="goal-progress-info">
+            <div class="goal-current">$2,250</div>
+            <div class="goal-percentage">45% complete</div>
+          </div>
+        </div>
+        
+        <div class="goal-card">
+          <div class="goal-header">
+            <div class="goal-icon">
+              <i class="fas fa-car"></i>
+            </div>
+            <div class="goal-info">
+              <h3 class="goal-title">New Car</h3>
+              <div class="goal-subtitle">Target date: March 2026</div>
+            </div>
+          </div>
+          
+          <div class="goal-target">
+            Target: <span class="goal-target-value">$25,000</span>
+          </div>
+          
+          <div class="goal-progress-container">
+            <div class="goal-progress-bar" style="width: 28%;"></div>
+          </div>
+          
+          <div class="goal-progress-info">
+            <div class="goal-current">$6,905.85</div>
+            <div class="goal-percentage">28% complete</div>
+          </div>
+        </div>
+        
+        <div class="goal-card">
+          <div class="goal-header">
+            <div class="goal-icon">
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="goal-info">
+              <h3 class="goal-title">Education Fund</h3>
+              <div class="goal-subtitle">Target date: August 2030</div>
+            </div>
+          </div>
+          
+          <div class="goal-target">
+            Target: <span class="goal-target-value">$75,000</span>
+          </div>
+          
+          <div class="goal-progress-container">
+            <div class="goal-progress-bar" style="width: 12%;"></div>
+          </div>
+          
+          <div class="goal-progress-info">
+            <div class="goal-current">$8,393.94</div>
+            <div class="goal-percentage">12% complete</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  <script src="js/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize theme toggle
+      const themeToggle = document.getElementById('theme-toggle');
+      const themeIcon = themeToggle.querySelector('i');
+      
+      themeToggle.addEventListener('click', function() {
+        document.body.classList.toggle('light-theme');
+        
+        if (document.body.classList.contains('light-theme')) {
+          themeIcon.classList.remove('fa-moon');
+          themeIcon.classList.add('fa-sun');
+        } else {
+          themeIcon.classList.remove('fa-sun');
+          themeIcon.classList.add('fa-moon');
+        }
+      });
+      
+      // Initialize charts
+      const netWorthData = generateChartData(100, {
+        min: -130000,
+        max: -90000,
+        volatility: 2500
+      });
+      
+      const netWorthChart = new SimpleChart('netWorthChart', netWorthData, {
+        lineColor: '#10B981',
+        fillColor: 'rgba(16, 185, 129, 0.1)',
+        showGrid: true,
+        animate: true
+      });
+      
+      // Time period selectors
+      const timeButtons = document.querySelectorAll('.status-tab');
+      timeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Remove active class from all buttons
+          timeButtons.forEach(b => b.classList.remove('active'));
+          
+          // Add active class to clicked button
+          this.classList.add('active');
+          
+          // In a real app, we would update the chart data here
+        });
+      });
+    });
+  </script>
+</body>
+</html> 

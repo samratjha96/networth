@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argos - Mobile First</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    :root {
+      /* Mobile-specific variables */
+      --bottom-nav-height: 64px;
+      --page-padding: 1rem;
+    }
+    
+    body {
+      font-family: var(--font-primary);
+      background-color: var(--primary-bg);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 0;
+      padding-bottom: var(--bottom-nav-height);
+      min-height: 100vh;
+    }
+    
+    /* Light theme overrides */
+    .light-theme {
+      --primary-bg: #f8fafc;
+      --secondary-bg: #ffffff;
+      --card-bg: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --accent-primary: #0ea5e9;
+      --accent-secondary: #8b5cf6;
+      --accent-tertiary: #f43f5e;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+    
+    /* Main container */
+    .container {
+      padding: 0 var(--page-padding);
+      margin: 0 auto;
+      max-width: 600px;
+    }
+    
+    @media (min-width: 640px) {
+      .container {
+        max-width: 640px;
+      }
+    }
+    
+    @media (min-width: 768px) {
+      .container {
+        max-width: 768px;
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .container {
+        max-width: 1024px;
+      }
+    }
+    
+    /* Header */
+    .header {
+      padding: 1rem var(--page-padding);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: var(--primary-bg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--accent-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
+    
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--bottom-nav-height);
+      background-color: var(--secondary-bg);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 1px solid var(--border-color);
+      z-index: 100;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      padding: 0.5rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .nav-item.active {
+      color: var(--accent-primary);
+    }
+    
+    .nav-icon {
+      font-size: 1.25rem;
+    }
+    
+    /* Main page content */
+    .page-content {
+      padding: 1rem 0 2rem;
+    }
+    
+    /* Section headers */
+    .section-header {
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .section-action {
+      color: var(--accent-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    
+    /* Cards */
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Net Worth Status Card */
+    .status-card {
+      background-color: var(--accent-primary);
+      color: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .status-background {
+      position: absolute;
+      bottom: -40px;
+      left: 0;
+      width: 100%;
+      height: 100px;
+      opacity: 0.2;
+    }
+    
+    .status-content {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .status-label {
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.8;
+    }
+    
+    .status-value {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      margin-bottom: 0.75rem;
+    }
+    
+    .status-change {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 30px;
+      padding: 0.5rem 0.75rem;
+      width: fit-content;
+      font-size: 0.875rem;
+    }
+    
+    .status-period {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .period-btn {
+      background-color: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 6px;
+      padding: 0.375rem 0.75rem;
+      color: white;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    
+    .period-btn.active {
+      background-color: white;
+      color: var(--accent-primary);
+      font-weight: 600;
+    }
+    
+    /* Chart container */
+    .chart-container {
+      width: 100%;
+      height: 200px;
+      margin-top: 1.5rem;
+      position: relative;
+    }
+    
+    /* Accounts List */
+    .accounts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .account-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      border-radius: 12px;
+      background-color: var(--secondary-bg);
+      transition: all 0.2s ease;
+    }
+    
+    .account-icon {
+      width: 48px;
+      height: 48px;
+      background-color: rgba(59, 130, 246, 0.1);
+      color: var(--accent-secondary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+    }
+    
+    .account-icon.checking {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--accent-primary);
+    }
+    
+    .account-icon.brokerage {
+      background-color: rgba(236, 72, 153, 0.1);
+      color: var(--accent-tertiary);
+    }
+    
+    .account-icon.retirement {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+    }
+    
+    .account-info {
+      flex-grow: 1;
+    }
+    
+    .account-name {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .account-type {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    
+    .account-balance {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 1rem;
+      text-align: right;
+    }
+    
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .stats-card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 1.25rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .stats-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    
+    .stats-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      margin-bottom: 0.25rem;
+    }
+    
+    .stats-change {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+    }
+    
+    .stats-change.positive {
+      color: var(--success);
+    }
+    
+    .stats-change.negative {
+      color: var(--danger);
+    }
+    
+    /* Insights section */
+    .insights-scroll {
+      display: flex;
+      overflow-x: auto;
+      padding-bottom: 1rem;
+      gap: 1rem;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .insights-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .insight-card {
+      flex: 0 0 auto;
+      width: 260px;
+      scroll-snap-align: start;
+      border-radius: 16px;
+      background-color: var(--card-bg);
+      padding: 1.25rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease;
+    }
+    
+    .insight-card:hover {
+      transform: translateY(-4px);
+    }
+    
+    .insight-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .insight-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      margin-right: 1rem;
+    }
+    
+    .insight-icon.alert {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+    
+    .insight-icon.info {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: var(--accent-secondary);
+    }
+    
+    .insight-title {
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .insight-content {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+    
+    .insight-action {
+      display: inline-block;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    
+    .insight-action:hover {
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+    
+    /* FAB - Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--bottom-nav-height) + 1rem);
+      right: 1rem;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background-color: var(--accent-primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 99;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .fab:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    }
+    
+    /* Responsive Adjustments */
+    @media (min-width: 768px) {
+      :root {
+        --page-padding: 2rem;
+      }
+      
+      body {
+        padding-bottom: 0;
+      }
+      
+      .fab {
+        bottom: 2rem;
+        right: 2rem;
+      }
+      
+      .bottom-nav {
+        display: none;
+      }
+      
+      .desktop-nav {
+        display: flex;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      
+      .insights-scroll {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        overflow-x: visible;
+      }
+      
+      .insight-card {
+        width: auto;
+      }
+    }
+    
+    /* Desktop Navigation (hidden on mobile) */
+    .desktop-nav {
+      display: none;
+      gap: 2rem;
+    }
+    
+    .desktop-nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+    
+    .desktop-nav-link:hover,
+    .desktop-nav-link.active {
+      color: var(--accent-primary);
+    }
+    
+    /* Theme Toggle */
+    .theme-toggle {
+      background-color: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.5rem;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <i class="fas fa-eye"></i>
+        Argos
+      </div>
+      
+      <nav class="desktop-nav">
+        <a href="#" class="desktop-nav-link active">Dashboard</a>
+        <a href="#" class="desktop-nav-link">Accounts</a>
+        <a href="#" class="desktop-nav-link">Transactions</a>
+        <a href="#" class="desktop-nav-link">Goals</a>
+        <a href="#" class="desktop-nav-link">Insights</a>
+      </nav>
+    </div>
+    
+    <div class="header-right">
+      <button class="theme-toggle" id="theme-toggle">
+        <i class="fas fa-moon"></i>
+      </button>
+      <div class="avatar">A</div>
+    </div>
+  </header>
+  
+  <div class="container">
+    <div class="page-content">
+      <div class="status-card">
+        <div class="status-background">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+            <path fill="white" fill-opacity="1" d="M0,192L60,181.3C120,171,240,149,360,144C480,139,600,149,720,176C840,203,960,245,1080,250.7C1200,256,1320,224,1380,208L1440,192L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
+          </svg>
+        </div>
+        <div class="status-content">
+          <div class="status-label">Net Worth</div>
+          <div class="status-value">-$110,190.51</div>
+          <div class="status-change">
+            <i class="fas fa-arrow-down"></i>
+            143.88% over all time
+          </div>
+          
+          <div class="status-period">
+            <button class="period-btn">1D</button>
+            <button class="period-btn">1W</button>
+            <button class="period-btn">1M</button>
+            <button class="period-btn">1Y</button>
+            <button class="period-btn active">ALL</button>
+          </div>
+          
+          <div class="chart-container">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stats-card">
+          <div class="stats-label">Total Assets</div>
+          <div class="stats-value">$196,645</div>
+          <div class="stats-change positive">
+            <i class="fas fa-arrow-up"></i>
+            18.4%
+          </div>
+        </div>
+        
+        <div class="stats-card">
+          <div class="stats-label">Total Liabilities</div>
+          <div class="stats-value">$306,836</div>
+          <div class="stats-change negative">
+            <i class="fas fa-arrow-up"></i>
+            34.2%
+          </div>
+        </div>
+        
+        <div class="stats-card">
+          <div class="stats-label">Monthly Income</div>
+          <div class="stats-value">$8,350</div>
+          <div class="stats-change positive">
+            <i class="fas fa-arrow-up"></i>
+            5.2%
+          </div>
+        </div>
+        
+        <div class="stats-card">
+          <div class="stats-label">Monthly Expenses</div>
+          <div class="stats-value">$5,670</div>
+          <div class="stats-change negative">
+            <i class="fas fa-arrow-up"></i>
+            7.8%
+          </div>
+        </div>
+      </div>
+      
+      <div class="section-header">
+        <h2 class="section-title">Accounts</h2>
+        <a href="#" class="section-action">View All</a>
+      </div>
+      
+      <div class="card">
+        <div class="accounts-list">
+          <div class="account-item">
+            <div class="account-icon checking">
+              <i class="fas fa-university"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">Primary Checking</div>
+              <div class="account-type">Checking</div>
+            </div>
+            <div class="account-balance">$3,450.53</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-piggy-bank"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">High-Yield Savings</div>
+              <div class="account-type">Savings</div>
+            </div>
+            <div class="account-balance">$44,459.48</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon brokerage">
+              <i class="fas fa-briefcase"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">Investment Portfolio</div>
+              <div class="account-type">Brokerage</div>
+            </div>
+            <div class="account-balance">$138,567.66</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon retirement">
+              <i class="fas fa-building"></i>
+            </div>
+            <div class="account-info">
+              <div class="account-name">401(k)</div>
+              <div class="account-type">Retirement</div>
+            </div>
+            <div class="account-balance">$105,360.04</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="section-header">
+        <h2 class="section-title">Financial Insights</h2>
+        <a href="#" class="section-action">More</a>
+      </div>
+      
+      <div class="insights-scroll">
+        <div class="insight-card">
+          <div class="insight-header">
+            <div class="insight-icon">
+              <i class="fas fa-hand-holding-usd"></i>
+            </div>
+            <h3 class="insight-title">Emergency Fund</h3>
+          </div>
+          <div class="insight-content">
+            Your emergency fund covers 2.1 months of expenses. Aim for 3-6 months for better financial security.
+          </div>
+          <a href="#" class="insight-action">Boost Fund</a>
+        </div>
+        
+        <div class="insight-card">
+          <div class="insight-header">
+            <div class="insight-icon info">
+              <i class="fas fa-piggy-bank"></i>
+            </div>
+            <h3 class="insight-title">High-Yield Savings</h3>
+          </div>
+          <div class="insight-content">
+            Your savings is earning 3.75% APY, which is currently beating inflation. Well done!
+          </div>
+          <a href="#" class="insight-action">View Details</a>
+        </div>
+        
+        <div class="insight-card">
+          <div class="insight-header">
+            <div class="insight-icon alert">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <h3 class="insight-title">HSA Contributions</h3>
+          </div>
+          <div class="insight-content">
+            You've used only 42% of your annual HSA contribution limit. Consider maximizing for tax benefits.
+          </div>
+          <a href="#" class="insight-action">Contribute</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <nav class="bottom-nav">
+    <a href="#" class="nav-item active">
+      <div class="nav-icon"><i class="fas fa-home"></i></div>
+      <div class="nav-label">Home</div>
+    </a>
+    <a href="#" class="nav-item">
+      <div class="nav-icon"><i class="fas fa-wallet"></i></div>
+      <div class="nav-label">Accounts</div>
+    </a>
+    <a href="#" class="nav-item">
+      <div class="nav-icon"><i class="fas fa-exchange-alt"></i></div>
+      <div class="nav-label">Transactions</div>
+    </a>
+    <a href="#" class="nav-item">
+      <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
+      <div class="nav-label">Insights</div>
+    </a>
+    <a href="#" class="nav-item">
+      <div class="nav-icon"><i class="fas fa-user"></i></div>
+      <div class="nav-label">Profile</div>
+    </a>
+  </nav>
+  
+  <div class="fab">
+    <i class="fas fa-plus"></i>
+  </div>
+  
+  <script src="js/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize theme toggle
+      const themeToggle = document.getElementById('theme-toggle');
+      const themeIcon = themeToggle.querySelector('i');
+      
+      themeToggle.addEventListener('click', function() {
+        document.body.classList.toggle('light-theme');
+        
+        if (document.body.classList.contains('light-theme')) {
+          themeIcon.classList.remove('fa-moon');
+          themeIcon.classList.add('fa-sun');
+        } else {
+          themeIcon.classList.remove('fa-sun');
+          themeIcon.classList.add('fa-moon');
+        }
+      });
+      
+      // Initialize charts
+      const statusData = generateChartData(50, {
+        min: -130000,
+        max: -90000,
+        volatility: 2000
+      });
+      
+      const statusChart = new SimpleChart('statusChart', statusData, {
+        lineColor: 'white',
+        fillColor: 'rgba(255, 255, 255, 0.2)',
+        gridColor: 'rgba(255, 255, 255, 0.1)',
+        animate: true
+      });
+      
+      // Time period selectors
+      const periodButtons = document.querySelectorAll('.period-btn');
+      periodButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Remove active class from all buttons
+          periodButtons.forEach(b => b.classList.remove('active'));
+          
+          // Add active class to clicked button
+          this.classList.add('active');
+          
+          // In a real app, we would update the chart data here
+        });
+      });
+    });
+  </script>
+</body>
+</html> 

@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argos - Glassy Design</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    :root {
+      --glass-bg: rgba(16, 18, 27, 0.4);
+      --glass-border: rgba(255, 255, 255, 0.05);
+      --glass-highlight: rgba(255, 255, 255, 0.1);
+      --glass-shadow: rgba(0, 0, 0, 0.1);
+      --blur-amount: 20px;
+      
+      --gradient-1: linear-gradient(135deg, #6667AB, #0EA5E9);
+      --gradient-2: linear-gradient(135deg, #10B981, #0EA5E9);
+      --gradient-3: linear-gradient(135deg, #EC4899, #8B5CF6);
+      
+      --accent-blue: #0EA5E9;
+      --accent-purple: #8B5CF6;
+      --accent-pink: #EC4899;
+      --accent-green: #10B981;
+      
+      --ease-bounce: cubic-bezier(0.3, 1.4, 0.5, 0.9);
+      --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0F1729;
+      color: white;
+      margin: 0;
+      line-height: 1.5;
+      background-image: radial-gradient(
+        circle at 50% -20%,
+        rgba(59, 130, 246, 0.2),
+        rgba(16, 18, 27, 0) 70%
+      );
+      min-height: 100vh;
+      overflow-x: hidden;
+      height: 100%;
+    }
+    
+    .app-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 2rem;
+      height: calc(100vh - 4rem);
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Glassmorphism styles */
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--blur-amount));
+      -webkit-backdrop-filter: blur(var(--blur-amount));
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      box-shadow: 0 10px 20px var(--glass-shadow);
+      overflow: hidden;
+    }
+    
+    .glass-hover:hover {
+      border-color: var(--glass-highlight);
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px var(--glass-shadow);
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      border-radius: 24px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 8rem);
+      transition: all 0.3s var(--ease-out);
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+      background: var(--gradient-1);
+    }
+    
+    .logo-text {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    
+    .menu-section {
+      margin-bottom: 2.5rem;
+    }
+    
+    .menu-header {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 1rem;
+      color: rgba(255, 255, 255, 0.6);
+      padding-left: 0.5rem;
+    }
+    
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 0.5rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+    
+    .menu-item.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-weight: 500;
+    }
+    
+    .menu-icon {
+      width: 24px;
+      text-align: center;
+      font-size: 18px;
+    }
+    
+    /* Main content */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      height: calc(100vh - 8rem);
+      overflow-y: auto;
+      padding-right: 1rem;
+    }
+    
+    .main-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .main-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .main-content::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+    
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      border-radius: 20px;
+      margin-bottom: 1rem;
+    }
+    
+    .page-title {
+      font-weight: 600;
+      font-size: 24px;
+      margin: 0;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      background: var(--gradient-3);
+      position: relative;
+    }
+    
+    .user-avatar::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      bottom: -3px;
+      left: -3px;
+      background: var(--gradient-3);
+      border-radius: 50%;
+      z-index: -1;
+      opacity: 0.3;
+      filter: blur(4px);
+    }
+    
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .user-name {
+      font-weight: 600;
+    }
+    
+    .user-status {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    /* Summary Cards */
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    
+    .summary-card {
+      padding: 1.5rem;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s var(--ease-out);
+      cursor: pointer;
+    }
+    
+    .summary-card:hover {
+      transform: translateY(-8px) scale(1.02);
+    }
+    
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background: rgba(255, 255, 255, 0.03);
+      mask: linear-gradient(to bottom right, transparent 50%, black 50%);
+      -webkit-mask: linear-gradient(to bottom right, transparent 50%, black 50%);
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card-title {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+    
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .card-icon.assets {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+      color: var(--accent-green);
+    }
+    
+    .card-icon.liabilities {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+      color: #EF4444;
+    }
+    
+    .card-icon.net-worth {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
+      color: var(--accent-blue);
+    }
+    
+    .card-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .card-change {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .change-up {
+      color: var(--accent-green);
+    }
+    
+    .change-down {
+      color: #EF4444;
+    }
+    
+    /* 3D Card Effect */
+    .card-3d-container {
+      perspective: 1500px;
+    }
+    
+    .card-3d {
+      transition: transform 0.5s var(--ease-out);
+      transform-style: preserve-3d;
+    }
+    
+    /* Main Chart Card */
+    .chart-card {
+      padding: 1.5rem;
+      border-radius: 20px;
+      margin-bottom: 2rem;
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .chart-title {
+      font-weight: 600;
+      font-size: 1.25rem;
+      margin: 0;
+    }
+    
+    .time-filter {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .time-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.6);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .time-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    
+    .time-btn.active {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--accent-blue);
+    }
+    
+    .chart-container {
+      height: 300px;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    
+    .donut-chart-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    
+    .donut-label {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    
+    .donut-sublabel {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    /* Accounts Grid */
+    .accounts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+    
+    .accounts-card {
+      padding: 1.5rem;
+      border-radius: 20px;
+    }
+    
+    .accounts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .accounts-title {
+      font-weight: 600;
+      font-size: 1.25rem;
+      margin: 0;
+    }
+    
+    .view-all {
+      color: var(--accent-blue);
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    
+    .account-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .account-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      transition: all 0.3s var(--ease-out);
+      cursor: pointer;
+    }
+    
+    .account-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateX(4px);
+    }
+    
+    .account-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+      font-size: 20px;
+    }
+    
+    .account-icon.checking {
+      color: var(--accent-blue);
+    }
+    
+    .account-icon.savings {
+      color: var(--accent-green);
+    }
+    
+    .account-icon.investment {
+      color: var(--accent-purple);
+    }
+    
+    .account-icon.retirement {
+      color: var(--accent-pink);
+    }
+    
+    .account-details {
+      flex-grow: 1;
+    }
+    
+    .account-name {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    
+    .account-type {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .account-balance {
+      font-weight: 600;
+      font-size: 1.125rem;
+    }
+    
+    /* Goals Grid */
+    .goals-card {
+      padding: 1.5rem;
+      border-radius: 20px;
+    }
+    
+    .goal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    
+    .goal-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .goal-info {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .goal-name {
+      font-weight: 500;
+    }
+    
+    .goal-amount {
+      display: flex;
+      font-weight: 500;
+    }
+    
+    .goal-current {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .goal-target {
+      margin-left: 0.25rem;
+    }
+    
+    .goal-progress-container {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .goal-progress {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s var(--ease-out);
+    }
+    
+    .goal-progress.emergency {
+      background: var(--gradient-2);
+    }
+    
+    .goal-progress.vacation {
+      background: var(--gradient-3);
+    }
+    
+    .goal-progress.house {
+      background: var(--gradient-1);
+    }
+    
+    /* Animated Gradient Background */
+    .animated-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.7;
+    }
+    
+    .gradient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+    }
+    
+    .orb-1 {
+      width: 600px;
+      height: 600px;
+      background: rgba(14, 165, 233, 0.2);
+      top: -300px;
+      right: -200px;
+      animation: float 15s ease-in-out infinite;
+    }
+    
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: rgba(139, 92, 246, 0.15);
+      bottom: -200px;
+      left: -100px;
+      animation: float 20s ease-in-out infinite reverse;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translate(0, 0);
+      }
+      50% {
+        transform: translate(100px, 100px);
+      }
+      100% {
+        transform: translate(0, 0);
+      }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .app-container {
+        grid-template-columns: 280px 1fr;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .summary-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .accounts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="animated-bg">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+  </div>
+
+  <div class="app-container">
+    <aside class="sidebar glass">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="fas fa-eye"></i>
+        </div>
+        <div class="logo-text">Argos</div>
+      </div>
+      
+      <div class="menu-section">
+        <div class="menu-header">Dashboard</div>
+        <div class="menu-item active">
+          <div class="menu-icon"><i class="fas fa-chart-line"></i></div>
+          <div>Overview</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon"><i class="fas fa-wallet"></i></div>
+          <div>Accounts</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon"><i class="fas fa-exchange-alt"></i></div>
+          <div>Transactions</div>
+        </div>
+      </div>
+      
+      <div class="menu-section">
+        <div class="menu-header">Analysis</div>
+        <div class="menu-item">
+          <div class="menu-icon"><i class="fas fa-chart-pie"></i></div>
+          <div>Insights</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon"><i class="fas fa-chart-bar"></i></div>
+          <div>Reports</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon"><i class="fas fa-bullseye"></i></div>
+          <div>Goals</div>
+        </div>
+      </div>
+      
+      <div class="menu-section">
+        <div class="menu-header">Settings</div>
+        <div class="menu-item">
+          <div class="menu-icon"><i class="fas fa-user-circle"></i></div>
+          <div>Profile</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon"><i class="fas fa-cog"></i></div>
+          <div>Preferences</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon"><i class="fas fa-question-circle"></i></div>
+          <div>Help</div>
+        </div>
+      </div>
+    </aside>
+    
+    <main class="main-content">
+      <header class="header glass">
+        <h1 class="page-title">Financial Overview</h1>
+        <div class="user-profile">
+          <div class="user-info">
+            <div class="user-name">Alex Smith</div>
+            <div class="user-status">Premium Plan</div>
+          </div>
+          <div class="user-avatar">A</div>
+        </div>
+      </header>
+      
+      <div class="summary-row">
+        <div class="card-3d-container">
+          <div class="summary-card glass glass-hover card-3d" data-tilt data-tilt-max="5">
+            <div class="card-header">
+              <h3 class="card-title">NET WORTH</h3>
+              <div class="card-icon net-worth">
+                <i class="fas fa-chart-line"></i>
+              </div>
+            </div>
+            <div class="card-value">-$110,190.51</div>
+            <div class="card-change change-down">
+              <i class="fas fa-arrow-down"></i>
+              <span>143.88% from last year</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-3d-container">
+          <div class="summary-card glass glass-hover card-3d" data-tilt data-tilt-max="5">
+            <div class="card-header">
+              <h3 class="card-title">TOTAL ASSETS</h3>
+              <div class="card-icon assets">
+                <i class="fas fa-plus"></i>
+              </div>
+            </div>
+            <div class="card-value">$196,645.88</div>
+            <div class="card-change change-up">
+              <i class="fas fa-arrow-up"></i>
+              <span>18.4% from last year</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-3d-container">
+          <div class="summary-card glass glass-hover card-3d" data-tilt data-tilt-max="5">
+            <div class="card-header">
+              <h3 class="card-title">TOTAL LIABILITIES</h3>
+              <div class="card-icon liabilities">
+                <i class="fas fa-minus"></i>
+              </div>
+            </div>
+            <div class="card-value">$306,836.39</div>
+            <div class="card-change change-down">
+              <i class="fas fa-arrow-up"></i>
+              <span>34.2% from last year</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="chart-card glass">
+        <div class="chart-header">
+          <h2 class="chart-title">Net Worth Trend</h2>
+          <div class="time-filter">
+            <button class="time-btn">1W</button>
+            <button class="time-btn">1M</button>
+            <button class="time-btn">6M</button>
+            <button class="time-btn active">1Y</button>
+            <button class="time-btn">ALL</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="netWorthChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="accounts-grid">
+        <div class="accounts-card glass">
+          <div class="accounts-header">
+            <h2 class="accounts-title">My Accounts</h2>
+            <a href="#" class="view-all">View All</a>
+          </div>
+          <div class="account-list">
+            <div class="account-item">
+              <div class="account-icon checking">
+                <i class="fas fa-university"></i>
+              </div>
+              <div class="account-details">
+                <div class="account-name">Primary Checking</div>
+                <div class="account-type">Checking</div>
+              </div>
+              <div class="account-balance">$3,450.53</div>
+            </div>
+            
+            <div class="account-item">
+              <div class="account-icon savings">
+                <i class="fas fa-piggy-bank"></i>
+              </div>
+              <div class="account-details">
+                <div class="account-name">High-Yield Savings</div>
+                <div class="account-type">Savings</div>
+              </div>
+              <div class="account-balance">$44,459.48</div>
+            </div>
+            
+            <div class="account-item">
+              <div class="account-icon investment">
+                <i class="fas fa-briefcase"></i>
+              </div>
+              <div class="account-details">
+                <div class="account-name">Investment Portfolio</div>
+                <div class="account-type">Brokerage</div>
+              </div>
+              <div class="account-balance">$138,567.66</div>
+            </div>
+            
+            <div class="account-item">
+              <div class="account-icon retirement">
+                <i class="fas fa-building"></i>
+              </div>
+              <div class="account-details">
+                <div class="account-name">401(k)</div>
+                <div class="account-type">Retirement</div>
+              </div>
+              <div class="account-balance">$105,360.04</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="goals-card glass">
+          <div class="accounts-header">
+            <h2 class="accounts-title">Financial Goals</h2>
+            <a href="#" class="view-all">Add Goal</a>
+          </div>
+          <div class="goal-list">
+            <div class="goal-item">
+              <div class="goal-info">
+                <div class="goal-name">Emergency Fund</div>
+                <div class="goal-amount">
+                  <span class="goal-current">$6,905</span>
+                  <span class="goal-target">/ $20,000</span>
+                </div>
+              </div>
+              <div class="goal-progress-container">
+                <div class="goal-progress emergency" style="width: 35%"></div>
+              </div>
+            </div>
+            
+            <div class="goal-item">
+              <div class="goal-info">
+                <div class="goal-name">Vacation Fund</div>
+                <div class="goal-amount">
+                  <span class="goal-current">$3,240</span>
+                  <span class="goal-target">/ $5,000</span>
+                </div>
+              </div>
+              <div class="goal-progress-container">
+                <div class="goal-progress vacation" style="width: 65%"></div>
+              </div>
+            </div>
+            
+            <div class="goal-item">
+              <div class="goal-info">
+                <div class="goal-name">House Down Payment</div>
+                <div class="goal-amount">
+                  <span class="goal-current">$27,500</span>
+                  <span class="goal-target">/ $100,000</span>
+                </div>
+              </div>
+              <div class="goal-progress-container">
+                <div class="goal-progress house" style="width: 27.5%"></div>
+              </div>
+            </div>
+            
+            <div class="goal-item">
+              <div class="goal-info">
+                <div class="goal-name">Car Fund</div>
+                <div class="goal-amount">
+                  <span class="goal-current">$12,350</span>
+                  <span class="goal-target">/ $25,000</span>
+                </div>
+              </div>
+              <div class="goal-progress-container">
+                <div class="goal-progress emergency" style="width: 49.4%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="chart-card glass glass-hover" style="grid-column: span 2;">
+          <div class="chart-header">
+            <h2 class="chart-title">Asset Allocation</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="assetAllocationChart"></canvas>
+            <div class="donut-chart-overlay">
+              <div class="donut-label">$196,645</div>
+              <div class="donut-sublabel">Total Assets</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script src="js/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.8.0/dist/vanilla-tilt.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize 3D card effect
+      VanillaTilt.init(document.querySelectorAll(".card-3d"), {
+        max: 5,
+        speed: 400,
+        glare: true,
+        "max-glare": 0.1,
+      });
+      
+      // Initialize charts
+      // Net Worth Chart
+      const netWorthData = generateChartData(24, {
+        min: -130000,
+        max: -90000,
+        volatility: 4000
+      });
+      
+      const netWorthChart = new SimpleChart('netWorthChart', netWorthData, {
+        lineColor: '#0EA5E9',
+        fillColor: 'rgba(14, 165, 233, 0.1)',
+        gridColor: 'rgba(255, 255, 255, 0.05)',
+        tension: 0.4,
+        pointRadius: 0,
+        showGrid: true,
+        animate: true
+      });
+      
+      // Asset Allocation Chart - placeholder
+      // In a real application, we would use a proper donut chart
+      const assetAllocationChart = new SimpleChart('assetAllocationChart', [], {
+        showGrid: false,
+        animate: false
+      });
+      
+      // Store charts for potential updates
+      window.charts = [
+        netWorthChart,
+        assetAllocationChart
+      ];
+      
+      // Time period selectors
+      const timeButtons = document.querySelectorAll('.time-btn');
+      timeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Remove active class from all buttons
+          timeButtons.forEach(b => b.classList.remove('active'));
+          
+          // Add active class to clicked button
+          this.classList.add('active');
+          
+          // In a real app, we would update the chart data here
+        });
+      });
+      
+      // Animate goal progress bars on load
+      setTimeout(() => {
+        document.querySelectorAll('.goal-progress').forEach(elem => {
+          const width = elem.style.width;
+          elem.style.width = '0%';
+          setTimeout(() => {
+            elem.style.width = width;
+          }, 100);
+        });
+      }, 500);
+    });
+  </script>
+</body>
+</html> 

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argos - Financial Dashboard Design Concepts</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --secondary: #3B82F6;
+      --accent: #EC4899;
+      --bg-dark: #1e1e1e;
+      --bg-card: #252525;
+      --text-light: #ffffff;
+      --text-muted: #9ca3af;
+      --border: #333333;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      line-height: 1.5;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    .logo-icon {
+      color: var(--primary);
+      font-size: 2rem;
+    }
+    
+    .logo-text {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-light);
+    }
+    
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.125rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .designs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+    
+    .design-card {
+      background-color: var(--bg-card);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .design-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .card-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .card-content {
+      padding: 1.5rem;
+    }
+    
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    .card-description {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .tag {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .tag.blue {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: var(--secondary);
+    }
+    
+    .tag.pink {
+      background-color: rgba(236, 72, 153, 0.1);
+      color: var(--accent);
+    }
+    
+    .card-link {
+      display: inline-block;
+      background-color: var(--primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
+    }
+    
+    .card-link:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    @media (max-width: 768px) {
+      .designs-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      body {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <i class="fas fa-eye logo-icon"></i>
+        <h1 class="logo-text">Argos</h1>
+      </div>
+      <p class="subtitle">Financial Dashboard Design Concepts - A visual exploration of potential UI/UX directions for the Argos financial tracking application.</p>
+    </header>
+    
+    <div class="designs-grid">
+      <div class="design-card">
+        <div class="card-image" style="background-color: #2e2e2e; display: flex; align-items: center; justify-content: center;">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGw9IiMxMEI5ODEiIGQ9Ik00IDVhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjJhMSAxIDAgMCAxLTEgMUg1YTEgMSAwIDAgMS0xLTFWNVptMCA2YTEgMSAwIDAgMSAxLTFoMTRhMSAxIDAgMCAxIDEgMXYyYTEgMSAwIDAgMS0xIDFINWExIDEgMCAwIDEtMS0xdi0yWm0wIDZhMSAxIDAgMCAxIDEtMWgxNGExIDEgMCAwIDEgMSAxdjJhMSAxIDAgMCAxLTEgMUg1YTEgMSAwIDAgMS0xLTF2LTJaIi8+PC9zdmc+" width="100" height="100" alt="Dashboard icon">
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">Modern Dashboard</h2>
+          <p class="card-description">A sleek, dark-themed dashboard with a sidebar navigation and grid layout. Features clean data visualization and account cards with subtle hover effects.</p>
+          <div class="card-tags">
+            <span class="tag">Dark Theme</span>
+            <span class="tag blue">Sidebar Nav</span>
+            <span class="tag pink">Grid Layout</span>
+          </div>
+          <a href="modern-dashboard.html" class="card-link">View Design</a>
+        </div>
+      </div>
+      
+      <div class="design-card">
+        <div class="card-image" style="background-color: #2e2e2e; display: flex; align-items: center; justify-content: center;">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGw9IiMzQjgyRjYiIGQ9Ik0yIDZhMiAyIDAgMCAxIDItMmgxNmEyIDIgMCAwIDEgMiAydjEyYTIgMiAwIDAgMS0yIDJINGEyIDIgMCAwIDEtMi0yVjZabTQgMmExIDEgMCAwIDAtMSAxdjJhMSAxIDAgMCAwIDEgMWgyYTEgMSAwIDAgMCAxLTFWOWExIDEgMCAwIDAtMS0xSDZabTcgMGExIDEgMCAwIDAtMSAxdjJhMSAxIDAgMCAwIDEgMWg0YTEgMSAwIDAgMCAxLTFWOWExIDEgMCAwIDAtMS0xaC00Wm0tNyA2YTEgMSAwIDAgMC0xIDF2MmExIDEgMCAwIDAgMSAxaDRhMSAxIDAgMCAwIDEtMXYtMmExIDEgMCAwIDAtMS0xSDZabTcgMGExIDEgMCAwIDAtMSAxdjJhMSAxIDAgMCAwIDEgMWgyYTEgMSAwIDAgMCAxLTF2LTJhMSAxIDAgMCAwLTEtMWgtMloiLz48L3N2Zz4=" width="100" height="100" alt="Minimalist icon">
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">Minimalist Insights</h2>
+          <p class="card-description">A clean, content-focused design with emphasis on financial insights and goals. Features a light/dark theme toggle and clear data visualization.</p>
+          <div class="card-tags">
+            <span class="tag">Theme Toggle</span>
+            <span class="tag blue">Goal Tracking</span>
+            <span class="tag pink">Financial Insights</span>
+          </div>
+          <a href="minimalist-insights.html" class="card-link">View Design</a>
+        </div>
+      </div>
+      
+      <div class="design-card">
+        <div class="card-image" style="background-color: #2e2e2e; display: flex; align-items: center; justify-content: center;">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGw9IiNFQzQ4OTkiIGQ9Ik0xMSA1YTIgMiAwIDAgMC0yIDJ2MTBhMiAyIDAgMCAwIDIgMmg2YTIgMiAwIDAgMCAyLTJWN2EyIDIgMCAwIDAtMi0yaC02Wk00IDdhMSAxIDAgMCAxIDEtMWgyYTEgMSAwIDAgMSAxIDF2MTBhMSAxIDAgMCAxLTEgMUg1YTEgMSAwIDAgMS0xLTFWN1oiLz48L3N2Zz4=" width="100" height="100" alt="Mobile icon">
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">Mobile First Design</h2>
+          <p class="card-description">A mobile-optimized interface that adapts beautifully to larger screens. Features bottom navigation, card-based UI, and horizontally scrolling insights.</p>
+          <div class="card-tags">
+            <span class="tag">Mobile Optimized</span>
+            <span class="tag blue">Bottom Nav</span>
+            <span class="tag pink">Card UI</span>
+          </div>
+          <a href="mobile-first.html" class="card-link">View Design</a>
+        </div>
+      </div>
+      
+      <div class="design-card">
+        <div class="card-image" style="background-color: #2e2e2e; display: flex; align-items: center; justify-content: center;">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGw9IiM4QjVDRjYiIGQ9Ik01IDRhMSAxIDAgMCAxIDEtMWgxMmExIDEgMCAwIDEgMSAxdjFhMSAxIDAgMCAxLTEgMWgtMmExIDEgMCAwIDAgLTEgMXYxMGExIDEgMCAwIDEtMSAxaC00YTEgMSAwIDAgMS0xLTFWN2ExIDEgMCAwIDAtMS0xSDZhMSAxIDAgMCAxLTEtMVY0Wk0xMCAxNmExIDEgMCAwIDAgMSAxaDJhMSAxIDAgMCAwIDEtMXYtM2ExIDEgMCAwIDAtMS0xaC0yYTEgMSAwIDAgMC0xIDF2M1oiLz48L3N2Zz4=" width="100" height="100" alt="Analytics icon">
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">Analytical Dashboard</h2>
+          <p class="card-description">A data-rich interface focused on deep financial analysis with multiple widgets, interactive charts, and detailed data tables with filtering capabilities.</p>
+          <div class="card-tags">
+            <span class="tag">Data Focused</span>
+            <span class="tag blue">Multi-chart</span>
+            <span class="tag pink">Widget-based</span>
+          </div>
+          <a href="analytical-dashboard.html" class="card-link">View Design</a>
+        </div>
+      </div>
+      
+      <div class="design-card">
+        <div class="card-image" style="background-color: #2e2e2e; display: flex; align-items: center; justify-content: center;">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGw9IiMwRUE1RTkiIGQ9Ik0xMiA2YzEuMSAwIDIgLjkgMiAycy0uOSAyLTIgMi0yLS45LTItMiAuOS0yIDItMm0wIDEwYy0zLjMxIDAtNi0yLjY5LTYtNnMybTQtOS45Yy0yLjk3IDAtNS4zIDIuMzMtNS4zIDUuM3YzLjQzbC0xLjcgMS43MWMtLjM5LjM5LS4zOSAxLjAyIDAgMS40MWw0LjI4IDQuMjhjLjM5LjM5IDEuMDIuMzkgMS40MSAwbDMuNzItMy43MmMuMzkzLS4zOS4zOTMtMS4wMiAwLTEuNDFsLS43MS0uNzFWMTEuM2MwLTIuOTcgMi4zMy01LjMgNS4zLTUuM3YtMmMtMi45NyAwLTUuMyAyLjMzLTUuMyA1LjN2My40M2wtMS43IDEuNzFjLS4zOS4zOS0uMzkgMS4wMiAwIDEuNDFsNC4yOCA0LjI4Yy4zOS4zOSAxLjAyLjM5IDEuNDEgMGwzLjcyLTMuNzJjLjM5My0uMzkuMzkzLTEuMDIgMC0xLjQxbC0uNzEtLjcxVjExLjNjMC0yLjk3IDIuMzMtNS4zIDUuMy01LjMiLz48L3N2Zz4=" width="100" height="100" alt="Glassmorphism icon">
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">Glassy Modern Design</h2>
+          <p class="card-description">An ultra-modern interface with glassmorphism effects, 3D card transformations, animated gradients, and a sleek minimalist aesthetic with rich visual feedback.</p>
+          <div class="card-tags">
+            <span class="tag">Glassmorphism</span>
+            <span class="tag blue">3D Effects</span>
+            <span class="tag pink">Animated UI</span>
+          </div>
+          <a href="glassy-design.html" class="card-link">View Design</a>
+        </div>
+      </div>
+      
+      <div class="design-card">
+        <div class="card-image" style="background-color: #2e2e2e; display: flex; align-items: center; justify-content: center;">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGZpbGw9IiNDMDM5MkIiIGQ9Ik0zIDNhMiAyIDAgMCAwLTIgMnYxNGEyIDIgMCAwIDAgMiAyaDE4YTIgMiAwIDAgMCAyLTJWNWEyIDIgMCAwIDAtMi0ySDN6TTMgNWgxOHYxNEgzVjV6bTIgMnYyaDE0VjdINXptMCA0djJoMTB2LTJINXptMCA0djJoN3YtMkg1eiIvPjwvc3ZnPg==" width="100" height="100" alt="Retro ledger icon">
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">Retro Ledger</h2>
+          <p class="card-description">A nostalgic paper-based interface inspired by traditional financial ledgers and early computing. Features ruled paper backgrounds, monospace fonts, and physical metaphors.</p>
+          <div class="card-tags">
+            <span class="tag">Paper Styled</span>
+            <span class="tag blue">Nostalgic</span>
+            <span class="tag pink">Tabular Data</span>
+          </div>
+          <a href="retro-ledger.html" class="card-link">View Design</a>
+        </div>
+      </div>
+    </div>
+    
+    <footer>
+      <p>Argos UI Design Concepts — Your all-seeing financial guardian</p>
+    </footer>
+  </div>
+</body>
+</html> 
