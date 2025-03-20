@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useEffect, useMemo } from "react";
+import React, { useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
   Area,
@@ -10,23 +10,20 @@ import {
   ReferenceDot,
 } from "recharts";
 import { CurrencyCode } from "@/types/currency";
-import { useIsMobile } from "@/hooks/ui/use-mobile";
-import { TimeRange } from "@/types/networth";
 import { Info } from "lucide-react";
 import {
   Tooltip as UITooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../ui/tooltip";
+} from "@/components/ui/tooltip";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
-import { useNetWorthChart } from "@/hooks/use-net-worth-chart";
 import { formatDateByRange } from "@/lib/date-formatters";
 import { ChartLoading, ChartError, ChartEmpty } from "./NetWorthChartStates";
 import { ChartTooltip } from "./ChartTooltip";
 import { TimeRangeSelector } from "./TimeRangeSelector";
-import { useDb } from "@/components/DatabaseProvider";
+import { getMockDataInstance } from "@/lib/mock-data";
 
 interface NetWorthChartProps {
   currency: CurrencyCode;
@@ -39,69 +36,52 @@ export function NetWorthChart({
   currency,
   currentNetWorth,
   accounts,
-  isLoading: externalLoading,
+  isLoading,
 }: NetWorthChartProps) {
   const timeRange = useTimeRangeStore((state) => state.timeRange);
-  const { backendType } = useDb();
-  const prevTimeRangeRef = useRef(timeRange);
-
-  const isMobile = useIsMobile();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const { formatWithCurrency } = useCurrencyFormatter(currency);
-
-  // Use our custom hook to handle chart data
-  const {
-    data,
-    events,
-    isLoading: chartLoading,
-    isEmpty,
-    error,
-  } = useNetWorthChart(timeRange, accounts);
-
-  // Add debug info to console
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      if (!data || data.length === 0) {
-        console.log("Chart debug: No data available for chart", {
-          timeRange,
-          accountsCount: accounts?.length,
-          isLoading: chartLoading,
-          isEmpty,
-          backendType,
-        });
-      }
+  const { networthHistory } = getMockDataInstance();
+  
+  // Filter data based on time range
+  const filteredData = (() => {
+    const timeRangeNumber = typeof timeRange === 'number' ? timeRange : 
+      timeRange === 'day' ? 1 : 
+      timeRange === 'week' ? 7 : 
+      timeRange === 'month' ? 30 : 
+      timeRange === 'year' ? 365 : 0;
+    
+    if (timeRangeNumber === 0) {
+      return networthHistory;
     }
-  }, [data, timeRange, accounts, chartLoading, isEmpty, backendType]);
-
-  // Use external loading state if provided, otherwise use the chart's internal loading state
-  const isLoading = useMemo(() => {
-    if (externalLoading !== undefined) return externalLoading;
-    return chartLoading;
-  }, [externalLoading, chartLoading]);
-
-  // Ensure we have valid data to render
-  const hasValidData = data && data.length > 0;
+    
+    const cutoffIndex = Math.max(0, networthHistory.length - timeRangeNumber);
+    return networthHistory.slice(cutoffIndex);
+  })();
+  
+  // Generate some event points (significant changes)
+  const events = filteredData.length > 5 ? 
+    [filteredData[Math.floor(filteredData.length * 0.33)], filteredData[Math.floor(filteredData.length * 0.66)]] : 
+    [];
 
   // Chart color based on net worth
   const chartColor =
     currentNetWorth < 0 ? "hsl(var(--destructive))" : "hsl(var(--primary))";
 
-  // Format date using our helper
-  const formatDate = useCallback(
-    (dateStr: string) => formatDateByRange(dateStr, timeRange),
-    [timeRange],
-  );
+  // Format date for display
+  const formatDate = (dateStr: string) => formatDateByRange(dateStr, timeRange);
 
   // Render the appropriate chart state
   const renderChartContent = () => {
     if (isLoading) return <ChartLoading />;
-    if (error) return <ChartError message={error.message} />;
-    if (!hasValidData) return <ChartEmpty />;
+    if (!filteredData || filteredData.length === 0) return <ChartEmpty />;
+
+    const isMobile = window.innerWidth < 768;
 
     return (
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
-          data={data}
+          data={filteredData}
           margin={{
             top: 10,
             right: isMobile ? 10 : 30,

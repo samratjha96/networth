@@ -1,28 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { AccountsPanel } from "./AccountsPanel";
 import { TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { Button } from "@/components/ui/button";
 import { useAccountsStore } from "@/store/accounts-store";
-import { useAccounts } from "@/hooks/accounts/use-accounts";
 import { AccountViewType } from "@/types/accounts";
 
 export function AccountsList() {
   const [view, setView] = useState<AccountViewType>("assets");
-  const { accounts } = useAccounts();
-  const { openAddDialog } = useAccountsStore();
+  const { accounts, openAddDialog } = useAccountsStore();
 
-  const { assetAccounts, liabilityAccounts } = useMemo(() => {
-    const assetAccounts = accounts.filter((a) => !a.isDebt);
-    const liabilityAccounts = accounts.filter((a) => a.isDebt);
-
-    return {
-      assetAccounts,
-      liabilityAccounts,
-    };
-  }, [accounts]);
+  // Filter accounts
+  const assetAccounts = accounts.filter((a) => !a.isDebt);
+  const liabilityAccounts = accounts.filter((a) => a.isDebt);
 
   return (
     <>

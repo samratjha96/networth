@@ -1,34 +1,4 @@
-import { Button } from "./ui/button";
-import { SignInDialog } from "./SignInDialog";
-import { useCallback } from "react";
-import { useAuth } from "./AuthProvider";
-import { toast } from "@/hooks/ui/use-toast";
-
 export const Header = () => {
-  const { user, signOut, isLoading } = useAuth();
-
-  const handleSignOut = useCallback(async () => {
-    try {
-      console.log("Signing out");
-      // Show toast immediately before the page refreshes
-      toast({
-        title: "Signing out...",
-        description: "Refreshing with demo mode data.",
-        duration: 1500,
-      });
-      await signOut();
-      // Page will automatically refresh from auth state change
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Sign out failed",
-        description: "Please try again",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  }, [signOut]);
-
   return (
     <div className="flex justify-between items-center">
       <div className="flex flex-col">
@@ -41,28 +11,7 @@ export const Header = () => {
       </div>
 
       <div className="flex items-center gap-4">
-        {isLoading ? (
-          <div className="h-8 w-[200px] animate-pulse rounded bg-muted" />
-        ) : user ? (
-          // Authenticated user view
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{user.email}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing out..." : "Sign out"}
-            </Button>
-          </div>
-        ) : (
-          // Demo mode view with sign in dialog
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Demo Mode</span>
-            <SignInDialog />
-          </div>
-        )}
+        <span className="text-xs text-muted-foreground">Demo Mode</span>
       </div>
     </div>
   );

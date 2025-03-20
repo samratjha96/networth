@@ -4,13 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import { useAuth } from "@/components/AuthProvider";
-import { DebugAuthStatus } from "@/components/DebugAuthStatus";
-import { useState, useEffect } from "react";
-import { AuthProvider } from "@/components/AuthProvider";
-import { DatabaseProvider } from "@/components/DatabaseProvider";
-import { useDatabaseStore } from "@/store/database-store";
-import { useDb } from "@/components/DatabaseProvider";
 
 // Create the QueryClient instance
 const queryClient = new QueryClient({
@@ -24,50 +17,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// App initialization wrapper that handles auth and database setup
-function AppInitializer({ children }) {
-  const { isLoading: authLoading, user } = useAuth();
-  const { setUserId } = useDatabaseStore();
-  const { isLoading: dbLoading } = useDb();
-  const [isInitializing, setIsInitializing] = useState(true);
-
-  // Set up user in database when auth state changes
-  useEffect(() => {
-    if (!authLoading) {
-      const userId = user?.id || null;
-      console.debug("Auth state determined, setting database user:", userId);
-
-      // Set appropriate database state based on authentication
-      setUserId(userId);
-
-      // We've done our initialization work
-      setIsInitializing(false);
-    }
-  }, [authLoading, user, setUserId]);
-
-  // Show loading indicator until everything is initialized
-  const isLoading = authLoading || dbLoading || isInitializing;
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Loading</h2>
-          <p className="text-muted-foreground text-sm">
-            {authLoading
-              ? "Checking authentication..."
-              : dbLoading
-                ? "Initializing database..."
-                : "Preparing application..."}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
-
 // App content with routes
 function AppContent() {
   return (
@@ -79,7 +28,6 @@ function AppContent() {
           <Route path="/" element={<Index />} />
         </Routes>
       </BrowserRouter>
-      <DebugAuthStatus />
     </div>
   );
 }
@@ -87,13 +35,7 @@ function AppContent() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <DatabaseProvider>
-          <AppInitializer>
-            <AppContent />
-          </AppInitializer>
-        </DatabaseProvider>
-      </AuthProvider>
+      <AppContent />
     </TooltipProvider>
   </QueryClientProvider>
 );
