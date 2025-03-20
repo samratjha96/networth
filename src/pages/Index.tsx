@@ -12,7 +12,8 @@ const DEFAULT_CURRENCY: CurrencyCode = "USD";
 const Index = () => {
   const { accounts } = useAccountsStore();
   const { networthHistory } = getMockDataInstance();
-  const currentNetWorth = networthHistory[networthHistory.length - 1]?.value || 0;
+  const currentNetWorth =
+    networthHistory[networthHistory.length - 1]?.value || 0;
 
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";

@@ -95,52 +95,60 @@ export const calculateNetWorth = (accounts: AccountWithValue[]): number => {
 // Generate mock net worth history for 365 days
 export const generateMockNetworthHistory = (
   accounts: AccountWithValue[],
-  days: number = 365
+  days: number = 365,
 ): NetworthHistory[] => {
   const startValue = calculateNetWorth(accounts);
   const today = new Date();
   const history: NetworthHistory[] = [];
   let currentValue = startValue;
-  
+
   // Generate seasonal factors (tax returns, bonuses, etc.)
-  const seasonalFactors = new Array(12).fill(0).map(() => randomFloat(-0.03, 0.05));
-  
+  const seasonalFactors = new Array(12)
+    .fill(0)
+    .map(() => randomFloat(-0.03, 0.05));
+
   // Start with initial value
   history.push({
     date: subDays(today, days).toISOString(),
     value: Math.round(startValue * 100) / 100,
   });
-  
+
   for (let i = 1; i <= days; i++) {
     const date = subDays(today, days - i);
     const month = date.getMonth();
-    
+
     // Daily volatility (random changes)
     const volatility = 0.0008;
-    const dailyChange = (Math.random() * 2 - 1) * Math.abs(currentValue) * volatility;
-    
+    const dailyChange =
+      (Math.random() * 2 - 1) * Math.abs(currentValue) * volatility;
+
     // Apply slight upward trend over time
     const trend = 0.0001;
     const trendChange = Math.abs(currentValue) * trend;
-    
+
     // Apply seasonal factors
-    const seasonalChange = currentValue * seasonalFactors[month] / 30; // Spread monthly impact across days
-    
+    const seasonalChange = (currentValue * seasonalFactors[month]) / 30; // Spread monthly impact across days
+
     // Combine all factors
     currentValue += dailyChange + trendChange + seasonalChange;
-    
+
     // Occasionally add significant events (like large purchases or windfalls)
-    if (Math.random() < 0.01) { // 1% chance each day
-      const eventImpact = currentValue * (Math.random() > 0.5 ? randomFloat(0.01, 0.05) : -randomFloat(0.01, 0.05));
+    if (Math.random() < 0.01) {
+      // 1% chance each day
+      const eventImpact =
+        currentValue *
+        (Math.random() > 0.5
+          ? randomFloat(0.01, 0.05)
+          : -randomFloat(0.01, 0.05));
       currentValue += eventImpact;
     }
-    
+
     history.push({
       date: date.toISOString(),
       value: Math.round(currentValue * 100) / 100,
     });
   }
-  
+
   return history;
 };
 
@@ -148,7 +156,7 @@ export const generateMockNetworthHistory = (
 export const getMockData = () => {
   const accounts = generateMockAccounts();
   const networthHistory = generateMockNetworthHistory(accounts);
-  
+
   return {
     accounts,
     networthHistory,

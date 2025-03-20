@@ -42,27 +42,38 @@ export function NetWorthChart({
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const { formatWithCurrency } = useCurrencyFormatter(currency);
   const { networthHistory } = getMockDataInstance();
-  
+
   // Filter data based on time range
   const filteredData = (() => {
-    const timeRangeNumber = typeof timeRange === 'number' ? timeRange : 
-      timeRange === 'day' ? 1 : 
-      timeRange === 'week' ? 7 : 
-      timeRange === 'month' ? 30 : 
-      timeRange === 'year' ? 365 : 0;
-    
+    const timeRangeNumber =
+      typeof timeRange === "number"
+        ? timeRange
+        : timeRange === "day"
+          ? 1
+          : timeRange === "week"
+            ? 7
+            : timeRange === "month"
+              ? 30
+              : timeRange === "year"
+                ? 365
+                : 0;
+
     if (timeRangeNumber === 0) {
       return networthHistory;
     }
-    
+
     const cutoffIndex = Math.max(0, networthHistory.length - timeRangeNumber);
     return networthHistory.slice(cutoffIndex);
   })();
-  
+
   // Generate some event points (significant changes)
-  const events = filteredData.length > 5 ? 
-    [filteredData[Math.floor(filteredData.length * 0.33)], filteredData[Math.floor(filteredData.length * 0.66)]] : 
-    [];
+  const events =
+    filteredData.length > 5
+      ? [
+          filteredData[Math.floor(filteredData.length * 0.33)],
+          filteredData[Math.floor(filteredData.length * 0.66)],
+        ]
+      : [];
 
   // Chart color based on net worth
   const chartColor =

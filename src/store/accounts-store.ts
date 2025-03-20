@@ -5,7 +5,7 @@ import { getMockDataInstance } from "@/lib/mock-data";
 interface AccountsState {
   // Account data state
   accounts: AccountWithValue[];
-  
+
   // Dialog state
   isDialogOpen: boolean;
   accountToEdit: AccountWithValue | null;
@@ -13,7 +13,9 @@ interface AccountsState {
 
   // Action handlers
   // Account data actions
-  addAccount: (account: Omit<AccountWithValue, "id">) => Promise<AccountWithValue>;
+  addAccount: (
+    account: Omit<AccountWithValue, "id">,
+  ) => Promise<AccountWithValue>;
   updateAccount: (account: AccountWithValue) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
 
@@ -30,7 +32,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
   return {
     // Initial account data state with mock data
     accounts: initialAccounts,
-    
+
     // Initial dialog state
     isDialogOpen: false,
     accountToEdit: null,
@@ -78,7 +80,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
       // Update the account in state
       set((state) => ({
         accounts: state.accounts.map((a) =>
-          a.id === account.id ? account : a
+          a.id === account.id ? account : a,
         ),
       }));
     },
