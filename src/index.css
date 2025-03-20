@@ -24,6 +24,7 @@
     --input: 240 4% 16%;
     --ring: 142 70% 50%;
     --radius: 0.75rem;
+    --font-mono: 'SF Mono', 'Roboto Mono', monospace;
   }
 }
 
@@ -55,4 +56,8 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(240 4% 20%);
+}
+
+html {
+  font-family: var(--font-mono);
 }
