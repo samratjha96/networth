@@ -4,6 +4,8 @@ import { TimeRange } from "@/types/networth";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { useAccountsStore } from "@/store/accounts-store";
+import { useAccountPerformance } from "@/hooks/use-account-performance";
+import { useNetWorthHistory } from "@/hooks/use-networth-history";
 
 // This would come from a hook that fetches data from Supabase
 // Based on the selected time range
@@ -26,6 +28,13 @@ interface AccountPerformance {
   percentChange: number;
 }
 
+// Simulate historical account data storage
+interface HistoricalAccountData {
+  [accountId: string]: {
+    [timeKey: string]: number;
+  };
+}
+
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
     case 1:
@@ -43,64 +52,25 @@ const getPeriodLabel = (days: TimeRange) => {
   }
 };
 
+// Get a key for storing historical data based on time range
+const getTimeKey = (timeRange: TimeRange) => {
+  return `history_${timeRange}`;
+};
+
 export function NetWorthSummary() {
   const { accounts } = useAccountsStore();
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const { formatWithCurrency } = useCurrencyFormatter("USD");
 
-  // In a real implementation, this would be fetched from Supabase
-  // using the networth_history table with the selected time range
-  // For now, we'll simulate it with the same calculation
+  // Calculate current net worth from accounts
   const currentNetWorth = accounts.reduce(
     (total, account) => total + account.balance,
     0,
   );
 
-  // This simulates what we would get from the Supabase query
-  // In production, this would come from an API call to Supabase
-  const netWorthData: NetWorthData = {
-    currentValue: currentNetWorth,
-    previousValue:
-      currentNetWorth *
-      (1 -
-        (timeRange === 1
-          ? 0.01
-          : timeRange === 7
-            ? 0.03
-            : timeRange === 30
-              ? 0.05
-              : 0.08)),
-    change:
-      currentNetWorth *
-      (timeRange === 1
-        ? 0.01
-        : timeRange === 7
-          ? 0.03
-          : timeRange === 30
-            ? 0.05
-            : 0.08),
-    percentageChange:
-      timeRange === 1 ? 1 : timeRange === 7 ? 3 : timeRange === 30 ? 5 : 8,
-  };
-
-  // This simulates the data we would get from the Supabase calculate_account_performance function
-  // In production, this would be fetched from Supabase
-  const accountPerformances: AccountPerformance[] = accounts.map((account) => ({
-    accountId: account.id,
-    accountName: account.name,
-    accountType: account.type,
-    isDebt: account.isDebt || false,
-    startValue: account.balance * 0.9, // Simulated start value
-    endValue: account.balance,
-    absoluteChange: account.balance * 0.1,
-    percentChange: 10, // Simulated 10% growth
-  }));
-
-  // Find best performing account - in production this would come directly from sorted query results
-  const bestPerformingAccount =
-    accounts.length > 0
-      ? accountPerformances.sort((a, b) => b.percentChange - a.percentChange)[0]
-      : null;
+  // Use our hooks to get data
+  const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
+  const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
 
   const isPositiveNetWorth = netWorthData.currentValue >= 0;
   const isPositiveChange = netWorthData.change > 0;
