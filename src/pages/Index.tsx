@@ -21,21 +21,28 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="max-w-[1800px] mx-auto py-4 px-3 md:px-4 space-y-4">
         <Header />
 
-        <NetWorthSummary />
+        {/* Layout container - vertical on mobile, side-by-side on larger screens */}
+        <div className="grid grid-cols-1 md:grid-cols-12 md:gap-6 lg:gap-8">
+          {/* Left side: Accounts list (at least 1/3 of the screen) */}
+          <div className="md:col-span-5 lg:col-span-4 xl:col-span-4 md:pr-2">
+            <AccountsList />
+          </div>
 
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-          <NetWorthChart
-            currency={DEFAULT_CURRENCY}
-            currentNetWorth={currentNetWorth}
-            accounts={accounts}
-            isLoading={false}
-          />
+          {/* Right side: NetWorth components */}
+          <div className="md:col-span-7 lg:col-span-8 xl:col-span-8 space-y-4 md:pl-2">
+            <NetWorthSummary />
+
+            <NetWorthChart
+              currency={DEFAULT_CURRENCY}
+              currentNetWorth={currentNetWorth}
+              accounts={accounts}
+              isLoading={false}
+            />
+          </div>
         </div>
-
-        <AccountsList />
       </div>
     </div>
   );
