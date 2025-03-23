@@ -62,7 +62,9 @@ export const useSignOut = () => {
   return useMutation({
     mutationFn: supabaseApi.auth.signOut,
     onSuccess: () => {
+      console.log("[BUG] useSignOut onSuccess - invalidating all queries");
       queryClient.invalidateQueries(); // Invalidate all queries when signing out
+      console.log("[BUG] useSignOut onSuccess - all queries invalidated");
     },
   });
 };
@@ -75,9 +77,11 @@ export const useSignInWithGoogle = () => {
 
 // Account Queries
 export const useAccounts = (userId: string | null) => {
+  console.log("[BUG] useAccounts query hook called with userId:", userId);
   return useQuery({
     queryKey: ["accounts", userId],
     queryFn: () => {
+      console.log("[BUG] useAccounts queryFn executing with userId:", userId);
       if (!userId) return Promise.resolve([]);
       return supabaseApi.accounts.getAccounts(userId);
     },

@@ -81,7 +81,14 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
       dataSource: "local" | "remote",
       userId: string | null,
     ) => {
+      console.log("[BUG] Accounts store updating dataSource", { 
+        current: get().dataSource, 
+        new: dataSource, 
+        currentUserId: get().userId, 
+        newUserId: userId 
+      });
       set({ dataSource, userId });
+      console.log("[BUG] Accounts store dataSource updated", get().dataSource);
     },
 
     // Dialog actions
@@ -99,7 +106,10 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
 
     // Sync remote accounts to the store
     syncRemoteAccounts: (accounts: AccountWithValue[]) => {
-      set({ accounts });
+      console.log("[BUG] syncRemoteAccounts called with", accounts.length, "accounts");
+      // Always force a new array reference to ensure React detects the change
+      set({ accounts: [...accounts] });
+      console.log("[BUG] accounts updated in store, new count:", get().accounts.length);
     },
 
     // Add a new account

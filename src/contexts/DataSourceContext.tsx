@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
 
 type DataSource = "local" | "remote";
@@ -20,15 +20,32 @@ export const DataSourceProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { user, status } = useAuthStore();
-
-  const value: DataSourceContextType = {
-    dataSource: status === "authenticated" ? "remote" : "local",
-    userId: user?.id || null,
-  };
+  // Store context values in local state
+  const [contextValue, setContextValue] = useState<DataSourceContextType>({
+    dataSource: "local",
+    userId: null,
+  });
+  
+  // Subscribe to the entire auth store
+  const authState = useAuthStore();
+  
+  // Update the context value whenever auth state changes
+  useEffect(() => {
+    console.log("[BUG] Auth state changed in DataSourceProvider", { 
+      user: authState.user?.id || "null", 
+      status: authState.status 
+    });
+    
+    setContextValue({
+      dataSource: authState.status === "authenticated" ? "remote" : "local",
+      userId: authState.user?.id || null,
+    });
+  }, [authState.user, authState.status]);
+  
+  console.log("[BUG] DataSourceProvider rendering with context value", contextValue);
 
   return (
-    <DataSourceContext.Provider value={value}>
+    <DataSourceContext.Provider value={contextValue}>
       {children}
     </DataSourceContext.Provider>
   );
