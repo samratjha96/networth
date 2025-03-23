@@ -15,6 +15,7 @@ export interface NetWorthData {
   percentageChange: number;
 }
 
+// Function to update networth history - now delegates to the API layer
 export async function updateNetworthHistory(
   userId: string,
   currentNetWorth: number,
@@ -26,6 +27,7 @@ export async function updateNetworthHistory(
 
   try {
     await supabaseApi.networth.updateNetWorthHistory(userId, currentNetWorth);
+    console.log("[DEBUG] Networth history updated successfully");
     return true;
   } catch (error) {
     console.error("Error updating networth history:", error);
