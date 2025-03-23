@@ -3,34 +3,21 @@ import { supabaseApi } from "./supabase-api";
 import { AccountWithValue } from "@/types/accounts";
 import { TimeRange } from "@/types/networth";
 import { invalidateQueries } from "@/utils/query-invalidation";
-
-// Auth Queries
-export const useSession = () => {
-  return useQuery({
-    queryKey: ["session"],
-    queryFn: supabaseApi.auth.getSession,
-    staleTime: Infinity, // Session data doesn't change unless explicitly mutated
-  });
-};
-
-export const useUser = () => {
-  return useQuery({
-    queryKey: ["user"],
-    queryFn: supabaseApi.auth.getUser,
-    staleTime: Infinity, // User data doesn't change unless explicitly mutated
-  });
-};
+import { sanitizeApiParams } from "@/utils/api-helpers";
+import { sanitizeString } from "@/utils/input-validation";
 
 // Auth Mutations
 export const useSignIn = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      supabaseApi.auth.signInWithPassword({
-        email,
-        password,
-      }),
+    mutationFn: ({ email, password }: { email: string; password: string }) => {
+      const sanitizedParams = sanitizeApiParams({ email, password });
+      return supabaseApi.auth.signInWithPassword({
+        email: sanitizedParams.email,
+        password: sanitizedParams.password,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
       queryClient.invalidateQueries({ queryKey: ["session"] });
@@ -50,12 +37,14 @@ export const useSignUp = () => {
       email: string;
       password: string;
       name: string;
-    }) =>
-      supabaseApi.auth.signUp({
+    }) => {
+      const sanitizedName = sanitizeString(name);
+      return supabaseApi.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name } },
-      }),
+        options: { data: { full_name: sanitizedName } },
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
       queryClient.invalidateQueries({ queryKey: ["session"] });
@@ -201,25 +190,5 @@ export const useNetWorthChartData = (
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
-
-// Networth Mutation
-export const useUpdateNetWorth = (userId: string | null) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (currentNetWorth: number) => {
-      if (!userId) throw new Error("User ID is required");
-      return supabaseApi.networth.updateNetWorthHistory(
-        userId,
-        currentNetWorth,
-      );
-    },
-    onSuccess: () => {
-      invalidateQueries(queryClient, userId, {
-        invalidateNetWorth: true,
-      });
-    },
   });
 };

@@ -31,21 +31,11 @@ export const DataSourceProvider = ({
 
   // Update the context value whenever auth state changes
   useEffect(() => {
-    console.log("[BUG] Auth state changed in DataSourceProvider", {
-      user: authState.user?.id || "null",
-      status: authState.status,
-    });
-
     setContextValue({
       dataSource: authState.status === "authenticated" ? "remote" : "local",
       userId: authState.user?.id || null,
     });
   }, [authState.user, authState.status]);
-
-  console.log(
-    "[BUG] DataSourceProvider rendering with context value",
-    contextValue,
-  );
 
   return (
     <DataSourceContext.Provider value={contextValue}>

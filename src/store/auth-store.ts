@@ -7,7 +7,13 @@ import {
   isValidPassword,
   sanitizeString,
 } from "@/utils/input-validation";
-import { sanitizeApiParams, createApiError } from "@/utils/api-helpers";
+import { createApiError } from "@/utils/api-helpers";
+import {
+  useSignIn,
+  useSignOut,
+  useSignUp,
+  useSignInWithGoogle,
+} from "@/api/queries";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
@@ -80,12 +86,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw createApiError("Password is required");
       }
 
-      // Sanitize inputs
-      const sanitizedParams = sanitizeApiParams({ email, password });
-
-      const { data, error } = await supabaseApi.auth.signInWithPassword({
-        email: sanitizedParams.email,
-        password: sanitizedParams.password,
+      // const { data, error } = await useSignIn()
+      const mutation = useSignIn();
+      const { data, error } = await mutation.mutateAsync({
+        email,
+        password,
       });
 
       if (error) throw error;
@@ -98,11 +103,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signInWithGoogle: async () => {
     try {
       set({ status: "loading", error: null });
-      const { error } = await supabaseApi.auth.signInWithOAuth({
-        provider: "google",
-      });
+      const mutation = useSignInWithGoogle();
+      const { data, error } = await mutation.mutateAsync();
       if (error) throw error;
-      // Auth state changes will be captured by the listener
     } catch (error) {
       set({ error: error as Error, status: "error" });
     }
@@ -127,19 +130,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw createApiError("Name is required");
       }
 
-      // Sanitize inputs
-      const sanitizedName = sanitizeString(name);
-
-      const { data, error } = await supabaseApi.auth.signUp({
+      const mutation = useSignUp();
+      const { data, error } = await mutation.mutateAsync({
         email,
         password,
-        options: {
-          data: { full_name: sanitizedName },
-        },
+        name,
       });
 
       if (error) throw error;
-      // Auth listener will handle state updates
     } catch (error) {
       set({ error: error as Error, status: "error" });
     }
@@ -148,9 +146,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     try {
       set({ status: "loading", error: null });
-      const { error } = await supabaseApi.auth.signOut();
+      const mutation = useSignOut();
+      const { error } = await mutation.mutateAsync();
       if (error) throw error;
-      // Auth listener will handle state updates
     } catch (error) {
       set({ error: error as Error, status: "error" });
     }
