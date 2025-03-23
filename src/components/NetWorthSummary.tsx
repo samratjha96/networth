@@ -8,7 +8,7 @@ import {
   useNetWorthHistory,
   updateNetworthHistory,
 } from "@/hooks/use-networth-history";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useDataSource } from "@/contexts/DataSourceContext";
 
@@ -30,16 +30,12 @@ const getPeriodLabel = (days: TimeRange) => {
 };
 
 export function NetWorthSummary() {
+  const [currentNetWorth, setCurrentNetWorth] = useState(0);
   const { accounts, isLoading } = useAccounts();
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const { formatWithCurrency } = useCurrencyFormatter("USD");
   const { dataSource, userId } = useDataSource();
 
-  // Calculate current net worth from accounts
-  const currentNetWorth = accounts.reduce(
-    (total, account) => total + account.balance,
-    0,
-  );
 
   // Use our hooks to get data
   const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
@@ -52,7 +48,8 @@ export function NetWorthSummary() {
         console.error("Failed to update networth history:", err),
       );
     }
-  }, [currentNetWorth, dataSource, userId, accounts.length]);
+    setCurrentNetWorth(accounts.reduce((total, account) => total + account.balance, 0));
+  }, [dataSource, userId, accounts]);
 
   const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
   const isPositiveChange = (netWorthData?.change ?? 0) > 0;
@@ -81,7 +78,7 @@ export function NetWorthSummary() {
               !isPositiveNetWorth ? "text-destructive" : ""
             }`}
           >
-            {formatWithCurrency(netWorthData?.currentValue ?? 0)}
+            {formatWithCurrency(currentNetWorth ?? 0)}
           </div>
           <p className="text-xs text-muted-foreground flex items-center">
             <span
