@@ -11,7 +11,6 @@ interface AuthState {
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signInWithApple: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -63,18 +62,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ status: "loading", error: null });
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-      });
-      if (error) throw error;
-    } catch (error) {
-      set({ error: error as Error, status: "error" });
-    }
-  },
-
-  signInWithApple: async () => {
-    try {
-      set({ status: "loading", error: null });
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "apple",
       });
       if (error) throw error;
     } catch (error) {

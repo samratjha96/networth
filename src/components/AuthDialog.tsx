@@ -24,8 +24,7 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const { signIn, signUp, signInWithGoogle, signInWithApple, error } =
-    useAuthStore();
+  const { signIn, signUp, signInWithGoogle, error } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,13 +50,9 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
     }
   };
 
-  const handleOAuthSignIn = async (provider: "google" | "apple") => {
+  const handleOAuthSignIn = async (provider: "google") => {
     try {
-      if (provider === "google") {
-        await signInWithGoogle();
-      } else {
-        await signInWithApple();
-      }
+      await signInWithGoogle();
 
       if (!error) {
         setIsOpen(false);
@@ -120,23 +115,6 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
                 />
               </svg>
               Continue with Google
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="flex items-center justify-center gap-2 py-5 w-full"
-              onClick={() => handleOAuthSignIn("apple")}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M17.05 20.28c-.98.95-2.05.86-3.08.38-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.37C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.87 1.17-.28 2.3-.99 3.46-.84 1.47.2 2.58.99 3.26 2.22-3.14 1.83-2.35 6.24.7 7.5-.55 1.35-1.3 2.7-2.5 3.22zM12.03 7.25c-.15-2.23 1.66-4.13 3.67-4.25.32 2.21-1.7 4.31-3.67 4.25z" />
-              </svg>
-              Continue with Apple
             </Button>
           </div>
 
