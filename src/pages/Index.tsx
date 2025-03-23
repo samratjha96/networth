@@ -21,18 +21,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[1800px] mx-auto py-4 px-3 md:px-4 space-y-4">
+      <div className="max-w-[2400px] mx-auto py-6 px-4 md:px-6 lg:px-8 xl:px-12 space-y-6">
         <Header />
 
         {/* Layout container - vertical on mobile, side-by-side on larger screens */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-12 md:gap-6 lg:gap-8">
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 xl:gap-12">
           {/* Left side: Accounts list (at least 1/3 of the screen) */}
-          <div className="md:col-span-5 lg:col-span-4 xl:col-span-4 md:pr-2">
+          <div className="md:col-span-5 lg:col-span-4 xl:col-span-4">
             <AccountsList />
           </div>
 
           {/* Right side: NetWorth components */}
-          <div className="md:col-span-7 lg:col-span-8 xl:col-span-8 space-y-4 md:pl-2">
+          <div className="md:col-span-7 lg:col-span-8 xl:col-span-8 space-y-6">
             <NetWorthSummary />
 
             <NetWorthChart

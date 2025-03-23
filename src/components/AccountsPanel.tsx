@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   ChevronDown,
   ChevronUp,
+  Plus,
 } from "lucide-react";
 import {
   formatCurrency,
@@ -111,157 +112,167 @@ export function AccountsPanel({ accounts, type }: AccountsPanelProps) {
 
   if (filteredAccounts.length === 0) {
     return (
-      <Alert variant="default" className="m-4 bg-muted/50 border border-dashed">
-        <PlusCircle className="h-4 w-4 text-muted-foreground" />
-        <AlertDescription className="flex items-center justify-between w-full">
-          <span>
-            Add your first {type === "assets" ? "asset" : "liability"} account
-            to start tracking
-          </span>
-          <AddAccountDialog
-            trigger={
-              <Badge
-                variant="outline"
-                className="cursor-pointer hover:bg-primary/10"
-                onClick={() => openAddDialog()}
-              >
-                Add {type === "assets" ? "Asset" : "Liability"}
-              </Badge>
-            }
-          />
-        </AlertDescription>
-      </Alert>
+      <div className="p-4">
+        <AddAccountDialog
+          trigger={
+            <Button className="w-full gap-2 text-lg py-6" variant="outline">
+              <Plus className="h-5 w-5" />
+              Add {type === "assets" ? "Asset" : "Liability"}
+            </Button>
+          }
+        />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4 p-3">
+    <div className="relative space-y-6 p-4">
+      {/* Main Panel Header */}
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-2xl font-bold tracking-tight">
+          {type === "assets" ? "Assets" : "Liabilities"}
+        </h2>
+        <AddAccountDialog
+          trigger={
+            <Button
+              className="shadow-lg hover:shadow-xl transition-all gap-2"
+              size="lg"
+            >
+              <Plus className="h-5 w-5" />
+              Add {type === "assets" ? "Asset" : "Liability"}
+            </Button>
+          }
+        />
+      </div>
+
       {Object.entries(groupedAccounts).map(([type, accounts]) => (
-        <div key={type} className="space-y-3">
+        <div
+          key={type}
+          className="rounded-lg border bg-card/50 backdrop-blur-sm overflow-hidden"
+        >
           <div
-            className="flex items-center px-2 group cursor-pointer hover:bg-muted/50 rounded-md py-2 transition-colors"
+            className="flex items-center px-4 py-3 group cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => toggleSection(type)}
           >
-            <div className="flex items-center gap-2">
-              <span className="text-lg" aria-hidden="true">
+            <div className="flex items-center gap-3 flex-1">
+              <span className="text-2xl" aria-hidden="true">
                 {accountTypeEmojis[type as AccountType] || "💰"}
               </span>
-              <h3 className="font-medium">{type}</h3>
-              <span className="px-1.5 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
-                {accounts.length}
-              </span>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 ml-1 text-muted-foreground group-hover:text-foreground transition-transform duration-200"
-                aria-label={
-                  collapsedSections[type]
-                    ? "Expand section"
-                    : "Collapse section"
-                }
-                onClick={(e) => {
-                  // Prevent triggering the parent's onClick
-                  e.stopPropagation();
-                  toggleSection(type);
-                }}
-              >
-                {collapsedSections[type] ? (
-                  <ChevronDown className="h-4 w-4 transition-transform duration-200 transform group-hover:scale-110" />
-                ) : (
-                  <ChevronUp className="h-4 w-4 transition-transform duration-200 transform group-hover:scale-110" />
-                )}
-              </Button>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-semibold tracking-tight bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
+                  {type}
+                </h3>
+                <Badge variant="secondary" className="text-xs">
+                  {accounts.length}
+                </Badge>
+              </div>
             </div>
 
-            <div className="ml-auto">
-              {/* Additional actions could go here if needed */}
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 ml-2 shrink-0"
+              aria-label={
+                collapsedSections[type] ? "Expand section" : "Collapse section"
+              }
+            >
+              {collapsedSections[type] ? (
+                <ChevronDown className="h-5 w-5 transition-transform duration-200" />
+              ) : (
+                <ChevronUp className="h-5 w-5 transition-transform duration-200" />
+              )}
+            </Button>
           </div>
 
           {!collapsedSections[type] && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {accounts.map((account) => {
-                const colors = getAccountColor(
-                  account.type as AccountType,
-                  account.isDebt,
-                );
-                return (
-                  <div
-                    key={account.id}
-                    className={cn(
-                      "relative rounded-lg overflow-hidden shadow-sm border",
-                      "hover:shadow-md transition-shadow duration-200",
-                      "bg-card",
-                    )}
-                  >
+            <div className="p-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {accounts.map((account) => {
+                  const colors = getAccountColor(
+                    account.type as AccountType,
+                    account.isDebt,
+                  );
+                  return (
                     <div
+                      key={account.id}
                       className={cn(
-                        "absolute top-0 left-0 w-full h-1",
-                        colors.borderColor,
+                        "group relative rounded-lg overflow-hidden",
+                        "bg-card border shadow-sm hover:shadow-md",
+                        "transition-all duration-200 hover:scale-[1.02]",
                       )}
-                    />
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-medium text-card-foreground">
-                            {account.name}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">
-                            {account.type}
-                          </p>
-                        </div>
-                        <DropdownMenu
-                          open={openMenuId === account.id}
-                          onOpenChange={(open) =>
-                            setOpenMenuId(open ? account.id : null)
-                          }
-                        >
-                          <DropdownMenuTrigger asChild>
-                            <button className="p-1 rounded-md hover:bg-accent text-muted-foreground">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem
-                              className="cursor-pointer"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setOpenMenuId(null);
-                                setTimeout(() => {
-                                  openEditDialog(account);
-                                }, 100);
-                              }}
-                            >
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="cursor-pointer text-destructive focus:text-destructive"
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                deleteAccount(account.id);
-                              }}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                    >
                       <div
                         className={cn(
-                          "text-lg font-semibold",
-                          account.isDebt
-                            ? "text-red-500"
-                            : "text-green-600 dark:text-green-500",
+                          "absolute top-0 left-0 w-full h-1.5",
+                          colors.borderColor,
                         )}
-                      >
-                        {formatAccountBalance(account)}
+                      />
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="space-y-1">
+                            <h4 className="text-lg font-semibold tracking-tight text-card-foreground">
+                              {account.name}
+                            </h4>
+                            <p className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">
+                              {account.type}
+                            </p>
+                          </div>
+                          <DropdownMenu
+                            open={openMenuId === account.id}
+                            onOpenChange={(open) =>
+                              setOpenMenuId(open ? account.id : null)
+                            }
+                          >
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem
+                                className="cursor-pointer"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setOpenMenuId(null);
+                                  setTimeout(() => {
+                                    openEditDialog(account);
+                                  }, 100);
+                                }}
+                              >
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="cursor-pointer text-destructive focus:text-destructive"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  deleteAccount(account.id);
+                                }}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <div
+                          className={cn(
+                            "text-2xl font-bold tracking-tight",
+                            account.isDebt
+                              ? "text-red-500 dark:text-red-400"
+                              : "text-green-600 dark:text-green-400",
+                          )}
+                        >
+                          {formatAccountBalance(account)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
