@@ -20,6 +20,7 @@ import {
   BarChart2,
   LineChart as LineChartIcon,
   TrendingUp,
+  ChevronDown,
 } from "lucide-react";
 import {
   Tooltip as UITooltip,
@@ -27,6 +28,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { formatDateByRange } from "@/lib/date-formatters";
@@ -34,6 +41,8 @@ import { ChartLoading, ChartError, ChartEmpty } from "./NetWorthChartStates";
 import { ChartTooltip } from "./ChartTooltip";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 import { getMockDataInstance } from "@/lib/mock-data";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/ui/use-mobile";
 
 type ChartType = "area" | "line" | "bar";
 
@@ -55,6 +64,7 @@ export function NetWorthChart({
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const { formatWithCurrency } = useCurrencyFormatter(currency);
   const { networthHistory } = getMockDataInstance();
+  const isMobile = useIsMobile();
 
   // Filter data based on time range
   const filteredData = (() => {
@@ -102,17 +112,30 @@ export function NetWorthChart({
   // Format date for display
   const formatDate = (dateStr: string) => formatDateByRange(dateStr, timeRange);
 
+  // Format currency for mobile
+  const formatCurrency = (value: number) => {
+    if (isMobile) {
+      const absValue = Math.abs(value);
+      if (absValue >= 1000000) {
+        return formatWithCurrency(value / 1000000).replace(/\.00$/, "") + "M";
+      }
+      if (absValue >= 1000) {
+        return formatWithCurrency(value / 1000).replace(/\.00$/, "") + "K";
+      }
+    }
+    return formatWithCurrency(value);
+  };
+
   // Render the appropriate chart based on selected type
   const renderChart = () => {
     if (isLoading) return <ChartLoading />;
     if (!filteredData || filteredData.length === 0) return <ChartEmpty />;
 
-    const isMobile = window.innerWidth < 768;
     const margin = {
       top: 10,
       right: isMobile ? 10 : 30,
-      left: isMobile ? 20 : 40,
-      bottom: 10,
+      left: isMobile ? 10 : 40,
+      bottom: isMobile ? 20 : 10,
     };
 
     const commonAxisProps = {
@@ -123,15 +146,17 @@ export function NetWorthChart({
         tickLine: false,
         axisLine: false,
         tickFormatter: formatDate,
-        minTickGap: isMobile ? 20 : 40,
+        minTickGap: isMobile ? 40 : 40,
+        height: isMobile ? 30 : 40,
       },
       yAxis: {
         stroke: "hsl(var(--muted-foreground))",
         fontSize: isMobile ? 10 : 12,
         tickLine: false,
         axisLine: false,
-        width: isMobile ? 60 : 80,
-        tickFormatter: (value: number) => formatWithCurrency(value),
+        width: isMobile ? 45 : 80,
+        tickFormatter: formatCurrency,
+        hide: isMobile,
       },
       tooltip: {
         content: (props: any) => (
@@ -293,32 +318,48 @@ export function NetWorthChart({
 
   return (
     <Card className="col-span-4">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Net Worth Over Time</CardTitle>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center border rounded-md overflow-hidden">
-              {chartTypes.map((type) => (
-                <button
-                  key={type.value}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                    chartType === type.value
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
-                  }`}
-                  onClick={() => setChartType(type.value as ChartType)}
+      <CardHeader className={isMobile ? "px-4 py-3" : undefined}>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <CardTitle className={isMobile ? "text-base" : undefined}>
+            {isMobile ? "Net Worth" : "Net Worth Over Time"}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
                 >
-                  {type.icon}
-                  <span className="hidden sm:inline">{type.label}</span>
-                </button>
-              ))}
-            </div>
+                  {chartTypes.find((type) => type.value === chartType)?.icon}
+                  <span className="hidden sm:inline">
+                    {chartTypes.find((type) => type.value === chartType)?.label}
+                  </span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {chartTypes.map((type) => (
+                  <DropdownMenuItem
+                    key={type.value}
+                    onClick={() => setChartType(type.value as ChartType)}
+                    className="flex items-center gap-2"
+                  >
+                    {type.icon}
+                    <span>{type.label}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <TimeRangeSelector />
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[400px]" ref={chartContainerRef}>
+      <CardContent className={isMobile ? "px-2 pb-2" : undefined}>
+        <div
+          className={`${isMobile ? "h-[300px]" : "h-[400px]"}`}
+          ref={chartContainerRef}
+        >
           {renderChart()}
         </div>
 
@@ -330,7 +371,9 @@ export function NetWorthChart({
                   <div className="flex items-center cursor-help">
                     <Info className="h-3 w-3 mr-1" />
                     <span>
-                      Significant changes in net worth are highlighted
+                      {isMobile
+                        ? "Significant changes highlighted"
+                        : "Significant changes in net worth are highlighted"}
                     </span>
                   </div>
                 </TooltipTrigger>
