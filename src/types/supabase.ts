@@ -45,39 +45,34 @@ export type Database = {
       hourly_account_values: {
         Row: {
           account_id: string;
-          hour_start: string;
-          value: number;
-          user_id: string;
           created_at: string;
+          hour_start: string;
           updated_at: string;
+          user_id: string;
+          value: number;
         };
         Insert: {
           account_id: string;
-          hour_start: string;
-          value: number;
-          user_id: string;
           created_at?: string;
+          hour_start: string;
           updated_at?: string;
+          user_id: string;
+          value: number;
         };
         Update: {
           account_id?: string;
-          hour_start?: string;
-          value?: number;
-          user_id?: string;
           created_at?: string;
+          hour_start?: string;
           updated_at?: string;
+          user_id?: string;
+          value?: number;
         };
         Relationships: [
           {
             foreignKeyName: "hourly_account_values_account_id_fkey";
             columns: ["account_id"];
+            isOneToOne: false;
             referencedRelation: "accounts";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "hourly_account_values_user_id_fkey";
-            columns: ["user_id"];
-            referencedRelation: "users";
             referencedColumns: ["id"];
           },
         ];
@@ -111,12 +106,6 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      get_current_account_value: {
-        Args: {
-          account_id_param: string;
-        };
-        Returns: number;
-      };
       calculate_account_performance: {
         Args: {
           user_id_param: string;
@@ -134,6 +123,12 @@ export type Database = {
           percent_change: number;
         }[];
       };
+      get_current_account_value: {
+        Args: {
+          account_id_param: string;
+        };
+        Returns: number;
+      };
     };
     Enums: {
       [_ in never]: never;
@@ -144,7 +139,6 @@ export type Database = {
   };
 };
 
-// Helper type for Supabase schema
 type PublicSchema = Database[Extract<keyof Database, "public">];
 
 export type Tables<
@@ -214,11 +208,30 @@ export type TablesUpdate<
       : never
     : never;
 
-// Helper type for function returns
-export type Functions<
-  PublicFunctionName extends keyof PublicSchema["Functions"],
-> = PublicSchema["Functions"][PublicFunctionName] extends {
-  Returns: infer R;
-}
-  ? R
-  : never;
+export type Enums<
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never;
