@@ -68,14 +68,14 @@ def select_instance(instances):
     return instance_id
 
 def run_bash_command(instance_id, region):
-    """Runs a bash command on the specified instance using SSM."""
+    """Runs a bash command on the specified instance as the ubuntu user."""
     ssm = boto3.client('ssm', region_name=region)
-    command = "sudo su - ubuntu && cd Github/networth/scripts && bash deploy.sh"  # Adjusted cd path
+    command = "cd /home/ubuntu/Github/networth && bash deploy.sh" # Adjusted cd path.
     try:
         response = ssm.send_command(
             InstanceIds=[instance_id],
             DocumentName="AWS-RunShellScript",
-            Parameters={'commands': [command]},
+            Parameters={'commands': [f'sudo -u ubuntu bash -c "{command}"']}, # run as ubuntu
             TimeoutSeconds=600,  # Adjust timeout as needed
         )
         command_id = response['Command']['CommandId']
