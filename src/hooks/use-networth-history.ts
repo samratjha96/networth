@@ -1,11 +1,7 @@
 import { TimeRange } from "@/types/networth";
 import { useDataSource } from "@/contexts/DataSourceContext";
 import { getStartDateForTimeRange } from "@/utils/time-range";
-import {
-  useNetWorthHistory as useTanstackNetWorthHistory,
-  useUpdateNetWorth,
-} from "@/api/queries";
-import { supabaseApi } from "@/api/supabase-api";
+import { useNetWorthHistory as useTanstackNetWorthHistory } from "@/api/queries";
 
 // Interface for net worth data returned by the hook
 export interface NetWorthData {
@@ -13,26 +9,6 @@ export interface NetWorthData {
   previousValue: number;
   change: number;
   percentageChange: number;
-}
-
-// Function to update networth history - now delegates to the API layer
-export async function updateNetworthHistory(
-  userId: string,
-  currentNetWorth: number,
-) {
-  if (!userId) {
-    console.log("[DEBUG] Skipping networth history update - no userId");
-    return;
-  }
-
-  try {
-    await supabaseApi.networth.updateNetWorthHistory(userId, currentNetWorth);
-    console.log("[DEBUG] Networth history updated successfully");
-    return true;
-  } catch (error) {
-    console.error("Error updating networth history:", error);
-    return false;
-  }
 }
 
 export function useNetWorthHistory(

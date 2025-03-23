@@ -34,13 +34,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAccounts } from "@/hooks/use-accounts";
-import { useDataSource } from "@/contexts/DataSourceContext";
 
 export function AccountsList() {
   const [view, setView] = useState<AccountViewType>("assets");
   const { openAddDialog } = useAccountsStore();
   const { accounts, isLoading } = useAccounts();
-  const { dataSource } = useDataSource();
 
   // Filter accounts
   const assetAccounts = accounts.filter((a) => !a.isDebt);
@@ -55,11 +53,6 @@ export function AccountsList() {
               <CardTitle className="text-xl">Accounts</CardTitle>
               <span className="text-sm text-muted-foreground px-1.5 py-0.5 bg-muted/50 rounded-full">
                 {accounts.length} total
-              </span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full ${dataSource === "remote" ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800"}`}
-              >
-                {dataSource === "remote" ? "Remote" : "Local"}
               </span>
               <AddAccountDialog
                 trigger={

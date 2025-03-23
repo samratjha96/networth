@@ -4,10 +4,7 @@ import { TimeRange } from "@/types/networth";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { useAccountPerformance } from "@/hooks/use-account-performance";
-import {
-  useNetWorthHistory,
-  updateNetworthHistory,
-} from "@/hooks/use-networth-history";
+import { useNetWorthHistory } from "@/hooks/use-networth-history";
 import { useEffect, useState } from "react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useDataSource } from "@/contexts/DataSourceContext";
@@ -36,19 +33,15 @@ export function NetWorthSummary() {
   const { formatWithCurrency } = useCurrencyFormatter("USD");
   const { dataSource, userId } = useDataSource();
 
-
   // Use our hooks to get data
   const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
   const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
 
   // Update networth history when current net worth changes and we're using remote data
   useEffect(() => {
-    if (dataSource === "remote" && userId && accounts.length > 0) {
-      updateNetworthHistory(userId, currentNetWorth).catch((err) =>
-        console.error("Failed to update networth history:", err),
-      );
-    }
-    setCurrentNetWorth(accounts.reduce((total, account) => total + account.balance, 0));
+    setCurrentNetWorth(
+      accounts.reduce((total, account) => total + account.balance, 0),
+    );
   }, [dataSource, userId, accounts]);
 
   const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
