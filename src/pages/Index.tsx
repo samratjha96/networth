@@ -6,18 +6,23 @@ import { CurrencyCode } from "@/types/currency";
 import { Header } from "@/components/Header";
 import { useAccountsStore } from "@/store/accounts-store";
 import { getMockDataInstance } from "@/lib/mock-data";
+import { useAuthStore } from "@/store/auth-store";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const Index = () => {
   const { accounts } = useAccountsStore();
+  const { initialize } = useAuthStore();
   const { networthHistory } = getMockDataInstance();
   const currentNetWorth =
     networthHistory[networthHistory.length - 1]?.value || 0;
 
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";
-  }, []);
+
+    // Initialize auth state
+    initialize();
+  }, [initialize]);
 
   return (
     <div className="min-h-screen bg-background">
