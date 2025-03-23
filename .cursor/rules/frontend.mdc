@@ -33,6 +33,10 @@ Syntax and Formatting
 - Use curly braces for all conditionals. Favor simplicity over cleverness.
 - Use declarative JSX.
 
+Database
+- All database types are in src/types/supabase.ts. This should be the holy grail source of truth
+- We are only using Supabase for our database and nothing else
+
 UI and Styling
 - Use Tailwind for components and styling.
 - Always design with mobile first philosophy

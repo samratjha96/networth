@@ -72,7 +72,6 @@ export function useNetWorthHistory(
         .limit(1);
 
       if (latestError) throw latestError;
-      console.log("[SUPABASE] latestData", latestData);
 
       // Get previous net worth value based on time range
       const { data: previousData, error: previousError } = await supabase
@@ -84,11 +83,6 @@ export function useNetWorthHistory(
         .limit(1);
 
       if (previousError) throw previousError;
-
-      console.log("[SUPABASE] networth_history", {
-        latest: latestData,
-        previous: previousData,
-      });
 
       if (!latestData?.length) return defaultData;
 

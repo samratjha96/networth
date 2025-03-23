@@ -4,18 +4,12 @@ import { AccountWithValue } from "@/types/accounts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useDataSource } from "@/contexts/DataSourceContext";
+import { getStartDateForTimeRange } from "@/utils/time-range";
+import { Database } from "@/types/supabase";
 
-// This interface would match what comes from Supabase's calculate_account_performance function
-export interface AccountPerformance {
-  accountId: string;
-  accountName: string;
-  accountType: string;
-  isDebt: boolean;
-  startValue: number;
-  endValue: number;
-  absoluteChange: number;
-  percentChange: number;
-}
+// Use the type from Supabase's auto-generated types
+export type AccountPerformance =
+  Database["public"]["Functions"]["calculate_account_performance"]["Returns"][0];
 
 // Simulate historical account data storage (only needed for localStorage implementation)
 interface HistoricalAccountData {
@@ -94,14 +88,14 @@ export function useAccountPerformance(
           : 0;
 
       return {
-        accountId: account.id,
-        accountName: account.name,
-        accountType: account.type,
-        isDebt: account.isDebt || false,
-        startValue,
-        endValue,
-        absoluteChange,
-        percentChange,
+        account_id: account.id,
+        account_name: account.name,
+        account_type: account.type,
+        is_debt: account.isDebt || false,
+        start_value: startValue,
+        end_value: endValue,
+        absolute_change: absoluteChange,
+        percent_change: percentChange,
       };
     });
   };
@@ -119,20 +113,7 @@ export function useAccountPerformance(
     try {
       // Calculate date range based on timeRange
       const endDate = new Date();
-      const startDate = new Date();
-
-      if (typeof timeRange === "number" && timeRange > 0) {
-        startDate.setDate(startDate.getDate() - timeRange);
-      } else {
-        // For "all time", use a very old date
-        startDate.setFullYear(startDate.getFullYear() - 10);
-      }
-
-      console.log("[SUPABASE] Fetching performance data with params:", {
-        userId,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      });
+      const startDate = getStartDateForTimeRange(timeRange);
 
       const { data, error } = await supabase.rpc(
         "calculate_account_performance",
@@ -143,12 +124,13 @@ export function useAccountPerformance(
         },
       );
 
+      console.log("[SUPABASE] performance data", JSON.stringify(data));
+
       if (error) {
         console.error("Supabase RPC error:", error);
         throw error;
       }
 
-      console.log("Successfully fetched performance data:", data);
       return data || [];
     } catch (error) {
       console.error("Error fetching account performance:", error);
@@ -170,24 +152,22 @@ export function useAccountPerformance(
   });
 
   useEffect(() => {
-    let performances: AccountPerformance[];
-
-    if (dataSource === "remote" && remoteData) {
-      performances = remoteData;
-    } else {
-      // Use local implementation for non-authenticated users or as fallback
-      performances = fetchLocalPerformanceData();
-    }
+    const performances =
+      dataSource === "remote" && remoteData
+        ? remoteData
+        : fetchLocalPerformanceData();
 
     setAccountPerformances(performances);
 
     // Find best performing account
     const best =
       performances.length > 0
-        ? [...performances].sort((a, b) => b.percentChange - a.percentChange)[0]
+        ? [...performances].sort(
+            (a, b) => b.percent_change - a.percent_change,
+          )[0]
         : null;
     setBestPerformingAccount(best);
   }, [dataSource, remoteData, accounts, timeRange]);
 
-  return { accountPerformances, bestPerformingAccount };
+  return { accountPerformances, bestPerformingAccount, isLoading };
 }

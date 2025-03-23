@@ -39,8 +39,6 @@ export function NetWorthSummary() {
   const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
   const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
 
-  console.log("[SUPABASE] netWorthData", JSON.stringify(netWorthData));
-
   const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
   const isPositiveChange = (netWorthData?.change ?? 0) > 0;
 
@@ -95,12 +93,12 @@ export function NetWorthSummary() {
           {bestPerformingAccount ? (
             <>
               <div className="text-2xl font-bold">
-                {bestPerformingAccount.accountName}
+                {bestPerformingAccount.account_name}
               </div>
               <p className="text-xs text-muted-foreground flex items-center">
                 <span className="text-primary flex items-center mr-1">
                   <ArrowUpRight className="h-3 w-3 mr-0.5" />
-                  {(bestPerformingAccount?.percentChange ?? 0).toFixed(1)}%
+                  {(bestPerformingAccount?.percent_change ?? 0).toFixed(1)}%
                 </span>
                 growth over the last {getPeriodLabel(timeRange)}
               </p>
