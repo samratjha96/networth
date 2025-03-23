@@ -2,9 +2,11 @@ import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 
+type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
+
 interface AuthState {
   user: User | null;
-  isLoading: boolean;
+  status: AuthStatus;
   error: Error | null;
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -16,12 +18,12 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isLoading: true,
+  status: "loading",
   error: null,
 
   initialize: async () => {
     try {
-      set({ isLoading: true });
+      set({ status: "loading" });
 
       // Check for existing session
       const { data, error } = await supabase.auth.getSession();
@@ -32,57 +34,57 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       if (data?.session) {
         const { data: userData } = await supabase.auth.getUser();
-        set({ user: userData.user, isLoading: false });
+        set({ user: userData.user, status: "authenticated" });
       } else {
-        set({ user: null, isLoading: false });
+        set({ user: null, status: "unauthenticated" });
       }
     } catch (error) {
-      set({ user: null, error: error as Error, isLoading: false });
+      set({ user: null, error: error as Error, status: "error" });
     }
   },
 
   signIn: async (email, password) => {
     try {
-      set({ isLoading: true, error: null });
+      set({ status: "loading", error: null });
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
-      set({ user: data.user, isLoading: false });
+      set({ user: data.user, status: "authenticated" });
     } catch (error) {
-      set({ error: error as Error, isLoading: false });
+      set({ error: error as Error, status: "error" });
     }
   },
 
   signInWithGoogle: async () => {
     try {
-      set({ isLoading: true, error: null });
+      set({ status: "loading", error: null });
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
       });
       if (error) throw error;
     } catch (error) {
-      set({ error: error as Error, isLoading: false });
+      set({ error: error as Error, status: "error" });
     }
   },
 
   signInWithApple: async () => {
     try {
-      set({ isLoading: true, error: null });
+      set({ status: "loading", error: null });
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "apple",
       });
       if (error) throw error;
     } catch (error) {
-      set({ error: error as Error, isLoading: false });
+      set({ error: error as Error, status: "error" });
     }
   },
 
   signUp: async (email, password, name) => {
     try {
-      set({ isLoading: true, error: null });
+      set({ status: "loading", error: null });
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -92,20 +94,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
 
       if (error) throw error;
-      set({ user: data.user, isLoading: false });
+      set({ user: data.user, status: "authenticated" });
     } catch (error) {
-      set({ error: error as Error, isLoading: false });
+      set({ error: error as Error, status: "error" });
     }
   },
 
   signOut: async () => {
     try {
-      set({ isLoading: true, error: null });
+      set({ status: "loading", error: null });
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      set({ user: null, isLoading: false });
+      set({ user: null, status: "unauthenticated" });
     } catch (error) {
-      set({ error: error as Error, isLoading: false });
+      set({ error: error as Error, status: "error" });
     }
   },
 }));
