@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -91,11 +90,6 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             {mode === "signin" ? "Sign In" : "Create Account"}
           </DialogTitle>
-          <DialogDescription>
-            {mode === "signin"
-              ? "Welcome back! Sign in to access your financial dashboard."
-              : "Join Argos to start tracking your financial journey."}
-          </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-5 py-4">
