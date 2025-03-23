@@ -70,7 +70,7 @@ def select_instance(instances):
 def run_bash_command(instance_id, region):
     """Runs a bash command on the specified instance as the ubuntu user."""
     ssm = boto3.client('ssm', region_name=region)
-    command = "cd /home/ubuntu/Github/networth && bash deploy.sh" # Adjusted cd path.
+    command = "cd /home/ubuntu/Github/networth && bash scripts/deploy.sh" # Adjusted cd path.
     try:
         response = ssm.send_command(
             InstanceIds=[instance_id],
