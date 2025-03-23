@@ -21,6 +21,11 @@ import { Label } from "@/components/ui/label";
 import { AccountType, assetTypes, debtTypes } from "@/types/accounts";
 import { CURRENCIES, CurrencyCode } from "@/types/currency";
 import { useAccountsStore } from "@/store/accounts-store";
+import {
+  isValidNumber,
+  sanitizeNumber,
+  sanitizeString,
+} from "@/utils/input-validation";
 
 interface AddAccountDialogProps {
   trigger?: React.ReactNode;
@@ -46,6 +51,10 @@ export function AddAccountDialog({
   const [balance, setBalance] = React.useState("");
   const [currency, setCurrency] = React.useState<CurrencyCode>("USD");
   const [isDebt, setIsDebt] = React.useState(false);
+  const [errors, setErrors] = React.useState({
+    name: "",
+    balance: "",
+  });
   const [touched, setTouched] = React.useState({
     name: false,
     balance: false,
@@ -69,49 +78,71 @@ export function AddAccountDialog({
         setIsDebt(defaultIsDebt);
       }
       setTouched({ name: false, balance: false });
+      setErrors({ name: "", balance: "" });
       setIsSubmitting(false);
     }
   }, [isOpen, accountToEdit, defaultIsDebt]);
+
+  const validateInputs = (): boolean => {
+    const newErrors = {
+      name: "",
+      balance: "",
+    };
+
+    // Validate name
+    if (!name.trim()) {
+      newErrors.name = "Name is required";
+    }
+
+    // Validate balance
+    if (!balance.trim()) {
+      newErrors.balance = "Balance is required";
+    } else if (!isValidNumber(balance)) {
+      newErrors.balance = "Balance must be a valid number";
+    }
+
+    setErrors(newErrors);
+    setTouched({ name: true, balance: true });
+
+    // Return true if no errors
+    return !newErrors.name && !newErrors.balance;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate required fields
-    if (!name.trim() || !balance.trim()) {
-      setTouched({ name: true, balance: true });
+    if (!validateInputs()) {
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Convert balance to number
-      let numericBalance = parseFloat(balance) || 0;
+      // Sanitize and convert balance to number
+      let numericBalance = sanitizeNumber(balance);
 
       // For liability accounts, ensure the balance is negative
       if (isDebt && numericBalance > 0) {
         numericBalance = -numericBalance;
       }
 
+      // Sanitize name input
+      const sanitizedName = sanitizeString(name);
+
       const accountData = {
-        name: name.trim(),
+        name: sanitizedName,
         type,
         balance: numericBalance,
         isDebt,
         currency,
       };
 
-      console.log("🔍 DIALOG: Submit with data:", accountData);
-
       if (accountToEdit) {
-        console.log("🔍 DIALOG: Editing existing account:", accountToEdit.id);
         await editAccount({ ...accountData, id: accountToEdit.id });
       } else {
-        console.log("🔍 DIALOG: Adding new account");
         await addAccount(accountData);
       }
-
-      console.log("🔍 DIALOG: Account operation completed");
 
       // Dialog will now be automatically closed by the store
     } catch (error) {
@@ -127,9 +158,8 @@ export function AddAccountDialog({
     }
   };
 
-  const isNameError = touched.name && !name.trim();
-  const isBalanceError = touched.balance && !balance.trim();
-  const isValid = name.trim() && balance.trim();
+  const isNameError = touched.name && errors.name;
+  const isBalanceError = touched.balance && errors.balance;
 
   // Get available account types based on whether it's an asset or liability
   const availableTypes = isDebt ? debtTypes : assetTypes;
@@ -179,10 +209,10 @@ export function AddAccountDialog({
               className={`col-span-3 bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] focus-visible:shadow-[0_0_0_1px_hsl(var(--primary))] ${
                 isNameError ? "shadow-[0_0_0_1px_hsl(var(--destructive))]" : ""
               }`}
-              aria-invalid={isNameError}
+              aria-invalid={!!isNameError}
             />
             {isNameError && (
-              <p className="text-sm text-destructive">Name is required</p>
+              <p className="text-sm text-destructive">{errors.name}</p>
             )}
           </div>
 
@@ -241,20 +271,26 @@ export function AddAccountDialog({
                   ? "shadow-[0_0_0_1px_hsl(var(--destructive))]"
                   : ""
               }`}
-              aria-invalid={isBalanceError}
+              aria-invalid={!!isBalanceError}
             />
             {isBalanceError && (
-              <p className="text-sm text-destructive">Balance is required</p>
+              <p className="text-sm text-destructive">{errors.balance}</p>
             )}
           </div>
 
-          <Button type="submit" disabled={!isValid || isSubmitting}>
-            {isSubmitting
-              ? "Saving..."
-              : accountToEdit
-                ? "Save Changes"
-                : "Add Account"}
-          </Button>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeDialog}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : accountToEdit ? "Save" : "Add"}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

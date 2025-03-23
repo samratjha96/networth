@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { User } from "@supabase/supabase-js";
 import { supabaseApi } from "@/api/supabase-api";
+import {
+  isValidEmail,
+  isValidPassword,
+  sanitizeString,
+} from "@/utils/input-validation";
+import { sanitizeApiParams, createApiError } from "@/utils/api-helpers";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
@@ -45,10 +51,23 @@ export const useAuthStore = create<AuthState>((set) => ({
   signIn: async (email, password) => {
     try {
       set({ status: "loading", error: null });
-      const { data, error } = await supabaseApi.auth.signInWithPassword(
-        email,
-        password,
-      );
+
+      // Validate inputs
+      if (!email || !isValidEmail(email)) {
+        throw createApiError("Invalid email address");
+      }
+
+      if (!password) {
+        throw createApiError("Password is required");
+      }
+
+      // Sanitize inputs
+      const sanitizedParams = sanitizeApiParams({ email, password });
+
+      const { data, error } = await supabaseApi.auth.signInWithPassword({
+        email: sanitizedParams.email,
+        password: sanitizedParams.password,
+      });
 
       if (error) throw error;
       set({ user: data.user, status: "authenticated" });
@@ -60,7 +79,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   signInWithGoogle: async () => {
     try {
       set({ status: "loading", error: null });
-      const { error } = await supabaseApi.auth.signInWithOAuth("google");
+      const { error } = await supabaseApi.auth.signInWithOAuth({
+        provider: "google",
+      });
       if (error) throw error;
     } catch (error) {
       set({ error: error as Error, status: "error" });
@@ -70,8 +91,31 @@ export const useAuthStore = create<AuthState>((set) => ({
   signUp: async (email, password, name) => {
     try {
       set({ status: "loading", error: null });
-      const { data, error } = await supabaseApi.auth.signUp(email, password, {
-        data: { full_name: name },
+
+      // Validate inputs
+      if (!email || !isValidEmail(email)) {
+        throw createApiError("Invalid email address");
+      }
+
+      if (!password || !isValidPassword(password)) {
+        throw createApiError(
+          "Password must be at least 8 characters with uppercase, lowercase, and number",
+        );
+      }
+
+      if (!name.trim()) {
+        throw createApiError("Name is required");
+      }
+
+      // Sanitize inputs
+      const sanitizedName = sanitizeString(name);
+
+      const { data, error } = await supabaseApi.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: sanitizedName },
+        },
       });
 
       if (error) throw error;

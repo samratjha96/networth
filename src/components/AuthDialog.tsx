@@ -12,6 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
+import {
+  isValidEmail,
+  isValidPassword,
+  sanitizeString,
+} from "@/utils/input-validation";
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
@@ -24,16 +29,60 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [validationErrors, setValidationErrors] = useState<{
+    email?: string;
+    password?: string;
+    name?: string;
+  }>({});
   const { signIn, signUp, signInWithGoogle, error } = useAuthStore();
+
+  const validateInputs = (): boolean => {
+    const errors: {
+      email?: string;
+      password?: string;
+      name?: string;
+    } = {};
+
+    // Validate email
+    if (!email) {
+      errors.email = "Email is required";
+    } else if (!isValidEmail(email)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    // Validate password
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (mode === "signup" && !isValidPassword(password)) {
+      errors.password =
+        "Password must be at least 8 characters with uppercase, lowercase, and number";
+    }
+
+    // Validate name for signup
+    if (mode === "signup" && !name.trim()) {
+      errors.name = "Name is required";
+    }
+
+    setValidationErrors(errors);
+
+    // Return true if no errors
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateInputs()) {
+      return;
+    }
 
     try {
       if (mode === "signin") {
         await signIn(email, password);
       } else {
-        await signUp(email, password, name);
+        // Sanitize name input
+        const sanitizedName = sanitizeString(name);
+        await signUp(email, password, sanitizedName);
       }
 
       if (!error) {
@@ -68,6 +117,7 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
     setEmail("");
     setPassword("");
     setName("");
+    setValidationErrors({});
   };
 
   const switchMode = () => {
@@ -134,8 +184,17 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
-                  className="bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)]"
+                  className={`bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] ${
+                    validationErrors.name
+                      ? "shadow-[0_0_0_1px_hsl(var(--destructive))]"
+                      : ""
+                  }`}
                 />
+                {validationErrors.name && (
+                  <p className="text-xs text-destructive mt-1">
+                    {validationErrors.name}
+                  </p>
+                )}
               </div>
             )}
 
@@ -148,8 +207,17 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                className="bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)]"
+                className={`bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] ${
+                  validationErrors.email
+                    ? "shadow-[0_0_0_1px_hsl(var(--destructive))]"
+                    : ""
+                }`}
               />
+              {validationErrors.email && (
+                <p className="text-xs text-destructive mt-1">
+                  {validationErrors.email}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -165,9 +233,17 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
                     : "Create a password"
                 }
                 required
-                minLength={6}
-                className="bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)]"
+                className={`bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)] ${
+                  validationErrors.password
+                    ? "shadow-[0_0_0_1px_hsl(var(--destructive))]"
+                    : ""
+                }`}
               />
+              {validationErrors.password && (
+                <p className="text-xs text-destructive mt-1">
+                  {validationErrors.password}
+                </p>
+              )}
             </div>
 
             {error && <p className="text-sm text-red-500">{error.message}</p>}

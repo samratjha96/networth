@@ -3,6 +3,7 @@ import { AccountWithValue, AccountType } from "@/types/accounts";
 import { CurrencyCode } from "@/types/currency";
 import { getMockDataInstance } from "@/lib/mock-data";
 import { supabaseApi } from "@/api/supabase-api";
+import { sanitizeAccountData } from "@/utils/api-helpers";
 
 // Define a store type to keep our implementation clean
 interface AccountsState {
@@ -111,16 +112,22 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
         const { dataSource, userId } = get();
         let newAccount: AccountWithValue;
 
+        // Sanitize input data
+        const sanitizedData = sanitizeAccountData(accountData) as Omit<
+          AccountWithValue,
+          "id"
+        >;
+
         if (dataSource === "remote" && userId) {
           // Remote operation through API
           newAccount = await supabaseApi.accounts.createAccount(
             userId,
-            accountData,
+            sanitizedData,
           );
         } else {
           // Local operation (original implementation)
           newAccount = {
-            ...accountData,
+            ...sanitizedData,
             id: `account-${Date.now()}`,
           } as AccountWithValue;
         }
@@ -159,15 +166,20 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
         // Get data source info from the store
         const { dataSource, userId } = get();
 
+        // Sanitize input data
+        const sanitizedAccount = sanitizeAccountData(
+          account,
+        ) as AccountWithValue;
+
         if (dataSource === "remote" && userId) {
           // Remote operation through API
-          await supabaseApi.accounts.updateAccount(userId, account);
+          await supabaseApi.accounts.updateAccount(userId, sanitizedAccount);
         }
 
         // Update the account in state (optimistic update)
         set((state) => {
           const updatedAccounts = state.accounts.map((a) =>
-            a.id === account.id ? account : a,
+            a.id === account.id ? sanitizedAccount : a,
           );
 
           // Update networth history if needed

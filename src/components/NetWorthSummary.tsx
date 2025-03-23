@@ -45,46 +45,17 @@ export function NetWorthSummary() {
   const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
   const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
 
-  // Debug logs
-  useEffect(() => {
-    console.log("[DEBUG] Accounts updated:", accounts);
-    console.log("[DEBUG] Current Net Worth:", currentNetWorth);
-  }, [accounts, currentNetWorth]);
-
-  useEffect(() => {
-    console.log("[DEBUG] NetWorth Data:", netWorthData);
-  }, [netWorthData]);
-
-  useEffect(() => {
-    console.log("[DEBUG] TimeRange changed:", timeRange);
-  }, [timeRange]);
-
   // Update networth history when current net worth changes and we're using remote data
   useEffect(() => {
     if (dataSource === "remote" && userId && accounts.length > 0) {
-      console.log(
-        "[DEBUG] NetWorthSummary triggering networth history update",
-        currentNetWorth,
-      );
       updateNetworthHistory(userId, currentNetWorth).catch((err) =>
-        console.error(
-          "[DEBUG] Failed to update networth history from component:",
-          err,
-        ),
+        console.error("Failed to update networth history:", err),
       );
     }
   }, [currentNetWorth, dataSource, userId, accounts.length]);
 
   const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
   const isPositiveChange = (netWorthData?.change ?? 0) > 0;
-
-  // Debug render count
-  useEffect(() => {
-    console.log("[DEBUG] NetWorthSummary rendered");
-    return () => {
-      console.log("[DEBUG] NetWorthSummary unmounted");
-    };
-  }, []);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">

@@ -8,16 +8,18 @@ import { User } from "@supabase/supabase-js";
 /**
  * Helper functions for common operations
  */
-const handleError = (error: any): never => {
-  throw error;
+const handleError = (error: any, context: string): never => {
+  console.error(`API Error in ${context}:`, error);
+  throw new Error(`${context}: ${error.message || "Unknown error"}`);
 };
 
-// Generic function to handle Supabase queries
+// Generic function to handle Supabase queries with improved error context
 const executeQuery = async <T>(
   queryFn: () => Promise<{ data: T | null; error: any }>,
+  context: string,
 ) => {
   const { data, error } = await queryFn();
-  if (error) handleError(error);
+  if (error) handleError(error, context);
   return data;
 };
 
@@ -42,20 +44,20 @@ export const supabaseApi = {
       return supabase.auth.getUser();
     },
 
-    signInWithPassword: async (email: string, password: string) => {
-      return supabase.auth.signInWithPassword({ email, password });
+    signInWithPassword: async (params: { email: string; password: string }) => {
+      return supabase.auth.signInWithPassword(params);
     },
 
-    signInWithOAuth: async (provider: "google") => {
-      return supabase.auth.signInWithOAuth({ provider });
+    signInWithOAuth: async (params: { provider: "google" }) => {
+      return supabase.auth.signInWithOAuth(params);
     },
 
-    signUp: async (
-      email: string,
-      password: string,
-      options?: { data?: { full_name: string } },
-    ) => {
-      return supabase.auth.signUp({ email, password, options });
+    signUp: async (params: {
+      email: string;
+      password: string;
+      options?: { data?: { full_name: string } };
+    }) => {
+      return supabase.auth.signUp(params);
     },
 
     signOut: async () => {
@@ -72,7 +74,7 @@ export const supabaseApi = {
           .from("accounts")
           .select("*")
           .eq("user_id", userId);
-      });
+      }, "getAccounts");
 
       if (!accountsData?.length) return [];
 
@@ -86,7 +88,7 @@ export const supabaseApi = {
           .select("account_id, value, hour_start")
           .in("account_id", accountIds)
           .order("hour_start", { ascending: false });
-      });
+      }, "getAccountValues");
 
       // Create a map of latest values
       const latestValues: Record<string, number> = {};
@@ -132,7 +134,7 @@ export const supabaseApi = {
           })
           .select()
           .single();
-      });
+      }, "createAccount");
 
       if (!data) throw new Error("No data returned from account creation");
 
@@ -146,7 +148,7 @@ export const supabaseApi = {
           hour_start: hourStart.toISOString(),
           value: accountData.balance,
         });
-      });
+      }, "insertInitialAccountValue");
 
       // Return combined account data
       return {
@@ -172,7 +174,7 @@ export const supabaseApi = {
           })
           .eq("id", accountData.id)
           .eq("user_id", userId);
-      });
+      }, "updateAccount");
 
       // Update account value
       const hourStart = getHourStart();
@@ -188,7 +190,7 @@ export const supabaseApi = {
             "hour_start",
             new Date(hourStart.getTime() + 3600000).toISOString(),
           );
-      });
+      }, "checkExistingValues");
 
       if (existingValues && existingValues.length > 0) {
         // Update existing value
@@ -200,7 +202,7 @@ export const supabaseApi = {
             })
             .eq("account_id", existingValues[0].account_id)
             .eq("hour_start", existingValues[0].hour_start);
-        });
+        }, "updateExistingValue");
       } else {
         // Insert new value
         await executeQuery(async () => {
@@ -210,7 +212,7 @@ export const supabaseApi = {
             hour_start: hourStart.toISOString(),
             value: accountData.balance,
           });
-        });
+        }, "insertNewValue");
       }
     },
 
@@ -222,7 +224,7 @@ export const supabaseApi = {
           .delete()
           .eq("id", accountId)
           .eq("user_id", userId);
-      });
+      }, "deleteAccount");
     },
 
     getAccountPerformance: async (
@@ -242,7 +244,7 @@ export const supabaseApi = {
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
         });
-      });
+      }, "getAccountPerformance");
 
       return data || [];
     },
@@ -262,7 +264,7 @@ export const supabaseApi = {
           .gte("date", startDate.toISOString())
           .lte("date", endDate.toISOString())
           .order("date", { ascending: true });
-      });
+      }, "getNetWorthHistory");
 
       return data || [];
     },
@@ -278,7 +280,7 @@ export const supabaseApi = {
           .eq("user_id", userId)
           .order("date", { ascending: false })
           .limit(1);
-      });
+      }, "getLatestNetWorth");
 
       // Get previous net worth value based on time range
       const previousData = await executeQuery<any[]>(async () => {
@@ -289,7 +291,7 @@ export const supabaseApi = {
           .gte("date", startDate.toISOString())
           .order("date", { ascending: true })
           .limit(1);
-      });
+      }, "getPreviousNetWorth");
 
       if (!latestData?.length) return null;
 
@@ -320,7 +322,7 @@ export const supabaseApi = {
           .gte("date", hourStart.toISOString())
           .lt("date", new Date(hourStart.getTime() + 3600000).toISOString()) // Add 1 hour
           .order("date", { ascending: false });
-      });
+      }, "checkExistingNetWorthEntries");
 
       if (existingEntries && existingEntries.length > 0) {
         // Update the existing entry for this hour
@@ -331,7 +333,7 @@ export const supabaseApi = {
             .from("networth_history")
             .update({ value: currentNetWorth })
             .eq("id", latestEntry.id);
-        });
+        }, "updateExistingNetWorthEntry");
       } else {
         // Create a new entry for this hour
         await executeQuery(async () => {
@@ -340,7 +342,7 @@ export const supabaseApi = {
             value: currentNetWorth,
             date: now.toISOString(), // Use the exact current time
           });
-        });
+        }, "insertNewNetWorthEntry");
       }
     },
   },
