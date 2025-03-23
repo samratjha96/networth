@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argos - Modern Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    :root {
+      --sidebar-width: 280px;
+    }
+    
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main";
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      grid-area: sidebar;
+      background-color: var(--card-bg);
+      padding: 2rem 1.5rem;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    
+    .sidebar-logo {
+      margin-bottom: 3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .sidebar-logo h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      margin: 0;
+    }
+    
+    .nav-section {
+      margin-bottom: 2rem;
+    }
+    
+    .nav-section-title {
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+    
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .nav-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+    
+    .nav-item.active {
+      background-color: var(--accent-primary);
+      color: white;
+    }
+    
+    .nav-icon {
+      margin-right: 1rem;
+      width: 1.25rem;
+      text-align: center;
+    }
+    
+    /* Header */
+    .header {
+      grid-area: header;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .header-title h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .header-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .theme-toggle {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background-color: var(--card-bg);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+    
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--accent-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+    }
+    
+    /* Main content */
+    .main {
+      grid-area: main;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+    
+    /* Dashboard grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+    
+    .grid-col-2 {
+      grid-column: span 2;
+    }
+    
+    .grid-col-3 {
+      grid-column: span 3;
+    }
+    
+    .grid-col-4 {
+      grid-column: span 4;
+    }
+    
+    /* Summary cards */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .summary-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .summary-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+    }
+    
+    .summary-card-title {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    .summary-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    
+    .icon-networth {
+      background-color: var(--accent-tertiary);
+    }
+    
+    .icon-assets {
+      background-color: var(--accent-secondary);
+    }
+    
+    .icon-liabilities {
+      background-color: var(--danger);
+    }
+    
+    .summary-card-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      margin-bottom: 0.5rem;
+    }
+    
+    .summary-card-change {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .change-positive {
+      color: var(--success);
+    }
+    
+    .change-negative {
+      color: var(--danger);
+    }
+    
+    /* Chart card */
+    .chart-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    
+    .chart-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .chart-tabs {
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .chart-tab {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      background-color: transparent;
+      color: var(--text-secondary);
+      border: none;
+      transition: all 0.2s ease;
+    }
+    
+    .chart-tab:hover {
+      color: var(--text-primary);
+    }
+    
+    .chart-tab.active {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+    
+    /* Accounts list */
+    .accounts-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    
+    .accounts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .accounts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .account-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 8px;
+      background-color: rgba(255, 255, 255, 0.03);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .account-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .account-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(255, 255, 255, 0.1);
+      margin-right: 1rem;
+    }
+    
+    .account-details {
+      flex-grow: 1;
+    }
+    
+    .account-name {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    
+    .account-category {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+    }
+    
+    .account-balance {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    
+    /* Add new account button */
+    .add-account {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px dashed var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      gap: 0.5rem;
+    }
+    
+    .add-account:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+    
+    /* Media queries */
+    @media (max-width: 1200px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      .summary-cards {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .summary-cards {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .grid-col-2, .grid-col-3, .grid-col-4 {
+        grid-column: span 2;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main";
+      }
+      
+      .sidebar {
+        display: none;
+      }
+      
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .summary-cards {
+        grid-template-columns: 1fr;
+      }
+      
+      .grid-col-2, .grid-col-3, .grid-col-4 {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <i class="fas fa-eye fa-lg" style="color: var(--accent-primary);"></i>
+      </div>
+      <h1>Argos</h1>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-section-title">Overview</div>
+      <div class="nav-item active">
+        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-wallet"></i></span>
+        <span>Accounts</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-exchange-alt"></i></span>
+        <span>Transactions</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-piggy-bank"></i></span>
+        <span>Budgets</span>
+      </div>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-section-title">Analysis</div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-chart-pie"></i></span>
+        <span>Spending</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+        <span>Income</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-balance-scale"></i></span>
+        <span>Net Worth</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-calendar-alt"></i></span>
+        <span>Cash Flow</span>
+      </div>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-section-title">Planning</div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-graduation-cap"></i></span>
+        <span>Financial Goals</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-home"></i></span>
+        <span>Mortgage Calculator</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-umbrella"></i></span>
+        <span>Insurance</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-chart-bar"></i></span>
+        <span>Investment Planner</span>
+      </div>
+    </div>
+    
+    <div class="nav-section" style="margin-top: auto;">
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-cog"></i></span>
+        <span>Settings</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon"><i class="fas fa-question-circle"></i></span>
+        <span>Help Center</span>
+      </div>
+    </div>
+  </aside>
+  
+  <header class="header">
+    <div class="header-title">
+      <h2>Dashboard</h2>
+      <div class="header-subtitle">Welcome back, Alex! Here's your financial overview.</div>
+    </div>
+    <div class="header-actions">
+      <div class="theme-toggle" id="theme-toggle">
+        <i class="fas fa-moon"></i>
+      </div>
+      <div class="user-profile">
+        <div class="avatar">A</div>
+        <div class="user-name">Alex Smith</div>
+      </div>
+    </div>
+  </header>
+  
+  <main class="main">
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-card-header">
+          <div class="summary-card-title">Net Worth</div>
+          <div class="summary-card-icon icon-networth">
+            <i class="fas fa-chart-line"></i>
+          </div>
+        </div>
+        <div class="summary-card-value">-$110,190.51</div>
+        <div class="summary-card-change change-negative">
+          <i class="fas fa-arrow-down"></i>
+          <span>143.88% over all time</span>
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <div class="summary-card-header">
+          <div class="summary-card-title">Total Assets</div>
+          <div class="summary-card-icon icon-assets">
+            <i class="fas fa-plus"></i>
+          </div>
+        </div>
+        <div class="summary-card-value">$196,645.88</div>
+        <div class="summary-card-change change-positive">
+          <i class="fas fa-arrow-up"></i>
+          <span>18.4% over all time</span>
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <div class="summary-card-header">
+          <div class="summary-card-title">Total Liabilities</div>
+          <div class="summary-card-icon icon-liabilities">
+            <i class="fas fa-minus"></i>
+          </div>
+        </div>
+        <div class="summary-card-value">$306,836.39</div>
+        <div class="summary-card-change change-negative">
+          <i class="fas fa-arrow-up"></i>
+          <span>34.2% over all time</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="dashboard-grid">
+      <div class="chart-card grid-col-3">
+        <div class="chart-card-header">
+          <h3>Net Worth Over Time</h3>
+          <div class="chart-tabs">
+            <button class="chart-tab">1D</button>
+            <button class="chart-tab">1W</button>
+            <button class="chart-tab">1M</button>
+            <button class="chart-tab">1Y</button>
+            <button class="chart-tab active">ALL</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="netWorthChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="accounts-card grid-col-1">
+        <div class="accounts-header">
+          <h3>Best Performing</h3>
+          <button class="btn btn-sm btn-outline">View All</button>
+        </div>
+        <div class="accounts-list">
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-university" style="color: var(--accent-primary);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">Primary Checking</div>
+              <div class="account-category">Checking</div>
+            </div>
+            <div class="account-balance">$3,450.53</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-piggy-bank" style="color: var(--accent-secondary);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">High-Yield Savings</div>
+              <div class="account-category">Savings</div>
+            </div>
+            <div class="account-balance">$44,459.48</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-briefcase" style="color: var(--accent-tertiary);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">Investment Portfolio</div>
+              <div class="account-category">Brokerage</div>
+            </div>
+            <div class="account-balance">$138,567.66</div>
+          </div>
+        </div>
+        
+        <div class="add-account mt-4">
+          <i class="fas fa-plus"></i>
+          <span>Add New Account</span>
+        </div>
+      </div>
+      
+      <div class="accounts-card grid-col-4">
+        <div class="accounts-header">
+          <h3>All Accounts</h3>
+          <div class="chart-tabs">
+            <button class="chart-tab active">All</button>
+            <button class="chart-tab">Checking</button>
+            <button class="chart-tab">Savings</button>
+            <button class="chart-tab">Investments</button>
+            <button class="chart-tab">Retirement</button>
+          </div>
+        </div>
+        <div class="accounts-list">
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-university" style="color: var(--accent-primary);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">Primary Checking</div>
+              <div class="account-category">Checking</div>
+            </div>
+            <div class="account-balance">$3,450.53</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-piggy-bank" style="color: var(--accent-secondary);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">High-Yield Savings</div>
+              <div class="account-category">Savings</div>
+            </div>
+            <div class="account-balance">$44,459.48</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-hand-holding-medical" style="color: var(--success);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">Emergency Fund</div>
+              <div class="account-category">Savings</div>
+            </div>
+            <div class="account-balance">$6,905.85</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-heartbeat" style="color: var(--danger);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">HSA</div>
+              <div class="account-category">Savings</div>
+            </div>
+            <div class="account-balance">$8,393.94</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-briefcase" style="color: var(--accent-tertiary);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">Investment Portfolio</div>
+              <div class="account-category">Brokerage</div>
+            </div>
+            <div class="account-balance">$138,567.66</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-building" style="color: var(--accent-secondary);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">401(k)</div>
+              <div class="account-category">Retirement</div>
+            </div>
+            <div class="account-balance">$105,360.04</div>
+          </div>
+          
+          <div class="account-item">
+            <div class="account-icon">
+              <i class="fas fa-coins" style="color: var(--accent-primary);"></i>
+            </div>
+            <div class="account-details">
+              <div class="account-name">Roth IRA</div>
+              <div class="account-category">Retirement</div>
+            </div>
+            <div class="account-balance">$77,978.61</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="js/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize charts
+      const netWorthData = generateChartData(100, {
+        min: -130000,
+        max: -90000,
+        volatility: 3000
+      });
+      
+      const netWorthChart = new SimpleChart('netWorthChart', netWorthData, {
+        lineColor: '#EC4899',
+        fillColor: 'rgba(236, 72, 153, 0.1)',
+        gridColor: 'rgba(255, 255, 255, 0.05)'
+      });
+      
+      // Store charts for theme toggle
+      window.charts = [netWorthChart];
+      
+      // Initialize theme toggle
+      initThemeToggle();
+      
+      // Time period selectors
+      const timeButtons = document.querySelectorAll('.chart-tab');
+      timeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Remove active class from all buttons
+          timeButtons.forEach(b => b.classList.remove('active'));
+          
+          // Add active class to clicked button
+          this.classList.add('active');
+          
+          // In a real app, we would update the chart data here
+        });
+      });
+    });
+  </script>
+</body>
+</html> 
