@@ -32,12 +32,13 @@ const ContentSkeleton = () => (
 );
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const { status, subscribeToAuthChanges, unsubscribeFromAuthChanges } = useAuthStore();
+  const { status, subscribeToAuthChanges, unsubscribeFromAuthChanges } =
+    useAuthStore();
 
   useEffect(() => {
     // Set up auth state subscription when component mounts
     subscribeToAuthChanges();
-    
+
     // Clean up subscription when component unmounts
     return () => {
       unsubscribeFromAuthChanges();

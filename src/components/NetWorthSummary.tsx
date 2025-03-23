@@ -35,11 +35,6 @@ export function NetWorthSummary() {
   const { formatWithCurrency } = useCurrencyFormatter("USD");
   const { dataSource, userId } = useDataSource();
 
-  // Add debug logging for dataSource changes
-  useEffect(() => {
-    console.log("[BUG] NetWorthSummary received new dataSource:", dataSource);
-  }, [dataSource]);
-
   // Calculate current net worth from accounts
   const currentNetWorth = accounts.reduce(
     (total, account) => total + account.balance,

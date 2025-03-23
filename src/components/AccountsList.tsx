@@ -46,12 +46,6 @@ export function AccountsList() {
   const assetAccounts = accounts.filter((a) => !a.isDebt);
   const liabilityAccounts = accounts.filter((a) => a.isDebt);
 
-  // Add this effect to log and force re-renders when dataSource changes
-  useEffect(() => {
-    console.log("[BUG] AccountsList received new dataSource:", dataSource);
-    // No need to do anything, just create a dependency on dataSource
-  }, [dataSource]);
-
   return (
     <>
       <Card className="bg-background border-border shadow-sm overflow-hidden">
@@ -62,8 +56,10 @@ export function AccountsList() {
               <span className="text-sm text-muted-foreground px-1.5 py-0.5 bg-muted/50 rounded-full">
                 {accounts.length} total
               </span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${dataSource === 'remote' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
-                {dataSource === 'remote' ? 'Remote' : 'Local'}
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${dataSource === "remote" ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800"}`}
+              >
+                {dataSource === "remote" ? "Remote" : "Local"}
               </span>
               <AddAccountDialog
                 trigger={

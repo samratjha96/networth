@@ -27,7 +27,10 @@ export const useSignIn = () => {
 
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
-      supabaseApi.auth.signInWithPassword(email, password),
+      supabaseApi.auth.signInWithPassword({
+        email,
+        password,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
       queryClient.invalidateQueries({ queryKey: ["session"] });
@@ -48,7 +51,11 @@ export const useSignUp = () => {
       password: string;
       name: string;
     }) =>
-      supabaseApi.auth.signUp(email, password, { data: { full_name: name } }),
+      supabaseApi.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
       queryClient.invalidateQueries({ queryKey: ["session"] });
@@ -62,26 +69,25 @@ export const useSignOut = () => {
   return useMutation({
     mutationFn: supabaseApi.auth.signOut,
     onSuccess: () => {
-      console.log("[BUG] useSignOut onSuccess - invalidating all queries");
       queryClient.invalidateQueries(); // Invalidate all queries when signing out
-      console.log("[BUG] useSignOut onSuccess - all queries invalidated");
     },
   });
 };
 
 export const useSignInWithGoogle = () => {
   return useMutation({
-    mutationFn: () => supabaseApi.auth.signInWithOAuth("google"),
+    mutationFn: () =>
+      supabaseApi.auth.signInWithOAuth({
+        provider: "google",
+      }),
   });
 };
 
 // Account Queries
 export const useAccounts = (userId: string | null) => {
-  console.log("[BUG] useAccounts query hook called with userId:", userId);
   return useQuery({
     queryKey: ["accounts", userId],
     queryFn: () => {
-      console.log("[BUG] useAccounts queryFn executing with userId:", userId);
       if (!userId) return Promise.resolve([]);
       return supabaseApi.accounts.getAccounts(userId);
     },

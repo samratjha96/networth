@@ -36,27 +36,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       get().unsubscribeFromAuthChanges();
     }
 
-    console.log("[BUG] Setting up auth state subscription");
-
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("[BUG] Auth state change event", { event, user: session?.user?.id || "null" });
-      
-      if (event === 'INITIAL_SESSION') {
+      if (event === "INITIAL_SESSION") {
         if (session) {
-          console.log("[BUG] Setting authenticated state from INITIAL_SESSION");
           set({ user: session.user, status: "authenticated", error: null });
         } else {
-          console.log("[BUG] Setting unauthenticated state from INITIAL_SESSION");
           set({ user: null, status: "unauthenticated", error: null });
         }
-      } else if (event === 'SIGNED_IN') {
-        console.log("[BUG] Setting authenticated state from SIGNED_IN");
-        set({ user: session?.user || null, status: "authenticated", error: null });
-      } else if (event === 'SIGNED_OUT') {
-        console.log("[BUG] Setting unauthenticated state from SIGNED_OUT");
+      } else if (event === "SIGNED_IN") {
+        set({
+          user: session?.user || null,
+          status: "authenticated",
+          error: null,
+        });
+      } else if (event === "SIGNED_OUT") {
         set({ user: null, status: "unauthenticated", error: null });
-      } else if (event === 'USER_UPDATED') {
-        console.log("[BUG] Updating user from USER_UPDATED");
+      } else if (event === "USER_UPDATED") {
         set({ user: session?.user || null });
       }
     });
@@ -67,7 +62,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   unsubscribeFromAuthChanges: () => {
     const { authStateSubscription } = get();
     if (authStateSubscription) {
-      console.log("[BUG] Unsubscribing from auth state changes");
       authStateSubscription();
       set({ authStateSubscription: null });
     }
@@ -153,17 +147,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     try {
-      console.log("[BUG] Sign out started");
       set({ status: "loading", error: null });
       const { error } = await supabaseApi.auth.signOut();
-      if (error) {
-        console.log("[BUG] Sign out error", error);
-        throw error;
-      }
-      console.log("[BUG] Sign out successful - auth listener should handle state updates");
+      if (error) throw error;
       // Auth listener will handle state updates
     } catch (error) {
-      console.log("[BUG] Sign out error caught", error);
       set({ error: error as Error, status: "error" });
     }
   },
