@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useAuthStore } from "@/store/auth-store";
+import { toast } from "sonner";
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
@@ -23,20 +25,49 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const { signIn, signUp, signInWithGoogle, signInWithApple, error } =
+    useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Handle authentication logic here (placeholder for now)
-    console.log("Auth submitted:", {
-      mode,
-      email,
-      password,
-      name: mode === "signup" ? name : undefined,
-    });
+    try {
+      if (mode === "signin") {
+        await signIn(email, password);
+      } else {
+        await signUp(email, password, name);
+      }
 
-    // For demo purposes we'll just close the dialog
-    setIsOpen(false);
+      if (!error) {
+        setIsOpen(false);
+        toast.success(
+          mode === "signin"
+            ? "Signed in successfully"
+            : "Account created successfully",
+        );
+        resetForm();
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Authentication failed");
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: "google" | "apple") => {
+    try {
+      if (provider === "google") {
+        await signInWithGoogle();
+      } else {
+        await signInWithApple();
+      }
+
+      if (!error) {
+        setIsOpen(false);
+        toast.success("Signed in successfully");
+        resetForm();
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Authentication failed");
+    }
   };
 
   const resetForm = () => {
@@ -74,7 +105,7 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
               type="button"
               variant="outline"
               className="flex items-center justify-center gap-2 py-5 w-full"
-              onClick={() => console.log("Google auth")}
+              onClick={() => handleOAuthSignIn("google")}
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path
@@ -101,7 +132,7 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
               type="button"
               variant="outline"
               className="flex items-center justify-center gap-2 py-5 w-full"
-              onClick={() => console.log("Apple auth")}
+              onClick={() => handleOAuthSignIn("apple")}
             >
               <svg
                 width="20"
@@ -144,6 +175,7 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
+                required
                 className="bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)]"
               />
             </div>
@@ -160,9 +192,13 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
                     ? "Enter your password"
                     : "Create a password"
                 }
+                required
+                minLength={6}
                 className="bg-card shadow-[0_0_0_1px_rgba(255,255,255,0.1)]"
               />
             </div>
+
+            {error && <p className="text-sm text-red-500">{error.message}</p>}
 
             <Button
               type="submit"
