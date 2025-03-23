@@ -6,6 +6,28 @@ import { getStartDateForTimeRange } from "@/utils/time-range";
 import { User } from "@supabase/supabase-js";
 
 /**
+ * Helper functions for common operations
+ */
+const handleError = (error: any): never => {
+  throw error;
+};
+
+// Generic function to handle Supabase queries
+const executeQuery = async <T>(
+  queryFn: () => Promise<{ data: T | null; error: any }>,
+) => {
+  const { data, error } = await queryFn();
+  if (error) handleError(error);
+  return data;
+};
+
+const getHourStart = () => {
+  const hourStart = new Date();
+  hourStart.setMinutes(0, 0, 0);
+  return hourStart;
+};
+
+/**
  * Supabase API service
  * Abstracts all direct Supabase calls into a clean API
  */
@@ -45,12 +67,12 @@ export const supabaseApi = {
   accounts: {
     getAccounts: async (userId: string) => {
       // Get accounts
-      const { data: accountsData, error: accountsError } = await supabase
-        .from("accounts")
-        .select("*")
-        .eq("user_id", userId);
-
-      if (accountsError) throw accountsError;
+      const accountsData = await executeQuery<any[]>(async () => {
+        return await supabase
+          .from("accounts")
+          .select("*")
+          .eq("user_id", userId);
+      });
 
       if (!accountsData?.length) return [];
 
@@ -58,13 +80,13 @@ export const supabaseApi = {
       const accountIds = accountsData.map((account) => account.id);
 
       // This query gets the latest hourly value for each account
-      const { data: valuesData, error: valuesError } = await supabase
-        .from("hourly_account_values")
-        .select("account_id, value, hour_start")
-        .in("account_id", accountIds)
-        .order("hour_start", { ascending: false });
-
-      if (valuesError) throw valuesError;
+      const valuesData = await executeQuery<any[]>(async () => {
+        return await supabase
+          .from("hourly_account_values")
+          .select("account_id, value, hour_start")
+          .in("account_id", accountIds)
+          .order("hour_start", { ascending: false });
+      });
 
       // Create a map of latest values
       const latestValues: Record<string, number> = {};
@@ -98,36 +120,33 @@ export const supabaseApi = {
       accountData: Omit<AccountWithValue, "id">,
     ) => {
       // Create account in Supabase
-      const { data, error } = await supabase
-        .from("accounts")
-        .insert({
-          user_id: userId,
-          name: accountData.name,
-          type: accountData.type,
-          currency: accountData.currency,
-          is_debt: accountData.isDebt || false,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await executeQuery<any>(async () => {
+        return await supabase
+          .from("accounts")
+          .insert({
+            user_id: userId,
+            name: accountData.name,
+            type: accountData.type,
+            currency: accountData.currency,
+            is_debt: accountData.isDebt || false,
+          })
+          .select()
+          .single();
+      });
 
       if (!data) throw new Error("No data returned from account creation");
 
       // Insert initial account value
-      const hourStart = new Date();
-      hourStart.setMinutes(0, 0, 0); // Set to start of hour
+      const hourStart = getHourStart();
 
-      const { error: valueError } = await supabase
-        .from("hourly_account_values")
-        .insert({
+      await executeQuery(async () => {
+        return await supabase.from("hourly_account_values").insert({
           account_id: data.id,
           user_id: userId,
           hour_start: hourStart.toISOString(),
           value: accountData.balance,
         });
-
-      if (valueError) throw valueError;
+      });
 
       // Return combined account data
       return {
@@ -142,71 +161,68 @@ export const supabaseApi = {
 
     updateAccount: async (userId: string, accountData: AccountWithValue) => {
       // Update account in Supabase
-      const { error } = await supabase
-        .from("accounts")
-        .update({
-          name: accountData.name,
-          type: accountData.type,
-          currency: accountData.currency,
-          is_debt: accountData.isDebt || false,
-        })
-        .eq("id", accountData.id)
-        .eq("user_id", userId);
-
-      if (error) throw error;
+      await executeQuery(async () => {
+        return await supabase
+          .from("accounts")
+          .update({
+            name: accountData.name,
+            type: accountData.type,
+            currency: accountData.currency,
+            is_debt: accountData.isDebt || false,
+          })
+          .eq("id", accountData.id)
+          .eq("user_id", userId);
+      });
 
       // Update account value
-      const hourStart = new Date();
-      hourStart.setMinutes(0, 0, 0); // Set to start of hour
+      const hourStart = getHourStart();
 
       // Check if we already have a value for this hour
-      const { data: existingValues, error: fetchError } = await supabase
-        .from("hourly_account_values")
-        .select("*")
-        .eq("account_id", accountData.id)
-        .gte("hour_start", hourStart.toISOString())
-        .lt(
-          "hour_start",
-          new Date(hourStart.getTime() + 3600000).toISOString(),
-        );
-
-      if (fetchError) throw fetchError;
+      const existingValues = await executeQuery<any[]>(async () => {
+        return await supabase
+          .from("hourly_account_values")
+          .select("*")
+          .eq("account_id", accountData.id)
+          .gte("hour_start", hourStart.toISOString())
+          .lt(
+            "hour_start",
+            new Date(hourStart.getTime() + 3600000).toISOString(),
+          );
+      });
 
       if (existingValues && existingValues.length > 0) {
         // Update existing value
-        const { error: updateError } = await supabase
-          .from("hourly_account_values")
-          .update({
-            value: accountData.balance,
-          })
-          .eq("account_id", existingValues[0].account_id)
-          .eq("hour_start", existingValues[0].hour_start);
-
-        if (updateError) throw updateError;
+        await executeQuery(async () => {
+          return await supabase
+            .from("hourly_account_values")
+            .update({
+              value: accountData.balance,
+            })
+            .eq("account_id", existingValues[0].account_id)
+            .eq("hour_start", existingValues[0].hour_start);
+        });
       } else {
         // Insert new value
-        const { error: insertError } = await supabase
-          .from("hourly_account_values")
-          .insert({
+        await executeQuery(async () => {
+          return await supabase.from("hourly_account_values").insert({
             account_id: accountData.id,
             user_id: userId,
             hour_start: hourStart.toISOString(),
             value: accountData.balance,
           });
-
-        if (insertError) throw insertError;
+        });
       }
     },
 
     deleteAccount: async (userId: string, accountId: string) => {
       // Delete account - cascade should handle related records
-      const { error } = await supabase
-        .from("accounts")
-        .delete()
-        .eq("id", accountId)
-        .eq("user_id", userId);
-
-      if (error) throw error;
+      await executeQuery(async () => {
+        return await supabase
+          .from("accounts")
+          .delete()
+          .eq("id", accountId)
+          .eq("user_id", userId);
+      });
     },
 
     getAccountPerformance: async (
@@ -220,16 +236,14 @@ export const supabaseApi = {
       const endDate = new Date();
       const startDate = getStartDateForTimeRange(timeRange);
 
-      const { data, error } = await supabase.rpc(
-        "calculate_account_performance",
-        {
+      const data = await executeQuery(async () => {
+        return await supabase.rpc("calculate_account_performance", {
           user_id_param: userId,
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
-        },
-      );
+        });
+      });
 
-      if (error) throw error;
       return data || [];
     },
   },
@@ -240,15 +254,16 @@ export const supabaseApi = {
       const startDate = getStartDateForTimeRange(timeRange);
       const endDate = new Date();
 
-      const { data, error } = await supabase
-        .from("networth_history")
-        .select("date, value")
-        .eq("user_id", userId)
-        .gte("date", startDate.toISOString())
-        .lte("date", endDate.toISOString())
-        .order("date", { ascending: true });
+      const data = await executeQuery(async () => {
+        return await supabase
+          .from("networth_history")
+          .select("date, value")
+          .eq("user_id", userId)
+          .gte("date", startDate.toISOString())
+          .lte("date", endDate.toISOString())
+          .order("date", { ascending: true });
+      });
 
-      if (error) throw error;
       return data || [];
     },
 
@@ -256,25 +271,25 @@ export const supabaseApi = {
       const startDate = getStartDateForTimeRange(timeRange);
 
       // Get latest net worth value
-      const { data: latestData, error: latestError } = await supabase
-        .from("networth_history")
-        .select("value, date")
-        .eq("user_id", userId)
-        .order("date", { ascending: false })
-        .limit(1);
-
-      if (latestError) throw latestError;
+      const latestData = await executeQuery<any[]>(async () => {
+        return await supabase
+          .from("networth_history")
+          .select("value, date")
+          .eq("user_id", userId)
+          .order("date", { ascending: false })
+          .limit(1);
+      });
 
       // Get previous net worth value based on time range
-      const { data: previousData, error: previousError } = await supabase
-        .from("networth_history")
-        .select("value, date")
-        .eq("user_id", userId)
-        .gte("date", startDate.toISOString())
-        .order("date", { ascending: true })
-        .limit(1);
-
-      if (previousError) throw previousError;
+      const previousData = await executeQuery<any[]>(async () => {
+        return await supabase
+          .from("networth_history")
+          .select("value, date")
+          .eq("user_id", userId)
+          .gte("date", startDate.toISOString())
+          .order("date", { ascending: true })
+          .limit(1);
+      });
 
       if (!latestData?.length) return null;
 
@@ -294,50 +309,38 @@ export const supabaseApi = {
 
     updateNetWorthHistory: async (userId: string, currentNetWorth: number) => {
       const now = new Date();
-
-      // Create an hour block timestamp (truncate to hour)
-      const hourStart = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        now.getHours(),
-        0,
-        0,
-        0,
-      );
+      const hourStart = getHourStart();
 
       // Check if an entry for this hour already exists
-      const { data: existingEntries, error: fetchError } = await supabase
-        .from("networth_history")
-        .select("id, value, date")
-        .eq("user_id", userId)
-        .gte("date", hourStart.toISOString())
-        .lt("date", new Date(hourStart.getTime() + 3600000).toISOString()) // Add 1 hour
-        .order("date", { ascending: false });
-
-      if (fetchError) throw fetchError;
+      const existingEntries = await executeQuery<any[]>(async () => {
+        return await supabase
+          .from("networth_history")
+          .select("id, value, date")
+          .eq("user_id", userId)
+          .gte("date", hourStart.toISOString())
+          .lt("date", new Date(hourStart.getTime() + 3600000).toISOString()) // Add 1 hour
+          .order("date", { ascending: false });
+      });
 
       if (existingEntries && existingEntries.length > 0) {
         // Update the existing entry for this hour
         const latestEntry = existingEntries[0];
 
-        const { error: updateError } = await supabase
-          .from("networth_history")
-          .update({ value: currentNetWorth })
-          .eq("id", latestEntry.id);
-
-        if (updateError) throw updateError;
+        await executeQuery(async () => {
+          return await supabase
+            .from("networth_history")
+            .update({ value: currentNetWorth })
+            .eq("id", latestEntry.id);
+        });
       } else {
         // Create a new entry for this hour
-        const { error: insertError } = await supabase
-          .from("networth_history")
-          .insert({
+        await executeQuery(async () => {
+          return await supabase.from("networth_history").insert({
             user_id: userId,
             value: currentNetWorth,
             date: now.toISOString(), // Use the exact current time
           });
-
-        if (insertError) throw insertError;
+        });
       }
     },
   },

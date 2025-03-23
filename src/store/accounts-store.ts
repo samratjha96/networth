@@ -38,9 +38,25 @@ interface AccountsState {
   closeDialog: () => void;
 }
 
-// Helper function to calculate total net worth from accounts
+// Calculate total net worth from accounts
 const calculateNetWorth = (accounts: AccountWithValue[]): number => {
   return accounts.reduce((total, account) => total + account.balance, 0);
+};
+
+// Update networth history if using remote data
+const updateNetWorthIfRemote = async (
+  dataSource: "local" | "remote",
+  userId: string | null,
+  accounts: AccountWithValue[],
+): Promise<void> => {
+  if (dataSource === "remote" && userId) {
+    const totalNetWorth = calculateNetWorth(accounts);
+    try {
+      await supabaseApi.networth.updateNetWorthHistory(userId, totalNetWorth);
+    } catch (err) {
+      console.error("Failed to update networth history:", err);
+    }
+  }
 };
 
 export const useAccountsStore = create<AccountsState>((set, get) => {
@@ -113,22 +129,8 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
         set((state) => {
           const updatedAccounts = [...state.accounts, newAccount];
 
-          // Update networth history if we're using remote data
-          if (dataSource === "remote" && userId) {
-            const totalNetWorth = calculateNetWorth(updatedAccounts);
-            console.log(
-              "[DEBUG] Updating networth history after adding account, new worth:",
-              totalNetWorth,
-            );
-            supabaseApi.networth
-              .updateNetWorthHistory(userId, totalNetWorth)
-              .catch((err) =>
-                console.error(
-                  "[DEBUG] Failed to update networth history:",
-                  err,
-                ),
-              );
-          }
+          // Update networth history if needed
+          updateNetWorthIfRemote(dataSource, userId, updatedAccounts);
 
           return {
             accounts: updatedAccounts,
@@ -168,22 +170,8 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
             a.id === account.id ? account : a,
           );
 
-          // Update networth history if we're using remote data
-          if (dataSource === "remote" && userId) {
-            const totalNetWorth = calculateNetWorth(updatedAccounts);
-            console.log(
-              "[DEBUG] Updating networth history after updating account, new worth:",
-              totalNetWorth,
-            );
-            supabaseApi.networth
-              .updateNetWorthHistory(userId, totalNetWorth)
-              .catch((err) =>
-                console.error(
-                  "[DEBUG] Failed to update networth history:",
-                  err,
-                ),
-              );
-          }
+          // Update networth history if needed
+          updateNetWorthIfRemote(dataSource, userId, updatedAccounts);
 
           return {
             accounts: updatedAccounts,
@@ -214,22 +202,8 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
         set((state) => {
           const updatedAccounts = state.accounts.filter((a) => a.id !== id);
 
-          // Update networth history if we're using remote data
-          if (dataSource === "remote" && userId) {
-            const totalNetWorth = calculateNetWorth(updatedAccounts);
-            console.log(
-              "[DEBUG] Updating networth history after deleting account, new worth:",
-              totalNetWorth,
-            );
-            supabaseApi.networth
-              .updateNetWorthHistory(userId, totalNetWorth)
-              .catch((err) =>
-                console.error(
-                  "[DEBUG] Failed to update networth history:",
-                  err,
-                ),
-              );
-          }
+          // Update networth history if needed
+          updateNetWorthIfRemote(dataSource, userId, updatedAccounts);
 
           return {
             accounts: updatedAccounts,
