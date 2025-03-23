@@ -147,9 +147,8 @@ export function AccountsPanel({ accounts, type }: AccountsPanelProps) {
                 {accountTypeEmojis[type as AccountType] || "💰"}
               </span>
               <h3 className="font-medium">{type}</h3>
-              <span className="text-xs text-muted-foreground">
-                {accounts.length}{" "}
-                {accounts.length === 1 ? "account" : "accounts"}
+              <span className="px-1.5 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
+                {accounts.length}
               </span>
 
               <Button

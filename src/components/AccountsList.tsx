@@ -116,22 +116,19 @@ function useCollapsibleSections(panelType: AccountViewType) {
   const storageKey = `collapsed-sections-${panelType}`;
 
   const [collapsedSections, setCollapsedSections] = useState<CollapsedSections>(
-    {},
-  );
-
-  useEffect(() => {
-    try {
-      const savedState = localStorage.getItem(storageKey);
-      if (savedState) {
-        setCollapsedSections(JSON.parse(savedState));
+    () => {
+      try {
+        const savedState = localStorage.getItem(storageKey);
+        return savedState ? JSON.parse(savedState) : {};
+      } catch (error) {
+        console.error(
+          "Failed to load collapsed sections from localStorage:",
+          error,
+        );
+        return {};
       }
-    } catch (error) {
-      console.error(
-        "Failed to load collapsed sections from localStorage:",
-        error,
-      );
-    }
-  }, [storageKey]);
+    },
+  );
 
   useEffect(() => {
     try {
@@ -288,8 +285,8 @@ function AccountTypeSection({
             {accountTypeEmojis[accountType] || "💰"}
           </span>
           <h3 className="font-medium">{accountType}</h3>
-          <span className="text-xs text-muted-foreground">
-            {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
+          <span className="px-1.5 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
+            {accounts.length}
           </span>
 
           <Button
