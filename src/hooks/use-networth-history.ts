@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
 import { TimeRange } from "@/types/networth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useDataSource } from "@/contexts/DataSourceContext";
+import { getStartDateForTimeRange } from "@/utils/time-range";
 
 // Interface for net worth data returned by the hook
 export interface NetWorthData {
@@ -11,16 +11,6 @@ export interface NetWorthData {
   change: number;
   percentageChange: number;
 }
-
-// Simulate historical net worth data storage (only needed for localStorage implementation)
-interface NetWorthHistoryData {
-  [timeKey: string]: number;
-}
-
-// Get a key for storing historical data based on time range
-const getTimeKey = (timeRange: TimeRange) => {
-  return `history_${timeRange}`;
-};
 
 export function useNetWorthHistory(
   currentNetWorth: number,
@@ -38,41 +28,25 @@ export function useNetWorthHistory(
 
   // Local storage implementation
   const fetchLocalNetWorthHistory = () => {
+    const startDate = getStartDateForTimeRange(timeRange);
+    const key = `networth_${startDate.toISOString()}`;
+
     // Try to load historical data from localStorage
-    const storedData = localStorage.getItem("networth_historical_data");
-    let netWorthHistory: NetWorthHistoryData = storedData
-      ? JSON.parse(storedData)
-      : {};
-
-    // Initialize any missing time ranges with historical data
-    let dataChanged = false;
-
-    // For each time range, initialize historical data if not present
-    [1, 7, 30, 365, 0].forEach((period) => {
-      const timeKey = getTimeKey(period as TimeRange);
-      if (!netWorthHistory[timeKey]) {
-        const randomFactor = 0.92 + Math.random() * 0.05;
-        netWorthHistory[timeKey] = currentNetWorth * randomFactor;
-        dataChanged = true;
-      }
-    });
-
-    // Save updated historical data
-    if (dataChanged) {
-      localStorage.setItem(
-        "networth_historical_data",
-        JSON.stringify(netWorthHistory),
-      );
-    }
-
-    // Get the historical value for this time range
-    const timeKey = getTimeKey(timeRange);
-    const previousValue = netWorthHistory[timeKey] || currentNetWorth * 0.95;
+    const storedValue = localStorage.getItem(key);
+    const previousValue = storedValue
+      ? parseFloat(storedValue)
+      : currentNetWorth * 0.95;
 
     // Calculate change and percentage
     const change = currentNetWorth - previousValue;
     const percentageChange =
       previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
+
+    // Store current value for future reference
+    localStorage.setItem(
+      `networth_${new Date().toISOString()}`,
+      currentNetWorth.toString(),
+    );
 
     return {
       currentValue: currentNetWorth,
@@ -87,44 +61,39 @@ export function useNetWorthHistory(
     if (!userId) return defaultData;
 
     try {
-      // Calculate start date based on timeRange
-      const startDate = new Date();
-      if (typeof timeRange === "number" && timeRange > 0) {
-        startDate.setDate(startDate.getDate() - timeRange);
-      } else {
-        // For "all time", use a very old date
-        startDate.setFullYear(startDate.getFullYear() - 10);
-      }
+      const startDate = getStartDateForTimeRange(timeRange);
 
-      // Get the latest historical value and the value at start date
-      const { data: historyData, error: historyError } = await supabase
+      // Get latest net worth value
+      const { data: latestData, error: latestError } = await supabase
         .from("networth_history")
         .select("value, date")
         .eq("user_id", userId)
         .order("date", { ascending: false })
         .limit(1);
 
-      if (historyError) {
-        console.error("Supabase query error:", historyError);
-        throw historyError;
-      }
+      if (latestError) throw latestError;
+      console.log("[SUPABASE] latestData", latestData);
 
-      // Get historical value at start date
-      const { data: startData, error: startError } = await supabase
+      // Get previous net worth value based on time range
+      const { data: previousData, error: previousError } = await supabase
         .from("networth_history")
-        .select("value")
+        .select("value, date")
         .eq("user_id", userId)
-        .lt("date", startDate.toISOString())
-        .order("date", { ascending: false })
+        .gte("date", startDate.toISOString())
+        .order("date", { ascending: true })
         .limit(1);
 
-      if (startError) {
-        console.error("Supabase query error:", startError);
-        throw startError;
-      }
+      if (previousError) throw previousError;
 
-      const currentValue = historyData?.[0]?.value || currentNetWorth;
-      const previousValue = startData?.[0]?.value || currentValue * 0.95;
+      console.log("[SUPABASE] networth_history", {
+        latest: latestData,
+        previous: previousData,
+      });
+
+      if (!latestData?.length) return defaultData;
+
+      const currentValue = latestData[0].value;
+      const previousValue = previousData?.[0]?.value ?? currentValue * 0.95;
       const change = currentValue - previousValue;
       const percentageChange =
         previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
@@ -158,14 +127,7 @@ export function useNetWorthHistory(
     return fetchLocalNetWorthHistory();
   }
 
-  // Handle remote data source
-  if (isLoading) {
-    console.log("Loading remote data...");
-    return defaultData;
-  }
-
-  if (error) {
-    console.error("Error in useNetWorthHistory:", error);
+  if (isLoading || error) {
     return defaultData;
   }
 

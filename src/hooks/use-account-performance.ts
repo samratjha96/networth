@@ -128,7 +128,7 @@ export function useAccountPerformance(
         startDate.setFullYear(startDate.getFullYear() - 10);
       }
 
-      console.log("Fetching performance data with params:", {
+      console.log("[SUPABASE] Fetching performance data with params:", {
         userId,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),

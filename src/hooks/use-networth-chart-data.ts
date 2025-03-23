@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDataSource } from "@/contexts/DataSourceContext";
 import { supabase } from "@/lib/supabase";
-import { NetworthHistory } from "@/types/networth";
+import { NetworthHistory, TimeRange } from "@/types/networth";
 import { getMockDataInstance } from "@/lib/mock-data";
+import { getStartDateForTimeRange } from "@/utils/time-range";
 
-export function useNetWorthChartData(timeRange: number) {
+export function useNetWorthChartData(timeRange: TimeRange) {
   const { dataSource, userId } = useDataSource();
 
   // Fetch data from Supabase
@@ -12,15 +13,8 @@ export function useNetWorthChartData(timeRange: number) {
     if (!userId) return [];
 
     try {
+      const startDate = getStartDateForTimeRange(timeRange);
       const endDate = new Date();
-      const startDate = new Date();
-
-      if (timeRange > 0) {
-        startDate.setDate(startDate.getDate() - timeRange);
-      } else {
-        // For "all time", use a very old date
-        startDate.setFullYear(startDate.getFullYear() - 10);
-      }
 
       const { data, error } = await supabase
         .from("networth_history")
