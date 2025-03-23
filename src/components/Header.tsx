@@ -97,9 +97,6 @@ export const Header = () => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem className="text-sm">Profile</DropdownMenuItem>
-              <DropdownMenuItem className="text-sm">Settings</DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-sm text-red-500 focus:text-red-500"
                 onClick={() => signOut.mutate()}

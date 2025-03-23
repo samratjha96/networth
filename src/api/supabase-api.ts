@@ -3,7 +3,7 @@ import { AccountWithValue, AccountType } from "@/types/accounts";
 import { CurrencyCode } from "@/types/currency";
 import { TimeRange } from "@/types/networth";
 import { getStartDateForTimeRange } from "@/utils/time-range";
-import { User } from "@supabase/supabase-js";
+import { SignInWithOAuthCredentials, User } from "@supabase/supabase-js";
 
 /**
  * Helper functions for common operations
@@ -48,7 +48,7 @@ export const supabaseApi = {
       return supabase.auth.signInWithPassword(params);
     },
 
-    signInWithOAuth: async (params: { provider: "google" }) => {
+    signInWithOAuth: async (params: SignInWithOAuthCredentials) => {
       return supabase.auth.signInWithOAuth(params);
     },
 
