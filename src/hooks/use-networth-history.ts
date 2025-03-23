@@ -1,8 +1,11 @@
 import { TimeRange } from "@/types/networth";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useDataSource } from "@/contexts/DataSourceContext";
 import { getStartDateForTimeRange } from "@/utils/time-range";
+import {
+  useNetWorthHistory as useTanstackNetWorthHistory,
+  useUpdateNetWorth,
+} from "@/api/queries";
+import { supabaseApi } from "@/api/supabase-api";
 
 // Interface for net worth data returned by the hook
 export interface NetWorthData {
@@ -10,6 +13,26 @@ export interface NetWorthData {
   previousValue: number;
   change: number;
   percentageChange: number;
+}
+
+// Function to update networth history - now delegates to the API layer
+export async function updateNetworthHistory(
+  userId: string,
+  currentNetWorth: number,
+) {
+  if (!userId) {
+    console.log("[DEBUG] Skipping networth history update - no userId");
+    return;
+  }
+
+  try {
+    await supabaseApi.networth.updateNetWorthHistory(userId, currentNetWorth);
+    console.log("[DEBUG] Networth history updated successfully");
+    return true;
+  } catch (error) {
+    console.error("Error updating networth history:", error);
+    return false;
+  }
 }
 
 export function useNetWorthHistory(
@@ -56,65 +79,15 @@ export function useNetWorthHistory(
     };
   };
 
-  // Supabase implementation
-  const fetchSupabaseNetWorthHistory = async () => {
-    if (!userId) return defaultData;
-
-    try {
-      const startDate = getStartDateForTimeRange(timeRange);
-
-      // Get latest net worth value
-      const { data: latestData, error: latestError } = await supabase
-        .from("networth_history")
-        .select("value, date")
-        .eq("user_id", userId)
-        .order("date", { ascending: false })
-        .limit(1);
-
-      if (latestError) throw latestError;
-
-      // Get previous net worth value based on time range
-      const { data: previousData, error: previousError } = await supabase
-        .from("networth_history")
-        .select("value, date")
-        .eq("user_id", userId)
-        .gte("date", startDate.toISOString())
-        .order("date", { ascending: true })
-        .limit(1);
-
-      if (previousError) throw previousError;
-
-      if (!latestData?.length) return defaultData;
-
-      const currentValue = latestData[0].value;
-      const previousValue = previousData?.[0]?.value ?? currentValue * 0.95;
-      const change = currentValue - previousValue;
-      const percentageChange =
-        previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
-
-      return {
-        currentValue,
-        previousValue,
-        change,
-        percentageChange,
-      };
-    } catch (error) {
-      console.error("Error fetching net worth history:", error);
-      return defaultData;
-    }
-  };
-
-  // Using React Query for remote data
+  // Using Tanstack Query for remote data
   const {
     data: remoteData,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ["networth-history", userId, timeRange, currentNetWorth],
-    queryFn: fetchSupabaseNetWorthHistory,
-    enabled: dataSource === "remote" && !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  } = useTanstackNetWorthHistory(
+    dataSource === "remote" ? userId : null,
+    timeRange,
+  );
 
   // Return data based on the current data source
   if (dataSource === "local") {

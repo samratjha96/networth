@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
+import { supabaseApi } from "@/api/supabase-api";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
@@ -25,14 +25,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ status: "loading" });
 
       // Check for existing session
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await supabaseApi.auth.getSession();
 
       if (error) {
         throw error;
       }
 
       if (data?.session) {
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: userData } = await supabaseApi.auth.getUser();
         set({ user: userData.user, status: "authenticated" });
       } else {
         set({ user: null, status: "unauthenticated" });
@@ -45,10 +45,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   signIn: async (email, password) => {
     try {
       set({ status: "loading", error: null });
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabaseApi.auth.signInWithPassword(
         email,
         password,
-      });
+      );
 
       if (error) throw error;
       set({ user: data.user, status: "authenticated" });
@@ -60,9 +60,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signInWithGoogle: async () => {
     try {
       set({ status: "loading", error: null });
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-      });
+      const { error } = await supabaseApi.auth.signInWithOAuth("google");
       if (error) throw error;
     } catch (error) {
       set({ error: error as Error, status: "error" });
@@ -72,12 +70,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   signUp: async (email, password, name) => {
     try {
       set({ status: "loading", error: null });
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: name },
-        },
+      const { data, error } = await supabaseApi.auth.signUp(email, password, {
+        data: { full_name: name },
       });
 
       if (error) throw error;
@@ -90,7 +84,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     try {
       set({ status: "loading", error: null });
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabaseApi.auth.signOut();
       if (error) throw error;
       set({ user: null, status: "unauthenticated" });
     } catch (error) {

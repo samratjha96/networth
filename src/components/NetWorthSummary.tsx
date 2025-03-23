@@ -3,9 +3,14 @@ import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
 import { TimeRange } from "@/types/networth";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
-import { useAccountsStore } from "@/store/accounts-store";
 import { useAccountPerformance } from "@/hooks/use-account-performance";
-import { useNetWorthHistory } from "@/hooks/use-networth-history";
+import {
+  useNetWorthHistory,
+  updateNetworthHistory,
+} from "@/hooks/use-networth-history";
+import { useEffect } from "react";
+import { useAccounts } from "@/hooks/use-accounts";
+import { useDataSource } from "@/contexts/DataSourceContext";
 
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
@@ -25,9 +30,10 @@ const getPeriodLabel = (days: TimeRange) => {
 };
 
 export function NetWorthSummary() {
-  const { accounts } = useAccountsStore();
+  const { accounts, isLoading } = useAccounts();
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const { formatWithCurrency } = useCurrencyFormatter("USD");
+  const { dataSource, userId } = useDataSource();
 
   // Calculate current net worth from accounts
   const currentNetWorth = accounts.reduce(
@@ -39,8 +45,46 @@ export function NetWorthSummary() {
   const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
   const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
 
+  // Debug logs
+  useEffect(() => {
+    console.log("[DEBUG] Accounts updated:", accounts);
+    console.log("[DEBUG] Current Net Worth:", currentNetWorth);
+  }, [accounts, currentNetWorth]);
+
+  useEffect(() => {
+    console.log("[DEBUG] NetWorth Data:", netWorthData);
+  }, [netWorthData]);
+
+  useEffect(() => {
+    console.log("[DEBUG] TimeRange changed:", timeRange);
+  }, [timeRange]);
+
+  // Update networth history when current net worth changes and we're using remote data
+  useEffect(() => {
+    if (dataSource === "remote" && userId && accounts.length > 0) {
+      console.log(
+        "[DEBUG] NetWorthSummary triggering networth history update",
+        currentNetWorth,
+      );
+      updateNetworthHistory(userId, currentNetWorth).catch((err) =>
+        console.error(
+          "[DEBUG] Failed to update networth history from component:",
+          err,
+        ),
+      );
+    }
+  }, [currentNetWorth, dataSource, userId, accounts.length]);
+
   const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
   const isPositiveChange = (netWorthData?.change ?? 0) > 0;
+
+  // Debug render count
+  useEffect(() => {
+    console.log("[DEBUG] NetWorthSummary rendered");
+    return () => {
+      console.log("[DEBUG] NetWorthSummary unmounted");
+    };
+  }, []);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">

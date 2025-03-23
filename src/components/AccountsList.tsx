@@ -34,10 +34,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useEffect } from "react";
+import { useAccounts } from "@/hooks/use-accounts";
 
 export function AccountsList() {
   const [view, setView] = useState<AccountViewType>("assets");
-  const { accounts, openAddDialog } = useAccountsStore();
+  const { openAddDialog } = useAccountsStore();
+  const { accounts, isLoading } = useAccounts();
 
   // Filter accounts
   const assetAccounts = accounts.filter((a) => !a.isDebt);
@@ -103,7 +105,13 @@ export function AccountsList() {
         </CardHeader>
 
         <CardContent className="p-0 pb-2">
-          <SplitAccountsLayout type={view} accounts={accounts} />
+          {isLoading ? (
+            <div className="p-4 flex items-center justify-center">
+              <p className="text-muted-foreground">Loading accounts...</p>
+            </div>
+          ) : (
+            <SplitAccountsLayout type={view} accounts={accounts} />
+          )}
         </CardContent>
       </Card>
     </>
