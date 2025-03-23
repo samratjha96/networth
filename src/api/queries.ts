@@ -139,6 +139,7 @@ export const useAddAccount = (userId: string | null) => {
 
 export const useUpdateAccount = (userId: string | null) => {
   const queryClient = useQueryClient();
+  console.log("[DEBUG] useUpdateAccount", userId);
 
   return useMutation({
     mutationFn: (accountData: AccountWithValue) => {

@@ -8,7 +8,7 @@ import {
   useNetWorthHistory,
   updateNetworthHistory,
 } from "@/hooks/use-networth-history";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useDataSource } from "@/contexts/DataSourceContext";
 
@@ -30,32 +30,28 @@ const getPeriodLabel = (days: TimeRange) => {
 };
 
 export function NetWorthSummary() {
-  const { accounts, isLoading } = useAccounts();
+  const { accounts } = useAccounts();
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const { formatWithCurrency } = useCurrencyFormatter("USD");
-  const { dataSource, userId } = useDataSource();
 
-  // Calculate current net worth from accounts
-  const currentNetWorth = accounts.reduce(
-    (total, account) => total + account.balance,
-    0,
+  // Calculate current net worth from accounts using useMemo
+  const currentNetWorth = useMemo(
+    () => accounts.reduce((total, account) => total + account.balance, 0),
+    [accounts],
   );
 
   // Use our hooks to get data
   const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
   const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
 
-  // Update networth history when current net worth changes and we're using remote data
-  useEffect(() => {
-    if (dataSource === "remote" && userId && accounts.length > 0) {
-      updateNetworthHistory(userId, currentNetWorth).catch((err) =>
-        console.error("Failed to update networth history:", err),
-      );
-    }
-  }, [currentNetWorth, dataSource, userId, accounts.length]);
-
-  const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
-  const isPositiveChange = (netWorthData?.change ?? 0) > 0;
+  // Memoize derived values to prevent unnecessary recalculations
+  const { isPositiveNetWorth, isPositiveChange } = useMemo(
+    () => ({
+      isPositiveNetWorth: (netWorthData?.currentValue ?? 0) >= 0,
+      isPositiveChange: (netWorthData?.change ?? 0) > 0,
+    }),
+    [netWorthData],
+  );
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
