@@ -35,6 +35,7 @@ Syntax and Formatting
 
 UI and Styling
 - Use Tailwind for components and styling.
+- Always design with mobile first philosophy
 
 Performance Optimization
 - Look for ways to make things faster:

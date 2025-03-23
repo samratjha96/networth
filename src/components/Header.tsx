@@ -24,8 +24,9 @@ export const Header = () => {
   };
 
   return (
-    <div className="flex justify-between items-center">
-      <div className="flex flex-col">
+    <div className="w-full flex flex-col items-center gap-4 md:grid md:grid-cols-3 md:items-center">
+      <div className="hidden md:block"></div>
+      <div className="flex flex-col items-center">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
           Argos
         </h1>
@@ -34,7 +35,7 @@ export const Header = () => {
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex justify-center md:justify-end">
         {!user ? (
           <div className="flex flex-row items-end gap-2">
             <div className="px-3 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-700 font-medium text-xs flex items-center gap-1.5 animate-pulse">

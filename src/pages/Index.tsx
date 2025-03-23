@@ -25,7 +25,7 @@ const Index = () => {
         <Header />
 
         {/* Layout container - vertical on mobile, side-by-side on larger screens */}
-        <div className="grid grid-cols-1 md:grid-cols-12 md:gap-6 lg:gap-8">
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 md:gap-6 lg:gap-8">
           {/* Left side: Accounts list (at least 1/3 of the screen) */}
           <div className="md:col-span-5 lg:col-span-4 xl:col-span-4 md:pr-2">
             <AccountsList />
