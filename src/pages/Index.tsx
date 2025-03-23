@@ -5,13 +5,29 @@ import { AccountsList } from "@/components/AccountsList";
 import { CurrencyCode } from "@/types/currency";
 import { Header } from "@/components/Header";
 import { useAccountsStore } from "@/store/accounts-store";
-import { getMockDataInstance } from "@/lib/mock-data";
+import { useTimeRangeStore } from "@/store/time-range-store";
+import { useNetWorthChartData } from "@/hooks/use-networth-chart-data";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const Index = () => {
   const { accounts } = useAccountsStore();
-  const { networthHistory } = getMockDataInstance();
+  const timeRange = useTimeRangeStore((state) => state.timeRange);
+
+  const timeRangeNumber =
+    typeof timeRange === "number"
+      ? timeRange
+      : timeRange === "day"
+        ? 1
+        : timeRange === "week"
+          ? 7
+          : timeRange === "month"
+            ? 30
+            : timeRange === "year"
+              ? 365
+              : 0;
+
+  const { networthHistory, isLoading } = useNetWorthChartData(timeRangeNumber);
   const currentNetWorth =
     networthHistory[networthHistory.length - 1]?.value || 0;
 
@@ -39,7 +55,7 @@ const Index = () => {
               currency={DEFAULT_CURRENCY}
               currentNetWorth={currentNetWorth}
               accounts={accounts}
-              isLoading={false}
+              isLoading={isLoading}
             />
           </div>
         </div>

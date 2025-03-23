@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { TimeRange } from "@/types/networth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { useDataSource } from "@/contexts/DataSourceContext";
 
 // Interface for net worth data returned by the hook
 export interface NetWorthData {
@@ -23,100 +26,148 @@ export function useNetWorthHistory(
   currentNetWorth: number,
   timeRange: TimeRange,
 ) {
-  const [netWorthData, setNetWorthData] = useState<NetWorthData>({
+  const { dataSource, userId } = useDataSource();
+
+  // Default data state (for loading or error)
+  const defaultData: NetWorthData = {
     currentValue: currentNetWorth,
-    previousValue: currentNetWorth * 0.95, // Default 5% lower
+    previousValue: currentNetWorth * 0.95,
     change: currentNetWorth * 0.05,
     percentageChange: 5,
-  });
+  };
 
-  useEffect(() => {
-    // This would be replaced with a Supabase call in production
-    // For now, we use localStorage to simulate historical data
+  // Local storage implementation
+  const fetchLocalNetWorthHistory = () => {
+    // Try to load historical data from localStorage
+    const storedData = localStorage.getItem("networth_historical_data");
+    let netWorthHistory: NetWorthHistoryData = storedData
+      ? JSON.parse(storedData)
+      : {};
 
-    // === START: Replace this block with Supabase call in production ===
-    const fetchNetWorthHistory = () => {
-      // Try to load historical data from localStorage
-      const storedData = localStorage.getItem("networth_historical_data");
-      let netWorthHistory: NetWorthHistoryData = storedData
-        ? JSON.parse(storedData)
-        : {};
+    // Initialize any missing time ranges with historical data
+    let dataChanged = false;
 
-      // Initialize any missing time ranges with historical data
-      let dataChanged = false;
+    // For each time range, initialize historical data if not present
+    [1, 7, 30, 365, 0].forEach((period) => {
+      const timeKey = getTimeKey(period as TimeRange);
+      if (!netWorthHistory[timeKey]) {
+        const randomFactor = 0.92 + Math.random() * 0.05;
+        netWorthHistory[timeKey] = currentNetWorth * randomFactor;
+        dataChanged = true;
+      }
+    });
 
-      // For each time range, initialize historical data if not present
-      [1, 7, 30, 365, 0].forEach((period) => {
-        const timeKey = getTimeKey(period as TimeRange);
-        if (!netWorthHistory[timeKey]) {
-          // Set initial historical value at 92-97% of current value
-          // This creates a reasonable range of growth
-          const randomFactor = 0.92 + Math.random() * 0.05;
-          netWorthHistory[timeKey] = currentNetWorth * randomFactor;
-          dataChanged = true;
-        }
-      });
+    // Save updated historical data
+    if (dataChanged) {
+      localStorage.setItem(
+        "networth_historical_data",
+        JSON.stringify(netWorthHistory),
+      );
+    }
 
-      // Save updated historical data
-      if (dataChanged) {
-        localStorage.setItem(
-          "networth_historical_data",
-          JSON.stringify(netWorthHistory),
-        );
+    // Get the historical value for this time range
+    const timeKey = getTimeKey(timeRange);
+    const previousValue = netWorthHistory[timeKey] || currentNetWorth * 0.95;
+
+    // Calculate change and percentage
+    const change = currentNetWorth - previousValue;
+    const percentageChange =
+      previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
+
+    return {
+      currentValue: currentNetWorth,
+      previousValue,
+      change,
+      percentageChange,
+    };
+  };
+
+  // Supabase implementation
+  const fetchSupabaseNetWorthHistory = async () => {
+    if (!userId) return defaultData;
+
+    try {
+      // Calculate start date based on timeRange
+      const startDate = new Date();
+      if (typeof timeRange === "number" && timeRange > 0) {
+        startDate.setDate(startDate.getDate() - timeRange);
+      } else {
+        // For "all time", use a very old date
+        startDate.setFullYear(startDate.getFullYear() - 10);
       }
 
-      // Get the historical value for this time range
-      const timeKey = getTimeKey(timeRange);
-      const previousValue = netWorthHistory[timeKey] || currentNetWorth * 0.95;
+      // Get the latest historical value and the value at start date
+      const { data: historyData, error: historyError } = await supabase
+        .from("networth_history")
+        .select("value, date")
+        .eq("user_id", userId)
+        .order("date", { ascending: false })
+        .limit(1);
 
-      // Calculate change and percentage
-      const change = currentNetWorth - previousValue;
+      if (historyError) {
+        console.error("Supabase query error:", historyError);
+        throw historyError;
+      }
+
+      // Get historical value at start date
+      const { data: startData, error: startError } = await supabase
+        .from("networth_history")
+        .select("value")
+        .eq("user_id", userId)
+        .lt("date", startDate.toISOString())
+        .order("date", { ascending: false })
+        .limit(1);
+
+      if (startError) {
+        console.error("Supabase query error:", startError);
+        throw startError;
+      }
+
+      const currentValue = historyData?.[0]?.value || currentNetWorth;
+      const previousValue = startData?.[0]?.value || currentValue * 0.95;
+      const change = currentValue - previousValue;
       const percentageChange =
         previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
 
       return {
-        currentValue: currentNetWorth,
+        currentValue,
         previousValue,
         change,
         percentageChange,
       };
-    };
+    } catch (error) {
+      console.error("Error fetching net worth history:", error);
+      return defaultData;
+    }
+  };
 
-    // Calculate and update the net worth data
-    const data = fetchNetWorthHistory();
-    setNetWorthData(data);
-    // === END: Replace this block with Supabase call in production ===
+  // Using React Query for remote data
+  const {
+    data: remoteData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["networth-history", userId, timeRange, currentNetWorth],
+    queryFn: fetchSupabaseNetWorthHistory,
+    enabled: dataSource === "remote" && !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-    /* 
-    // SUPABASE IMPLEMENTATION WOULD LOOK LIKE THIS:
-    
-    const fetchNetWorthHistory = async () => {
-      // This would be an actual async call to Supabase
-      const { data, error } = await supabase
-        .rpc('calculate_networth_change', { 
-          user_id: currentUser.id, 
-          time_range_days: timeRange 
-        });
-        
-      if (error) {
-        console.error('Error fetching net worth history:', error);
-        return {
-          currentValue: currentNetWorth,
-          previousValue: currentNetWorth * 0.95,
-          change: currentNetWorth * 0.05,
-          percentageChange: 5,
-        };
-      }
-      
-      return data;
-    };
-    
-    // Fetch data and update state
-    fetchNetWorthHistory().then(data => {
-      setNetWorthData(data);
-    });
-    */
-  }, [currentNetWorth, timeRange]);
+  // Return data based on the current data source
+  if (dataSource === "local") {
+    return fetchLocalNetWorthHistory();
+  }
 
-  return netWorthData;
+  // Handle remote data source
+  if (isLoading) {
+    console.log("Loading remote data...");
+    return defaultData;
+  }
+
+  if (error) {
+    console.error("Error in useNetWorthHistory:", error);
+    return defaultData;
+  }
+
+  return remoteData || defaultData;
 }

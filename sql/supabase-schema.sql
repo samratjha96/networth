@@ -170,9 +170,10 @@ BEGIN
   ),
   filtered_start_values AS (
     SELECT DISTINCT ON (account_id) 
-      account_id, value
+      sv.account_id, 
+      sv.value
     FROM 
-      start_values
+      start_values sv
   ),
   end_values AS (
     SELECT 
@@ -189,9 +190,10 @@ BEGIN
   ),
   filtered_end_values AS (
     SELECT DISTINCT ON (account_id) 
-      account_id, value
+      ev.account_id, 
+      ev.value
     FROM 
-      end_values
+      end_values ev
   )
   SELECT 
     a.id AS account_id,

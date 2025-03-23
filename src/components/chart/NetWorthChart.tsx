@@ -37,12 +37,16 @@ import {
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { formatDateByRange } from "@/lib/date-formatters";
-import { ChartLoading, ChartError, ChartEmpty } from "./NetWorthChartStates";
+import {
+  ChartLoading,
+  ChartEmpty,
+} from "@/components/chart/NetWorthChartStates";
 import { ChartTooltip } from "./ChartTooltip";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 import { getMockDataInstance } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/ui/use-mobile";
+import { useNetWorthChartData } from "@/hooks/use-networth-chart-data";
 
 type ChartType = "area" | "line" | "bar";
 
@@ -57,30 +61,33 @@ export function NetWorthChart({
   currency,
   currentNetWorth,
   accounts,
-  isLoading,
+  isLoading: parentIsLoading,
 }: NetWorthChartProps) {
   const [chartType, setChartType] = useState<ChartType>("area");
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const { formatWithCurrency } = useCurrencyFormatter(currency);
-  const { networthHistory } = getMockDataInstance();
   const isMobile = useIsMobile();
+
+  const timeRangeNumber =
+    typeof timeRange === "number"
+      ? timeRange
+      : timeRange === "day"
+        ? 1
+        : timeRange === "week"
+          ? 7
+          : timeRange === "month"
+            ? 30
+            : timeRange === "year"
+              ? 365
+              : 0;
+
+  const { networthHistory, isLoading: dataIsLoading } =
+    useNetWorthChartData(timeRangeNumber);
+  const isLoading = parentIsLoading || dataIsLoading;
 
   // Filter data based on time range
   const filteredData = (() => {
-    const timeRangeNumber =
-      typeof timeRange === "number"
-        ? timeRange
-        : timeRange === "day"
-          ? 1
-          : timeRange === "week"
-            ? 7
-            : timeRange === "month"
-              ? 30
-              : timeRange === "year"
-                ? 365
-                : 0;
-
     if (timeRangeNumber === 0) {
       return networthHistory;
     }

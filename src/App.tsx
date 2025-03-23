@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { DataSourceProvider } from "@/contexts/DataSourceContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Create the QueryClient instance
 const queryClient = new QueryClient({
@@ -13,7 +16,8 @@ const queryClient = new QueryClient({
       // Don't refetch on window focus for better user experience
       refetchOnWindowFocus: false,
       // Cache data for longer to reduce unnecessary loading
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
     },
   },
 });
@@ -34,13 +38,16 @@ function AppContent() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AppContent />
+        <DataSourceProvider>
+          <AppContent />
+        </DataSourceProvider>
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

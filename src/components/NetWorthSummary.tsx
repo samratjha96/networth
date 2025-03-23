@@ -7,34 +7,6 @@ import { useAccountsStore } from "@/store/accounts-store";
 import { useAccountPerformance } from "@/hooks/use-account-performance";
 import { useNetWorthHistory } from "@/hooks/use-networth-history";
 
-// This would come from a hook that fetches data from Supabase
-// Based on the selected time range
-interface NetWorthData {
-  currentValue: number;
-  previousValue: number;
-  change: number;
-  percentageChange: number;
-}
-
-// This would match the data from calculate_account_performance in Supabase
-interface AccountPerformance {
-  accountId: string;
-  accountName: string;
-  accountType: string;
-  isDebt: boolean;
-  startValue: number;
-  endValue: number;
-  absoluteChange: number;
-  percentChange: number;
-}
-
-// Simulate historical account data storage
-interface HistoricalAccountData {
-  [accountId: string]: {
-    [timeKey: string]: number;
-  };
-}
-
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
     case 1:
@@ -52,11 +24,6 @@ const getPeriodLabel = (days: TimeRange) => {
   }
 };
 
-// Get a key for storing historical data based on time range
-const getTimeKey = (timeRange: TimeRange) => {
-  return `history_${timeRange}`;
-};
-
 export function NetWorthSummary() {
   const { accounts } = useAccountsStore();
   const timeRange = useTimeRangeStore((state) => state.timeRange);
@@ -72,8 +39,10 @@ export function NetWorthSummary() {
   const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
   const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
 
-  const isPositiveNetWorth = netWorthData.currentValue >= 0;
-  const isPositiveChange = netWorthData.change > 0;
+  console.log("[SUPABASE] netWorthData", JSON.stringify(netWorthData));
+
+  const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
+  const isPositiveChange = (netWorthData?.change ?? 0) > 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -90,7 +59,7 @@ export function NetWorthSummary() {
             ) : (
               <ArrowDownRight className="h-4 w-4 mr-1" />
             )}
-            {Math.abs(netWorthData.percentageChange).toFixed(2)}%
+            {Math.abs(netWorthData?.percentageChange ?? 0).toFixed(2)}%
           </span>
         </CardHeader>
         <CardContent>
@@ -99,14 +68,14 @@ export function NetWorthSummary() {
               !isPositiveNetWorth ? "text-destructive" : ""
             }`}
           >
-            {formatWithCurrency(netWorthData.currentValue)}
+            {formatWithCurrency(netWorthData?.currentValue ?? 0)}
           </div>
           <p className="text-xs text-muted-foreground flex items-center">
             <span
               className={isPositiveChange ? "text-primary" : "text-destructive"}
             >
               {isPositiveChange ? "+" : ""}
-              {formatWithCurrency(Math.abs(netWorthData.change))}
+              {formatWithCurrency(Math.abs(netWorthData?.change ?? 0))}
             </span>
             <span className="ml-1">
               over the last {getPeriodLabel(timeRange)}
@@ -131,7 +100,7 @@ export function NetWorthSummary() {
               <p className="text-xs text-muted-foreground flex items-center">
                 <span className="text-primary flex items-center mr-1">
                   <ArrowUpRight className="h-3 w-3 mr-0.5" />
-                  {bestPerformingAccount.percentChange.toFixed(1)}%
+                  {(bestPerformingAccount?.percentChange ?? 0).toFixed(1)}%
                 </span>
                 growth over the last {getPeriodLabel(timeRange)}
               </p>
