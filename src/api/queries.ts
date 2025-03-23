@@ -54,7 +54,6 @@ export const useSignUp = () => {
 
 export const useSignOut = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: supabaseApi.auth.signOut,
     onSuccess: () => {

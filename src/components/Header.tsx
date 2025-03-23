@@ -8,9 +8,10 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
+import { useSignOut } from "@/api/queries";
 export const Header = () => {
-  const { user, signOut } = useAuthStore();
+  const { user } = useAuthStore();
+  const signOut = useSignOut();
 
   // Get initials for avatar
   const getInitials = () => {
@@ -101,7 +102,7 @@ export const Header = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-sm text-red-500 focus:text-red-500"
-                onClick={signOut}
+                onClick={() => signOut.mutate()}
               >
                 Sign out
               </DropdownMenuItem>

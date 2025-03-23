@@ -17,6 +17,7 @@ import {
   isValidPassword,
   sanitizeString,
 } from "@/utils/input-validation";
+import { useSignIn, useSignInWithGoogle, useSignUp } from "@/api/queries";
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
@@ -34,8 +35,10 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
     password?: string;
     name?: string;
   }>({});
-  const { signIn, signUp, signInWithGoogle, error } = useAuthStore();
-
+  const { error } = useAuthStore();
+  const signIn = useSignIn();
+  const signUp = useSignUp();
+  const signInWithGoogle = useSignInWithGoogle();
   const validateInputs = (): boolean => {
     const errors: {
       email?: string;
@@ -78,11 +81,9 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
 
     try {
       if (mode === "signin") {
-        await signIn(email, password);
+        await signIn.mutateAsync({ email, password });
       } else {
-        // Sanitize name input
-        const sanitizedName = sanitizeString(name);
-        await signUp(email, password, sanitizedName);
+        await signUp.mutateAsync({ email, password, name });
       }
 
       if (!error) {
@@ -101,7 +102,7 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
 
   const handleOAuthSignIn = async (provider: "google") => {
     try {
-      await signInWithGoogle();
+      await signInWithGoogle.mutateAsync();
 
       if (!error) {
         setIsOpen(false);
