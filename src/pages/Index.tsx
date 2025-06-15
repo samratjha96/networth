@@ -1,36 +1,13 @@
 import { useEffect } from "react";
-import { NetWorthSummary } from "@/components/NetWorthSummary";
-import { NetWorthChart } from "@/components/chart/NetWorthChart";
-import { AccountsList } from "@/components/AccountsList";
+import { NetWorthSummaryUpdated } from "@/components/NetWorthSummaryUpdated";
+import { NetWorthChartUpdated } from "@/components/chart/NetWorthChartUpdated";
+import { AccountsListUpdated } from "@/components/AccountsListUpdated";
 import { CurrencyCode } from "@/types/currency";
 import { Header } from "@/components/Header";
-import { useAccountsStore } from "@/store/accounts-store";
-import { useTimeRangeStore } from "@/store/time-range-store";
-import { useNetWorthChartData } from "@/hooks/use-networth-chart-data";
 
 const DEFAULT_CURRENCY: CurrencyCode = "USD";
 
 const Index = () => {
-  const { accounts } = useAccountsStore();
-  const timeRange = useTimeRangeStore((state) => state.timeRange);
-
-  const timeRangeNumber =
-    typeof timeRange === "number"
-      ? timeRange
-      : timeRange === "day"
-        ? 1
-        : timeRange === "week"
-          ? 7
-          : timeRange === "month"
-            ? 30
-            : timeRange === "year"
-              ? 365
-              : 0;
-
-  const { networthHistory, isLoading } = useNetWorthChartData(timeRangeNumber);
-  const currentNetWorth =
-    networthHistory[networthHistory.length - 1]?.value || 0;
-
   useEffect(() => {
     document.title = "Argos | Your Net Worth Guardian";
   }, []);
@@ -44,18 +21,14 @@ const Index = () => {
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 xl:gap-12">
           {/* Left side: Accounts list (at least 1/3 of the screen) */}
           <div className="md:col-span-5 lg:col-span-4 xl:col-span-4">
-            <AccountsList />
+            <AccountsListUpdated />
           </div>
 
           {/* Right side: NetWorth components */}
           <div className="md:col-span-7 lg:col-span-8 xl:col-span-8 space-y-6">
-            <NetWorthSummary />
+            <NetWorthSummaryUpdated />
 
-            <NetWorthChart
-              currency={DEFAULT_CURRENCY}
-              currentNetWorth={currentNetWorth}
-              isLoading={isLoading}
-            />
+            <NetWorthChartUpdated currency={DEFAULT_CURRENCY} />
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { DataSourceProvider } from "@/contexts/DataSourceContext";
+import { AppDataProvider } from "@/contexts/AppDataContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Create the QueryClient instance
@@ -40,9 +40,9 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <DataSourceProvider>
+        <AppDataProvider>
           <AppContent />
-        </DataSourceProvider>
+        </AppDataProvider>
       </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

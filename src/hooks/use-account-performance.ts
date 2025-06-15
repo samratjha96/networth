@@ -19,7 +19,7 @@ function calculateLocalPerformance(
 ): AccountPerformance[] {
   // Try to load historical data from localStorage
   const storedData = localStorage.getItem("account_historical_data");
-  let accountHistory = storedData ? JSON.parse(storedData) : {};
+  const accountHistory = storedData ? JSON.parse(storedData) : {};
 
   // Initialize any missing accounts with historical data
   let dataChanged = false;

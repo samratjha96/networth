@@ -1,811 +1,836 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Argos - Retro Ledger</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=DM+Mono:wght@400;500&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <style>
-    :root {
-      /* Paper Colors */
-      --paper-bg: #f8f5e9;
-      --paper-aged: #f4f1e6;
-      --folder-color: #bb9d77;
-      --folder-dark: #9a7e5a;
-      --folder-tab: #c9ae8c;
-      --ink-color: #2c2a24;
-      --ink-faded: #696761;
-      --red-ink: #9e2c2c;
-      --green-ink: #356e3f;
-      --blue-ink: #264e70;
-      --ruled-line: #c1bca9;
-      --grid-line: rgba(143, 134, 121, 0.2);
-      --highlight: #fbf8c1;
-      
-      /* Fonts */
-      --font-typewriter: 'Special Elite', cursive;
-      --font-monospace: 'DM Mono', monospace;
-      --font-serif: 'Libre Baskerville', serif;
-      
-      /* Shadows */
-      --paper-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-      --inset-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      background-color: #e5e1d8;
-      background-image: 
-        linear-gradient(45deg, #d8d4cb 25%, transparent 25%),
-        linear-gradient(-45deg, #d8d4cb 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #d8d4cb 75%),
-        linear-gradient(-45deg, transparent 75%, #d8d4cb 75%);
-      background-size: 20px 20px;
-      font-family: var(--font-serif);
-      color: var(--ink-color);
-      min-height: 100vh;
-      padding: 40px 20px;
-      line-height: 1.5;
-    }
-    
-    .ledger-container {
-      max-width: 1100px;
-      margin: 0 auto;
-      position: relative;
-    }
-    
-    /* Folder Tab */
-    .folder-tab {
-      background-color: var(--folder-tab);
-      width: 200px;
-      height: 40px;
-      border-radius: 8px 8px 0 0;
-      margin-left: 40px;
-      margin-bottom: -5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
-      border: 2px solid var(--folder-dark);
-      border-bottom: none;
-      z-index: 2;
-      position: relative;
-    }
-    
-    .tab-label {
-      font-family: var(--font-typewriter);
-      font-size: 16px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      color: var(--ink-color);
-    }
-    
-    /* Paper Page */
-    .paper-page {
-      background-color: var(--paper-bg);
-      background-image: 
-        linear-gradient(rgba(193, 188, 169, 0.3) 1px, transparent 1px);
-      background-size: 100% 40px;
-      background-position: 0 14px;
-      border: 1px solid var(--ruled-line);
-      box-shadow: var(--paper-shadow);
-      position: relative;
-      z-index: 1;
-      padding: 30px 40px;
-      min-height: 1200px;
-      max-width: 1020px;
-      margin: 0 auto;
-    }
-    
-    /* Paper texture overlay */
-    .paper-page::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image: url('data:image/png;base64,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');
-      opacity: 0.03;
-      z-index: -1;
-      pointer-events: none;
-    }
-    
-    /* Add a red margin line to simulate a traditional ledger */
-    .paper-page::after {
-      content: none;
-    }
-    
-    /* Header */
-    .ledger-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
-      border-bottom: 2px solid var(--ruled-line);
-    }
-    
-    .ledger-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .logo-icon {
-      font-family: var(--font-serif);
-      font-weight: bold;
-      font-size: 24px;
-      color: var(--red-ink);
-      padding: 8px 12px;
-      border: 2px solid var(--red-ink);
-      border-radius: 4px;
-      position: relative;
-    }
-    
-    .logo-icon::after {
-      content: '';
-      position: absolute;
-      top: 4px;
-      left: 4px;
-      right: -4px;
-      bottom: -4px;
-      border: 1px solid var(--red-ink);
-      border-radius: 4px;
-      z-index: -1;
-    }
-    
-    .logo-text {
-      font-family: var(--font-typewriter);
-      font-size: 32px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      color: var(--ink-color);
-    }
-    
-    .current-date {
-      font-family: var(--font-typewriter);
-      font-size: 18px;
-      color: var(--ink-faded);
-    }
-    
-    /* Summary Boxes */
-    .summary-boxes {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-bottom: 40px;
-    }
-    
-    .summary-box {
-      background-color: var(--paper-aged);
-      border: 1px solid var(--ruled-line);
-      box-shadow: var(--inset-shadow);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .summary-box::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 30px;
-      height: 30px;
-      background: linear-gradient(135deg, transparent 50%, var(--ruled-line) 50%);
-    }
-    
-    .summary-label {
-      font-family: var(--font-typewriter);
-      font-size: 18px;
-      margin-bottom: 15px;
-      position: relative;
-    }
-    
-    .summary-label::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      bottom: -5px;
-      width: 100%;
-      height: 1px;
-      background-color: var(--ruled-line);
-    }
-    
-    .summary-value {
-      font-family: var(--font-monospace);
-      font-size: 28px;
-      font-weight: 500;
-      margin-bottom: 10px;
-    }
-    
-    .net-worth-value {
-      color: var(--blue-ink);
-    }
-    
-    .assets-value {
-      color: var(--green-ink);
-    }
-    
-    .liabilities-value {
-      color: var(--red-ink);
-    }
-    
-    .summary-change {
-      font-family: var(--font-monospace);
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-    }
-    
-    .change-icon {
-      display: inline-block;
-      margin-right: 8px;
-      font-size: 14px;
-    }
-    
-    .change-up {
-      color: var(--green-ink);
-    }
-    
-    .change-down {
-      color: var(--red-ink);
-    }
-    
-    /* Chart Section */
-    .chart-section {
-      margin-bottom: 40px;
-      position: relative;
-      border: 1px solid var(--ruled-line);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-      background-color: rgba(255, 255, 255, 0.5);
-      z-index: 2;
-    }
-    
-    .chart-header {
-      display: flex;
-      background-color: var(--paper-aged);
-      border-bottom: 1px solid var(--ruled-line);
-    }
-    
-    .chart-tab {
-      padding: 10px 20px;
-      font-family: var(--font-typewriter);
-      font-size: 16px;
-      cursor: pointer;
-      border-right: 1px solid var(--ruled-line);
-    }
-    
-    .chart-tab.active {
-      background-color: var(--paper-bg);
-      box-shadow: inset 0 3px 0 var(--red-ink);
-      font-weight: bold;
-    }
-    .chart-container {
-      background-color: var(--paper-bg);
-      height: 300px;
-      padding: 20px;
-      position: relative;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Argos - Retro Ledger</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Special+Elite&family=DM+Mono:wght@400;500&family=Libre+Baskerville:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+      :root {
+        /* Paper Colors */
+        --paper-bg: #f8f5e9;
+        --paper-aged: #f4f1e6;
+        --folder-color: #bb9d77;
+        --folder-dark: #9a7e5a;
+        --folder-tab: #c9ae8c;
+        --ink-color: #2c2a24;
+        --ink-faded: #696761;
+        --red-ink: #9e2c2c;
+        --green-ink: #356e3f;
+        --blue-ink: #264e70;
+        --ruled-line: #c1bca9;
+        --grid-line: rgba(143, 134, 121, 0.2);
+        --highlight: #fbf8c1;
 
-    /* Fixed: Moved z-index to be higher than the content */
-    .chart-container::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image: 
-        linear-gradient(rgba(143, 134, 121, 0.2) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(143, 134, 121, 0.2) 1px, transparent 1px);
-      background-size: 40px 40px;
-      z-index: 1;
-      pointer-events: none;
-    }
+        /* Fonts */
+        --font-typewriter: "Special Elite", cursive;
+        --font-monospace: "DM Mono", monospace;
+        --font-serif: "Libre Baskerville", serif;
 
-    /* Fixed: Added z-index to ensure chart content appears above grid lines */
-    .chart-line {
-      stroke-width: 2px;
-      fill: none;
-      z-index: 2;
-      position: relative;
-    }
-
-    .chart-line-up {
-      stroke: var(--green-ink);
-    }
-
-    .chart-line-down {
-      stroke: var(--red-ink); 
-    }
-
-    .chart-dot {
-      fill: var(--paper-bg);
-      stroke-width: 2px;
-      z-index: 2;
-      position: relative;
-    }
-
-    .chart-dot-up {
-      stroke: var(--green-ink);
-    }
-
-    .chart-dot-down {
-      stroke: var(--red-ink);
-    }
-    
-    /* Account Registry */
-    .registry-section {
-      margin-bottom: 40px;
-      position: relative;
-    }
-    
-    .registry-section::before {
-      content: '';
-      position: absolute;
-      top: 50px;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(248, 245, 233, 0.9);
-      z-index: 1;
-    }
-    
-    .registry-title {
-      font-family: var(--font-typewriter);
-      font-size: 22px;
-      margin-bottom: 20px;
-      position: relative;
-      display: inline-block;
-      z-index: 2;
-    }
-    
-    .registry-title::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      bottom: -5px;
-      width: 100%;
-      height: 2px;
-      background-color: var(--ink-color);
-    }
-    
-    .registry-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: var(--font-monospace);
-      position: relative;
-      z-index: 2;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    }
-    
-    .registry-table th,
-    .registry-table td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--ruled-line);
-    }
-    
-    .registry-table th {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--ink-color);
-      background-color: var(--paper-aged);
-      border-top: 1px solid var(--ruled-line);
-      border-bottom: 2px solid var(--ink-color);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .registry-table thead {
-      background-color: var(--paper-aged);
-    }
-    
-    .registry-table tbody {
-      background-color: var(--paper-bg);
-    }
-    
-    .registry-table tr {
-      background-color: rgba(255, 255, 255, 0.6);
-    }
-    
-    .registry-table tr:nth-child(even) {
-      background-color: rgba(248, 245, 233, 0.8);
-    }
-    
-    .registry-table tr:hover {
-      background-color: var(--highlight);
-    }
-    
-    .account-name {
-      font-weight: 500;
-      color: var(--ink-color);
-    }
-    
-    .account-type {
-      font-size: 14px;
-      color: var(--ink-faded);
-    }
-    
-    .balance-positive {
-      color: var(--green-ink);
-      font-weight: 500;
-    }
-    
-    .balance-negative {
-      color: var(--red-ink);
-      font-weight: 500;
-    }
-    
-    .change-column {
-      text-align: right;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    
-    /* Make the table look more like a traditional ledger */
-    .registry-table::before {
-      content: '';
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      right: -2px;
-      bottom: -2px;
-      border: 1px solid var(--ruled-line);
-      pointer-events: none;
-      z-index: -1;
-    }
-    
-    /* Notes Section */
-    .notes-section {
-      margin-bottom: 40px;
-    }
-    
-    .notes-title {
-      font-family: var(--font-typewriter);
-      font-size: 22px;
-      margin-bottom: 20px;
-      position: relative;
-      display: inline-block;
-    }
-    
-    .notes-title::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      bottom: -5px;
-      width: 100%;
-      height: 2px;
-      background-color: var(--ink-color);
-    }
-    
-    .notes-textarea {
-      width: 100%;
-      height: 150px;
-      background-color: var(--paper-aged);
-      border: 1px solid var(--ruled-line);
-      box-shadow: var(--inset-shadow);
-      font-family: var(--font-typewriter);
-      font-size: 16px;
-      line-height: 40px;
-      color: var(--ink-color);
-      padding: 10px 15px;
-      resize: vertical;
-      background-image: 
-        linear-gradient(rgba(193, 188, 169, 0.3) 1px, transparent 1px);
-      background-size: 100% 40px;
-      background-attachment: local;
-    }
-    
-    /* Footer */
-    .ledger-footer {
-      margin-top: 60px;
-      display: flex;
-      justify-content: space-between;
-      font-family: var(--font-typewriter);
-      font-size: 14px;
-      color: var(--ink-faded);
-      padding-top: 20px;
-      border-top: 2px solid var(--ruled-line);
-    }
-    
-    .footer-signature {
-      font-family: 'Libre Baskerville', cursive;
-      font-style: italic;
-    }
-    
-    /* Responsive Design */
-    @media (max-width: 992px) {
-      .summary-boxes {
-        grid-template-columns: 1fr;
-        gap: 15px;
+        /* Shadows */
+        --paper-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        --inset-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
       }
-    }
-    
-    @media (max-width: 768px) {
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: #e5e1d8;
+        background-image:
+          linear-gradient(45deg, #d8d4cb 25%, transparent 25%),
+          linear-gradient(-45deg, #d8d4cb 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #d8d4cb 75%),
+          linear-gradient(-45deg, transparent 75%, #d8d4cb 75%);
+        background-size: 20px 20px;
+        font-family: var(--font-serif);
+        color: var(--ink-color);
+        min-height: 100vh;
+        padding: 40px 20px;
+        line-height: 1.5;
+      }
+
+      .ledger-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        position: relative;
+      }
+
+      /* Folder Tab */
+      .folder-tab {
+        background-color: var(--folder-tab);
+        width: 200px;
+        height: 40px;
+        border-radius: 8px 8px 0 0;
+        margin-left: 40px;
+        margin-bottom: -5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
+        border: 2px solid var(--folder-dark);
+        border-bottom: none;
+        z-index: 2;
+        position: relative;
+      }
+
+      .tab-label {
+        font-family: var(--font-typewriter);
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: var(--ink-color);
+      }
+
+      /* Paper Page */
+      .paper-page {
+        background-color: var(--paper-bg);
+        background-image: linear-gradient(
+          rgba(193, 188, 169, 0.3) 1px,
+          transparent 1px
+        );
+        background-size: 100% 40px;
+        background-position: 0 14px;
+        border: 1px solid var(--ruled-line);
+        box-shadow: var(--paper-shadow);
+        position: relative;
+        z-index: 1;
+        padding: 30px 40px;
+        min-height: 1200px;
+        max-width: 1020px;
+        margin: 0 auto;
+      }
+
+      /* Paper texture overlay */
+      .paper-page::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c8TV1mAAAAG3RSTlNAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAvEOwtAAAFVklEQVR4XpWWB67c2BUFb3g557T/hRo9/WUMZHlgr4Bg8Z4qQgQJlHI4A8SzFVrapvmTF9O7dmYRFZ60YiBhJRCgh1FYhiLAmdvX0CzTOpNE77ME0Zty/nWWzchDtiqrmQDeuv3powQ5ta2eN0FY0InkqDD73lT9c9lEzwUNqgFHs9VQce3TVClFCQrSTfOiYkVJQBmpbq2L6iZavPnAPcoU0dSw0SUTqz/GtrGuXfbyyBniKykOWQWGqwwMA7QiYAxi+IlPdqo+hYHnUt5ZPfnsHJyNiDtnpJyayNBkF6cWoYGAMY92U2hXHF/C1M8uP/ZtYdiuj26UdAdQQSXQErwSOMzt/XWRWAz5GuSBIkwG1H3FabJ2OsUOUhGC6tK4EMtJO0ttC6IBD3kM0ve0tJwMdSfjZo+EEISaeTr9P3wYrGjXqyC1krcKdhMpxEnt5JetoulscpyzhXN5FRpuPHvbeQaKxFAEB6EN+cYN6xD7RYGpXpNndMmZgM5Dcs3YSNFDHUo2LGfZuukSWyUYirJAdYbF3MfqEKmjM+I2EfhA94iG3L7uKrR+GdWD73ydlIB+6hgref1QTlmgmbM3/LeX5GI1Ux1RWpgxpLuZ2+I+IjzZ8wqE4nilvQdkUdfhzI5QDWy+kw5Wgg2pGpeEVeCCA7b85BO3F9DzxB3cdqvBzWcmzbyMiqhzuYqtHRVG2y4x+KOlnyqla8AoWWpuBoYRxzXrfKuILl6SfiWCbjxoZJUaCBj1CjH7GIaDbc9kqBY3W/Rgjda1iqQcOJu2WW+76pZC9QG7M00dffe9hNnseupFL53r8F7YHSwJWUKP2q+k7RdsxyOB11n0xtOvnW4irMMFNV4H0uqwS5ExsmP9AxbDTc9JwgneAT5vTiUSm1E7BSflSt3bfa1tv8Di3R8n3Af7MNWzs49hmauE2wP+ttrq+AsWpFG2awvsuOqbipWHgtuvuaAE+A1Z/7gC9hesnr+7wqCwG8c5yAg3AL1fm8T9AZtp/bbJGwl1pNrE7RuOX7PeMRUERVaPpEs+yqeoSmuOlokqw49pgomjLeh7icHNlG19yjs6XXOMedYm5xH2YxpV2tc0Ro2jJfxC50ApuxGob7lMsxfTbeUv07TyYxpeLucEH1gNd4IKH2LAg5TdVhlCafZvpskfncCfx8pOhJzd76bJWeYFnFciwcYfubRc12Ip/ppIhA1/mSZ/RxjFDrJC5xifFjJpY2Xl5zXdguFqYyTR1zSp1Y9p+tktDYYSNflcxI0iyO4TPBdlRcpeqjK/piF5bklq77VSEaA+z8qmJTFzIWiitbnzR794USKBUaT0NTEsVjZqLaFVqJoPN9ODG70IPbfBHKK+/q/AWR0tJzYHRULOa4MP+W/HfGadZUbfw177G7j/OGbIs8TahLyynl4X4RinF793Oz+BU0saXtUHrVBFT/DnA3ctNPoGbs4hRIjTok8i+algT1lTHi4SxFvONKNrgQFAq2/gFnWMXgwffgYMJpiKYkmW3tTg3ZQ9Jq+f8XN+A5eeUKHWvJWJ2sgJ1Sop+wwhqFVijqWaJhwtD8MNlSBeWNNWTa5Z5kPZw5+LbVT99wqTdx29lMUH4OIG/D86ruKEauBjvH5xy6um/Sfj7ei6UUVk4AIl3MyD4MSSTOFgSwsH/QJWaQ5as7ZcmgBZkzjjU1UrQ74ci1gWBCSGHtuV1H2mhSnO3Wp/3fEV5a+4wz//6qy8JxjZsmxxy5+4w9CDNJY09T072iKG0EnOS0arEYgXqYnXcYHwjTtUNAcMelOd4xpkoqiTYICWFq0JSiPfPDQdnt+4/wuqcXY47QILbgAAAABJRU5ErkJggg==");
+        opacity: 0.03;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      /* Add a red margin line to simulate a traditional ledger */
+      .paper-page::after {
+        content: none;
+      }
+
+      /* Header */
       .ledger-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid var(--ruled-line);
       }
-      
-      .registry-table {
+
+      .ledger-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo-icon {
+        font-family: var(--font-serif);
+        font-weight: bold;
+        font-size: 24px;
+        color: var(--red-ink);
+        padding: 8px 12px;
+        border: 2px solid var(--red-ink);
+        border-radius: 4px;
+        position: relative;
+      }
+
+      .logo-icon::after {
+        content: "";
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        right: -4px;
+        bottom: -4px;
+        border: 1px solid var(--red-ink);
+        border-radius: 4px;
+        z-index: -1;
+      }
+
+      .logo-text {
+        font-family: var(--font-typewriter);
+        font-size: 32px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: var(--ink-color);
+      }
+
+      .current-date {
+        font-family: var(--font-typewriter);
+        font-size: 18px;
+        color: var(--ink-faded);
+      }
+
+      /* Summary Boxes */
+      .summary-boxes {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      .summary-box {
+        background-color: var(--paper-aged);
+        border: 1px solid var(--ruled-line);
+        box-shadow: var(--inset-shadow);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .summary-box::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 30px;
+        height: 30px;
+        background: linear-gradient(
+          135deg,
+          transparent 50%,
+          var(--ruled-line) 50%
+        );
+      }
+
+      .summary-label {
+        font-family: var(--font-typewriter);
+        font-size: 18px;
+        margin-bottom: 15px;
+        position: relative;
+      }
+
+      .summary-label::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        width: 100%;
+        height: 1px;
+        background-color: var(--ruled-line);
+      }
+
+      .summary-value {
+        font-family: var(--font-monospace);
+        font-size: 28px;
+        font-weight: 500;
+        margin-bottom: 10px;
+      }
+
+      .net-worth-value {
+        color: var(--blue-ink);
+      }
+
+      .assets-value {
+        color: var(--green-ink);
+      }
+
+      .liabilities-value {
+        color: var(--red-ink);
+      }
+
+      .summary-change {
+        font-family: var(--font-monospace);
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+      }
+
+      .change-icon {
+        display: inline-block;
+        margin-right: 8px;
         font-size: 14px;
       }
-      
-      .registry-table th:nth-child(3),
-      .registry-table td:nth-child(3) {
-        display: none;
+
+      .change-up {
+        color: var(--green-ink);
       }
-      
-      .registry-table th:nth-child(4),
-      .registry-table td:nth-child(4) {
-        display: none;
+
+      .change-down {
+        color: var(--red-ink);
       }
-    }
-    
-    @media (max-width: 576px) {
-      .paper-page {
-        padding: 20px 15px;
+
+      /* Chart Section */
+      .chart-section {
+        margin-bottom: 40px;
+        position: relative;
+        border: 1px solid var(--ruled-line);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        background-color: rgba(255, 255, 255, 0.5);
+        z-index: 2;
       }
-      
-      .registry-table th:nth-child(6),
-      .registry-table td:nth-child(6) {
-        display: none;
+
+      .chart-header {
+        display: flex;
+        background-color: var(--paper-aged);
+        border-bottom: 1px solid var(--ruled-line);
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="ledger-container">
-    <div class="folder-tab">
-      <div class="tab-label">FINANCIAL RECORDS</div>
+
+      .chart-tab {
+        padding: 10px 20px;
+        font-family: var(--font-typewriter);
+        font-size: 16px;
+        cursor: pointer;
+        border-right: 1px solid var(--ruled-line);
+      }
+
+      .chart-tab.active {
+        background-color: var(--paper-bg);
+        box-shadow: inset 0 3px 0 var(--red-ink);
+        font-weight: bold;
+      }
+      .chart-container {
+        background-color: var(--paper-bg);
+        height: 300px;
+        padding: 20px;
+        position: relative;
+      }
+
+      /* Fixed: Moved z-index to be higher than the content */
+      .chart-container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image:
+          linear-gradient(rgba(143, 134, 121, 0.2) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(143, 134, 121, 0.2) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      /* Fixed: Added z-index to ensure chart content appears above grid lines */
+      .chart-line {
+        stroke-width: 2px;
+        fill: none;
+        z-index: 2;
+        position: relative;
+      }
+
+      .chart-line-up {
+        stroke: var(--green-ink);
+      }
+
+      .chart-line-down {
+        stroke: var(--red-ink);
+      }
+
+      .chart-dot {
+        fill: var(--paper-bg);
+        stroke-width: 2px;
+        z-index: 2;
+        position: relative;
+      }
+
+      .chart-dot-up {
+        stroke: var(--green-ink);
+      }
+
+      .chart-dot-down {
+        stroke: var(--red-ink);
+      }
+
+      /* Account Registry */
+      .registry-section {
+        margin-bottom: 40px;
+        position: relative;
+      }
+
+      .registry-section::before {
+        content: "";
+        position: absolute;
+        top: 50px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(248, 245, 233, 0.9);
+        z-index: 1;
+      }
+
+      .registry-title {
+        font-family: var(--font-typewriter);
+        font-size: 22px;
+        margin-bottom: 20px;
+        position: relative;
+        display: inline-block;
+        z-index: 2;
+      }
+
+      .registry-title::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        width: 100%;
+        height: 2px;
+        background-color: var(--ink-color);
+      }
+
+      .registry-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--font-monospace);
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      }
+
+      .registry-table th,
+      .registry-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--ruled-line);
+      }
+
+      .registry-table th {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--ink-color);
+        background-color: var(--paper-aged);
+        border-top: 1px solid var(--ruled-line);
+        border-bottom: 2px solid var(--ink-color);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .registry-table thead {
+        background-color: var(--paper-aged);
+      }
+
+      .registry-table tbody {
+        background-color: var(--paper-bg);
+      }
+
+      .registry-table tr {
+        background-color: rgba(255, 255, 255, 0.6);
+      }
+
+      .registry-table tr:nth-child(even) {
+        background-color: rgba(248, 245, 233, 0.8);
+      }
+
+      .registry-table tr:hover {
+        background-color: var(--highlight);
+      }
+
+      .account-name {
+        font-weight: 500;
+        color: var(--ink-color);
+      }
+
+      .account-type {
+        font-size: 14px;
+        color: var(--ink-faded);
+      }
+
+      .balance-positive {
+        color: var(--green-ink);
+        font-weight: 500;
+      }
+
+      .balance-negative {
+        color: var(--red-ink);
+        font-weight: 500;
+      }
+
+      .change-column {
+        text-align: right;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      /* Make the table look more like a traditional ledger */
+      .registry-table::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border: 1px solid var(--ruled-line);
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      /* Notes Section */
+      .notes-section {
+        margin-bottom: 40px;
+      }
+
+      .notes-title {
+        font-family: var(--font-typewriter);
+        font-size: 22px;
+        margin-bottom: 20px;
+        position: relative;
+        display: inline-block;
+      }
+
+      .notes-title::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        width: 100%;
+        height: 2px;
+        background-color: var(--ink-color);
+      }
+
+      .notes-textarea {
+        width: 100%;
+        height: 150px;
+        background-color: var(--paper-aged);
+        border: 1px solid var(--ruled-line);
+        box-shadow: var(--inset-shadow);
+        font-family: var(--font-typewriter);
+        font-size: 16px;
+        line-height: 40px;
+        color: var(--ink-color);
+        padding: 10px 15px;
+        resize: vertical;
+        background-image: linear-gradient(
+          rgba(193, 188, 169, 0.3) 1px,
+          transparent 1px
+        );
+        background-size: 100% 40px;
+        background-attachment: local;
+      }
+
+      /* Footer */
+      .ledger-footer {
+        margin-top: 60px;
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--font-typewriter);
+        font-size: 14px;
+        color: var(--ink-faded);
+        padding-top: 20px;
+        border-top: 2px solid var(--ruled-line);
+      }
+
+      .footer-signature {
+        font-family: "Libre Baskerville", cursive;
+        font-style: italic;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 992px) {
+        .summary-boxes {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .ledger-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+        }
+
+        .registry-table {
+          font-size: 14px;
+        }
+
+        .registry-table th:nth-child(3),
+        .registry-table td:nth-child(3) {
+          display: none;
+        }
+
+        .registry-table th:nth-child(4),
+        .registry-table td:nth-child(4) {
+          display: none;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .paper-page {
+          padding: 20px 15px;
+        }
+
+        .registry-table th:nth-child(6),
+        .registry-table td:nth-child(6) {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ledger-container">
+      <div class="folder-tab">
+        <div class="tab-label">FINANCIAL RECORDS</div>
+      </div>
+
+      <main class="paper-page">
+        <header class="ledger-header">
+          <div class="ledger-logo">
+            <div class="logo-icon">A</div>
+            <h1 class="logo-text">ARGOS FINANCIAL LEDGER</h1>
+          </div>
+          <div class="current-date" id="currentDate"></div>
+        </header>
+
+        <section class="summary-boxes">
+          <div class="summary-box">
+            <div class="summary-label">NET WORTH</div>
+            <div class="summary-value net-worth-value">$287,492.58</div>
+            <div class="summary-change">
+              <span class="change-icon change-up">↑</span>
+              <span>$4,891.25 (1.7%)</span>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <div class="summary-label">TOTAL ASSETS</div>
+            <div class="summary-value assets-value">$352,647.29</div>
+            <div class="summary-change">
+              <span class="change-icon change-up">↑</span>
+              <span>$8,923.45 (2.6%)</span>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <div class="summary-label">TOTAL LIABILITIES</div>
+            <div class="summary-value liabilities-value">$65,154.71</div>
+            <div class="summary-change">
+              <span class="change-icon change-down">↑</span>
+              <span>$4,032.20 (6.6%)</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="chart-section">
+          <div class="chart-header">
+            <div class="chart-tab active" data-period="3m">3 Months</div>
+            <div class="chart-tab" data-period="6m">6 Months</div>
+            <div class="chart-tab" data-period="1y">1 Year</div>
+            <div class="chart-tab" data-period="5y">5 Years</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="netWorthChart"></canvas>
+          </div>
+        </section>
+
+        <section class="registry-section">
+          <h2 class="registry-title">ACCOUNT REGISTRY</h2>
+          <table class="registry-table">
+            <thead>
+              <tr>
+                <th>Account Name</th>
+                <th>Type</th>
+                <th>Institution</th>
+                <th>Current Balance</th>
+                <th>Previous Balance</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="account-name">Main Checking</td>
+                <td class="account-type">Checking</td>
+                <td>Chase Bank</td>
+                <td class="balance-positive">$12,456.78</td>
+                <td>$11,879.45</td>
+                <td class="change-column change-up">+$577.33</td>
+              </tr>
+              <tr>
+                <td class="account-name">Emergency Fund</td>
+                <td class="account-type">Savings</td>
+                <td>Ally Bank</td>
+                <td class="balance-positive">$35,750.00</td>
+                <td>$35,000.00</td>
+                <td class="change-column change-up">+$750.00</td>
+              </tr>
+              <tr>
+                <td class="account-name">401(k)</td>
+                <td class="account-type">Retirement</td>
+                <td>Fidelity</td>
+                <td class="balance-positive">$215,487.32</td>
+                <td>$208,946.12</td>
+                <td class="change-column change-up">+$6,541.20</td>
+              </tr>
+              <tr>
+                <td class="account-name">Roth IRA</td>
+                <td class="account-type">Retirement</td>
+                <td>Vanguard</td>
+                <td class="balance-positive">$88,953.19</td>
+                <td>$87,898.27</td>
+                <td class="change-column change-up">+$1,054.92</td>
+              </tr>
+              <tr>
+                <td class="account-name">Mortgage</td>
+                <td class="account-type">Loan</td>
+                <td>Wells Fargo</td>
+                <td class="balance-negative">-$62,370.20</td>
+                <td>-$62,952.30</td>
+                <td class="change-column change-up">+$582.10</td>
+              </tr>
+              <tr>
+                <td class="account-name">Sapphire Reserve</td>
+                <td class="account-type">Credit Card</td>
+                <td>Chase</td>
+                <td class="balance-negative">-$2,784.51</td>
+                <td>-$1,334.72</td>
+                <td class="change-column change-down">-$1,449.79</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="notes-section">
+          <h2 class="notes-title">NOTES & OBSERVATIONS</h2>
+          <textarea
+            class="notes-textarea"
+            id="notesTextarea"
+            placeholder="Enter your financial observations here..."
+          >
+Retirement accounts continuing to perform well this quarter. Need to pay down credit card balance from recent travel expenses. Consider moving some emergency funds to higher-yield CD when it matures next month.</textarea
+          >
+        </section>
+
+        <footer class="ledger-footer">
+          <div class="footer-page">Page 1 of 1</div>
+          <div class="footer-signature">Prepared by Argos Financial</div>
+        </footer>
+      </main>
     </div>
-    
-    <main class="paper-page">
-      <header class="ledger-header">
-        <div class="ledger-logo">
-          <div class="logo-icon">A</div>
-          <h1 class="logo-text">ARGOS FINANCIAL LEDGER</h1>
-        </div>
-        <div class="current-date" id="currentDate"></div>
-      </header>
-      
-      <section class="summary-boxes">
-        <div class="summary-box">
-          <div class="summary-label">NET WORTH</div>
-          <div class="summary-value net-worth-value">$287,492.58</div>
-          <div class="summary-change">
-            <span class="change-icon change-up">↑</span>
-            <span>$4,891.25 (1.7%)</span>
-          </div>
-        </div>
-        
-        <div class="summary-box">
-          <div class="summary-label">TOTAL ASSETS</div>
-          <div class="summary-value assets-value">$352,647.29</div>
-          <div class="summary-change">
-            <span class="change-icon change-up">↑</span>
-            <span>$8,923.45 (2.6%)</span>
-          </div>
-        </div>
-        
-        <div class="summary-box">
-          <div class="summary-label">TOTAL LIABILITIES</div>
-          <div class="summary-value liabilities-value">$65,154.71</div>
-          <div class="summary-change">
-            <span class="change-icon change-down">↑</span>
-            <span>$4,032.20 (6.6%)</span>
-          </div>
-        </div>
-      </section>
-      
-      <section class="chart-section">
-        <div class="chart-header">
-          <div class="chart-tab active" data-period="3m">3 Months</div>
-          <div class="chart-tab" data-period="6m">6 Months</div>
-          <div class="chart-tab" data-period="1y">1 Year</div>
-          <div class="chart-tab" data-period="5y">5 Years</div>
-        </div>
-        <div class="chart-container">
-          <canvas id="netWorthChart"></canvas>
-        </div>
-      </section>
-      
-      <section class="registry-section">
-        <h2 class="registry-title">ACCOUNT REGISTRY</h2>
-        <table class="registry-table">
-          <thead>
-            <tr>
-              <th>Account Name</th>
-              <th>Type</th>
-              <th>Institution</th>
-              <th>Current Balance</th>
-              <th>Previous Balance</th>
-              <th>Change</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="account-name">Main Checking</td>
-              <td class="account-type">Checking</td>
-              <td>Chase Bank</td>
-              <td class="balance-positive">$12,456.78</td>
-              <td>$11,879.45</td>
-              <td class="change-column change-up">+$577.33</td>
-            </tr>
-            <tr>
-              <td class="account-name">Emergency Fund</td>
-              <td class="account-type">Savings</td>
-              <td>Ally Bank</td>
-              <td class="balance-positive">$35,750.00</td>
-              <td>$35,000.00</td>
-              <td class="change-column change-up">+$750.00</td>
-            </tr>
-            <tr>
-              <td class="account-name">401(k)</td>
-              <td class="account-type">Retirement</td>
-              <td>Fidelity</td>
-              <td class="balance-positive">$215,487.32</td>
-              <td>$208,946.12</td>
-              <td class="change-column change-up">+$6,541.20</td>
-            </tr>
-            <tr>
-              <td class="account-name">Roth IRA</td>
-              <td class="account-type">Retirement</td>
-              <td>Vanguard</td>
-              <td class="balance-positive">$88,953.19</td>
-              <td>$87,898.27</td>
-              <td class="change-column change-up">+$1,054.92</td>
-            </tr>
-            <tr>
-              <td class="account-name">Mortgage</td>
-              <td class="account-type">Loan</td>
-              <td>Wells Fargo</td>
-              <td class="balance-negative">-$62,370.20</td>
-              <td>-$62,952.30</td>
-              <td class="change-column change-up">+$582.10</td>
-            </tr>
-            <tr>
-              <td class="account-name">Sapphire Reserve</td>
-              <td class="account-type">Credit Card</td>
-              <td>Chase</td>
-              <td class="balance-negative">-$2,784.51</td>
-              <td>-$1,334.72</td>
-              <td class="change-column change-down">-$1,449.79</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-      
-      <section class="notes-section">
-        <h2 class="notes-title">NOTES & OBSERVATIONS</h2>
-        <textarea class="notes-textarea" id="notesTextarea" placeholder="Enter your financial observations here...">Retirement accounts continuing to perform well this quarter. Need to pay down credit card balance from recent travel expenses. Consider moving some emergency funds to higher-yield CD when it matures next month.</textarea>
-      </section>
-      
-      <footer class="ledger-footer">
-        <div class="footer-page">Page 1 of 1</div>
-        <div class="footer-signature">Prepared by Argos Financial</div>
-      </footer>
-    </main>
-  </div>
-  
-  <script src="js/chart.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Set current date in the header
-      const currentDateElem = document.getElementById('currentDate');
-      const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      currentDateElem.textContent = now.toLocaleDateString('en-US', options);
-      // Initialize the net worth chart with pen/stylus styling
-      const netWorthChart = new SimpleChart('netWorthChart', {
-        lineColor: '#264e70', // var(--blue-ink)
-        fillColor: 'rgba(38, 78, 112, 0.1)',
-        showGrid: false,
-        smooth: true,
-        animationDuration: 1200,
-        lineWidth: 2,
-        lineCap: 'round',
-        lineJoin: 'round',
-        // Add pen pressure variation
-        pressurePoints: [
-          {x: 0, pressure: 0.8},
-          {x: 0.3, pressure: 1},
-          {x: 0.7, pressure: 0.9},
-          {x: 1, pressure: 0.85}
-        ],
-        // Add slight ink bleed effect
-        inkBleed: {
-          color: 'rgba(38, 78, 112, 0.15)',
-          width: 1
-        }
-      });
-      
-      // Generate data points with natural variations
-      const netWorthData = generateChartData(12, {
-        startValue: 275000,
-        endValue: 287000,
-        volatility: 0.008, // Increased for more natural variations
-        trend: 0.004,
-        min: 270000,
-        max: 290000,
-        // Add slight randomness to point positions
-        jitter: 0.3,
-        // Add ink pooling at data points
-        pointStyle: {
-          radius: 4,
-          fill: '#264e70',
-          blur: '2px'
-        }
-      });
-      
-      netWorthChart.updateData(netWorthData);
-      
-      // Handle chart tab clicks
-      const chartTabs = document.querySelectorAll('.chart-tab');
-      
-      chartTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-          // Remove active class from all tabs
-          chartTabs.forEach(t => t.classList.remove('active'));
-          
-          // Add active class to clicked tab
-          this.classList.add('active');
-          
-          // Generate chart data based on selected period
-          const period = this.getAttribute('data-period');
-          let dataPoints = 12;
-          let volatility = 0.005;
-          
-          if (period === '6m') {
-            dataPoints = 24;
-          } else if (period === '1y') {
-            dataPoints = 52;
-            volatility = 0.01;
-          } else if (period === '5y') {
-            dataPoints = 60;
-            volatility = 0.015;
-          }
-          
-          const newData = generateChartData(dataPoints, {
-            startValue: period === '5y' ? 180000 : 275000,
-            endValue: 287000,
-            volatility: volatility,
-            trend: period === '5y' ? 0.006 : 0.004,
-            min: period === '5y' ? 175000 : 270000,
-            max: period === '5y' ? 290000 : 290000
-          });
-          
-          netWorthChart.updateData(newData);
+
+    <script src="js/chart.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Set current date in the header
+        const currentDateElem = document.getElementById("currentDate");
+        const now = new Date();
+        const options = {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        };
+        currentDateElem.textContent = now.toLocaleDateString("en-US", options);
+        // Initialize the net worth chart with pen/stylus styling
+        const netWorthChart = new SimpleChart("netWorthChart", {
+          lineColor: "#264e70", // var(--blue-ink)
+          fillColor: "rgba(38, 78, 112, 0.1)",
+          showGrid: false,
+          smooth: true,
+          animationDuration: 1200,
+          lineWidth: 2,
+          lineCap: "round",
+          lineJoin: "round",
+          // Add pen pressure variation
+          pressurePoints: [
+            { x: 0, pressure: 0.8 },
+            { x: 0.3, pressure: 1 },
+            { x: 0.7, pressure: 0.9 },
+            { x: 1, pressure: 0.85 },
+          ],
+          // Add slight ink bleed effect
+          inkBleed: {
+            color: "rgba(38, 78, 112, 0.15)",
+            width: 1,
+          },
         });
+
+        // Generate data points with natural variations
+        const netWorthData = generateChartData(12, {
+          startValue: 275000,
+          endValue: 287000,
+          volatility: 0.008, // Increased for more natural variations
+          trend: 0.004,
+          min: 270000,
+          max: 290000,
+          // Add slight randomness to point positions
+          jitter: 0.3,
+          // Add ink pooling at data points
+          pointStyle: {
+            radius: 4,
+            fill: "#264e70",
+            blur: "2px",
+          },
+        });
+
+        netWorthChart.updateData(netWorthData);
+
+        // Handle chart tab clicks
+        const chartTabs = document.querySelectorAll(".chart-tab");
+
+        chartTabs.forEach((tab) => {
+          tab.addEventListener("click", function () {
+            // Remove active class from all tabs
+            chartTabs.forEach((t) => t.classList.remove("active"));
+
+            // Add active class to clicked tab
+            this.classList.add("active");
+
+            // Generate chart data based on selected period
+            const period = this.getAttribute("data-period");
+            let dataPoints = 12;
+            let volatility = 0.005;
+
+            if (period === "6m") {
+              dataPoints = 24;
+            } else if (period === "1y") {
+              dataPoints = 52;
+              volatility = 0.01;
+            } else if (period === "5y") {
+              dataPoints = 60;
+              volatility = 0.015;
+            }
+
+            const newData = generateChartData(dataPoints, {
+              startValue: period === "5y" ? 180000 : 275000,
+              endValue: 287000,
+              volatility: volatility,
+              trend: period === "5y" ? 0.006 : 0.004,
+              min: period === "5y" ? 175000 : 270000,
+              max: period === "5y" ? 290000 : 290000,
+            });
+
+            netWorthChart.updateData(newData);
+          });
+        });
+
+        // Auto-resize notes textarea
+        const notesTextarea = document.getElementById("notesTextarea");
+
+        function autoResize() {
+          notesTextarea.style.height = "auto";
+          notesTextarea.style.height = notesTextarea.scrollHeight + "px";
+        }
+
+        // Initial resize
+        autoResize();
+
+        // Resize on input
+        notesTextarea.addEventListener("input", autoResize);
       });
-      
-      // Auto-resize notes textarea
-      const notesTextarea = document.getElementById('notesTextarea');
-      
-      function autoResize() {
-        notesTextarea.style.height = 'auto';
-        notesTextarea.style.height = (notesTextarea.scrollHeight) + 'px';
-      }
-      
-      // Initial resize
-      autoResize();
-      
-      // Resize on input
-      notesTextarea.addEventListener('input', autoResize);
-    });
-  </script>
-</body>
-</html> 
+    </script>
+  </body>
+</html>

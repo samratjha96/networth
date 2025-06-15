@@ -12,9 +12,7 @@ export default defineConfig(({ mode }) => {
       host: "::",
       port: 8080,
     },
-    plugins: [
-      react()
-    ].filter(Boolean),
+    plugins: [react()].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
@@ -33,20 +31,22 @@ export default defineConfig(({ mode }) => {
       ),
     },
     esbuild: {
-      pure: isProd ? [
-        'console.log', 
-        'console.info', 
-        'console.debug', 
-        // Keep error and warning logs for debugging
-        // 'console.warn',
-        // 'console.error',
-        'console.trace'
-      ] : [],
-      logLevel: "error"
+      pure: isProd
+        ? [
+            "console.log",
+            "console.info",
+            "console.debug",
+            // Keep error and warning logs for debugging
+            // 'console.warn',
+            // 'console.error',
+            "console.trace",
+          ]
+        : [],
+      logLevel: "error",
     },
     build: {
       minify: isProd,
-      drop: isProd ? ['debugger'] : [] // Keep console logs for debugging
-    }
+      drop: isProd ? ["debugger"] : [], // Keep console logs for debugging
+    },
   };
 });

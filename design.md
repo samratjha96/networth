@@ -9,23 +9,27 @@ Argos is a personal finance application designed to help users track and visuali
 ### 2.1 Key Features
 
 1. **Net Worth Tracking**
+
    - Real-time calculation of total net worth based on user accounts
    - Historical tracking of net worth over time with multiple time ranges
    - Visualization of net worth changes with percentage and absolute values
 
 2. **Account Management**
+
    - Support for multiple account types (assets and liabilities)
    - Add, edit, and delete financial accounts
    - Track account balances over time
    - Multi-currency support
 
 3. **Data Visualization**
+
    - Interactive charts with adaptive resolution based on selected time range
    - Time range selection (daily, weekly, monthly, yearly, all-time)
    - Significant financial event highlighting
    - Performance metrics for individual accounts
 
 4. **Data Persistence**
+
    - Dual-storage architecture with localStorage and cloud options
    - Seamless transition between storage backends
    - Optional test mode with mock data
@@ -56,7 +60,7 @@ Argos follows a modern frontend architecture with:
 5. **State Management**: Zustand
 6. **Data Fetching**: React Query
 7. **Authentication**: Supabase Auth
-8. **Data Storage**: 
+8. **Data Storage**:
    - Local: Browser localStorage
    - Cloud: Supabase
 9. **Data Visualization**: Recharts
@@ -68,6 +72,7 @@ Argos follows a modern frontend architecture with:
 ### 4.1 Core Entities
 
 #### 4.1.1 Account
+
 ```typescript
 interface Account {
   id: string;
@@ -79,6 +84,7 @@ interface Account {
 ```
 
 #### 4.1.2 AccountWithValue
+
 ```typescript
 interface AccountWithValue extends Account {
   balance: number;
@@ -86,6 +92,7 @@ interface AccountWithValue extends Account {
 ```
 
 #### 4.1.3 AccountValue (Historical)
+
 ```typescript
 interface AccountValue {
   accountId: string;
@@ -95,6 +102,7 @@ interface AccountValue {
 ```
 
 #### 4.1.4 NetWorthSnapshot
+
 ```typescript
 interface NetWorthSnapshot {
   timestamp: Date;
@@ -103,6 +111,7 @@ interface NetWorthSnapshot {
 ```
 
 #### 4.1.5 AccountPerformance
+
 ```typescript
 interface AccountPerformance {
   accountId: string;
@@ -116,6 +125,7 @@ interface AccountPerformance {
 ### 4.2 Type Enumerations
 
 #### 4.2.1 Account Types
+
 ```typescript
 type AssetType =
   | "Checking"
@@ -132,11 +142,13 @@ type AccountType = AssetType | DebtType;
 ```
 
 #### 4.2.2 Currency Types
+
 ```typescript
 type CurrencyCode = "USD" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD";
 ```
 
 #### 4.2.3 Time Range Types
+
 ```typescript
 type TimeRange = "1D" | "1W" | "1M" | "1Y" | "ALL";
 ```
@@ -146,6 +158,7 @@ type TimeRange = "1D" | "1W" | "1M" | "1Y" | "ALL";
 ### 5.1 Page Structure
 
 #### 5.1.1 Main Dashboard Page (Index.tsx)
+
 - Displays overall app structure
 - Contains Header, NetWorthSummary, NetWorthChart, and AccountsList
 - Handles initial data loading and user authentication status
@@ -153,38 +166,45 @@ type TimeRange = "1D" | "1W" | "1M" | "1Y" | "ALL";
 ### 5.2 Core Components
 
 #### 5.2.1 Header Component
+
 - Application navigation
 - Authentication controls (Sign In/Sign Out)
 - App branding and title
 
 #### 5.2.2 Authentication Components
+
 - AuthProvider: Manages authentication state and user session
 - SignInButton: Trigger for authentication flow
 - SignInDialog: Modal dialog for authentication
 - SignInForm: Form for email/password and social login
 
 #### 5.2.3 Net Worth Summary Components
+
 - NetWorthSummary: Displays current net worth and performance metrics
 - Shows total net worth, change amount, and percentage
 
 #### 5.2.4 Net Worth Visualization Components
+
 - NetWorthChart: Main chart visualization of net worth over time
 - TimeRangeSelector: Controls for time period selection
 - ChartTooltip: Tooltip for displaying data points
 - State handling for loading, error, and empty states
 
 #### 5.2.5 Account Management Components
+
 - AccountsList: Main container for account display with assets/liabilities tabs
 - AccountsPanel: Renders account list with actions
 - AddAccountDialog: Form for adding and editing accounts
 
 #### 5.2.6 Database Components
+
 - DatabaseProvider: Context provider for database access
 - DebugAuthStatus: Debugging component for auth state (development only)
 
 ### 5.3 UI Component Library
 
 The application uses a comprehensive UI component library based on shadcn/ui with Radix UI primitives:
+
 - Dialog, Popover, Tooltip components
 - Form inputs and validation
 - Cards, Buttons, and other UI elements
@@ -195,21 +215,25 @@ The application uses a comprehensive UI component library based on shadcn/ui wit
 ### 6.1 Global State Stores
 
 #### 6.1.1 Auth Store
+
 - Manages authentication state
 - Handles sign in, sign out, and session persistence
 - Tracks current user information
 
 #### 6.1.2 Database Store
+
 - Manages database configuration
 - Stores user ID and database backend preference
 - Provides methods to switch between storage backends
 
 #### 6.1.3 Accounts Store
+
 - Manages account data and operations
 - Provides methods for CRUD operations on accounts
 - Handles account balance updates
 
 #### 6.1.4 Time Range Store
+
 - Manages selected time range for charts
 - Provides methods to update time range
 
@@ -224,6 +248,7 @@ The application uses a comprehensive UI component library based on shadcn/ui wit
 ### 7.1 Database Abstraction
 
 #### 7.1.1 Database Interface
+
 ```typescript
 interface DatabaseProvider {
   // Account operations
@@ -231,20 +256,23 @@ interface DatabaseProvider {
   addAccount(account: Omit<AccountWithValue, "id">): Promise<AccountWithValue>;
   updateAccount(account: AccountWithValue): Promise<void>;
   deleteAccount(id: string): Promise<void>;
-  
+
   // Net worth history operations
-  getNetWorthHistory(startDate: Date, endDate: Date): Promise<NetWorthSnapshot[]>;
+  getNetWorthHistory(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<NetWorthSnapshot[]>;
   getAccountValueHistory(
-    accountId: string, 
-    startDate: Date, 
-    endDate: Date
+    accountId: string,
+    startDate: Date,
+    endDate: Date,
   ): Promise<AccountValue[]>;
-  
+
   // Performance operations
   getAccountPerformance(
-    accountId: string, 
-    startDate: Date, 
-    endDate: Date
+    accountId: string,
+    startDate: Date,
+    endDate: Date,
   ): Promise<AccountPerformance>;
 }
 ```
@@ -252,16 +280,19 @@ interface DatabaseProvider {
 ### 7.2 Database Implementations
 
 #### 7.2.1 Mock Database (localStorage)
+
 - Stores data in browser localStorage
 - Provides offline functionality
 - Generates mock data for demonstration
 
 #### 7.2.2 Supabase Database
+
 - Cloud storage with Supabase backend
 - User authentication integration
 - Real-time data sync
 
 #### 7.2.3 Database Factory
+
 - Creates the appropriate database provider based on configuration
 - Handles fallback mechanisms for authentication
 - Provides a unified interface for database operations
@@ -271,11 +302,13 @@ interface DatabaseProvider {
 ### 8.1 Authentication Flows
 
 #### 8.1.1 Email/Password Authentication
+
 - Sign up with email and password
 - Sign in with email and password
 - Password reset functionality
 
 #### 8.1.2 Social Authentication
+
 - Google OAuth integration
 - Single sign-on flow
 
@@ -290,16 +323,19 @@ interface DatabaseProvider {
 ### 9.1 Chart System
 
 #### 9.1.1 Net Worth Chart
+
 - Area chart showing net worth over time
 - Interactive data points
 - Responsive design for different screen sizes
 
 #### 9.1.2 Adaptive Resolution
+
 - Dynamic data point density based on viewport size
 - Intelligent data aggregation for large datasets
 - Maintains visual fidelity across time ranges
 
 #### 9.1.3 Event Detection
+
 - Identifies significant financial events
 - Highlights important data points on charts
 - Provides context for major net worth changes
@@ -432,4 +468,4 @@ interface DatabaseProvider {
 
 Argos provides a comprehensive solution for personal net worth tracking with a focus on usability, data visualization, and flexibility in data storage. The application's architecture allows for both offline and cloud-based usage, catering to different user preferences for data privacy and accessibility.
 
-The modular design enables future enhancements while maintaining a solid foundation of core functionality. By combining modern frontend technologies with powerful visualization capabilities, Argos delivers a valuable tool for users to monitor and improve their financial health. 
+The modular design enables future enhancements while maintaining a solid foundation of core functionality. By combining modern frontend technologies with powerful visualization capabilities, Argos delivers a valuable tool for users to monitor and improve their financial health.
