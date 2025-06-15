@@ -32,7 +32,9 @@ export function sanitizeAccountData(
  * @param params Object containing parameters for API requests
  * @returns Sanitized parameters
  */
-export function sanitizeApiParams<T extends Record<string, any>>(params: T): T {
+export function sanitizeApiParams<T extends Record<string, unknown>>(
+  params: T,
+): T {
   const sanitized = { ...params };
 
   // Process each field based on its type
@@ -40,19 +42,19 @@ export function sanitizeApiParams<T extends Record<string, any>>(params: T): T {
     const value = sanitized[key];
 
     if (typeof value === "string") {
-      sanitized[key] = sanitizeString(value) as any;
+      sanitized[key] = sanitizeString(value) as unknown;
     } else if (
       typeof value === "number" ||
       (typeof value === "string" && !isNaN(Number(value)))
     ) {
-      sanitized[key] = sanitizeNumber(value) as any;
+      sanitized[key] = sanitizeNumber(value) as unknown;
     } else if (
       typeof value === "object" &&
       value !== null &&
       !Array.isArray(value)
     ) {
       // Recursively sanitize nested objects
-      sanitized[key] = sanitizeApiParams(value) as any;
+      sanitized[key] = sanitizeApiParams(value) as unknown;
     }
     // Arrays and other types are left as-is
   }
@@ -67,7 +69,7 @@ export function sanitizeApiParams<T extends Record<string, any>>(params: T): T {
  * @returns True if all required fields are present and valid
  */
 export function validateRequiredFields(
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   requiredFields: string[],
 ): { isValid: boolean; missingFields: string[] } {
   const missingFields: string[] = [];
@@ -93,9 +95,11 @@ export function validateRequiredFields(
  */
 export function createApiError(
   message: string,
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
 ): Error {
   const error = new Error(message);
-  (error as any).details = details;
+  // Add details to error object
+  type ErrorWithDetails = Error & { details?: Record<string, unknown> };
+  (error as ErrorWithDetails).details = details;
   return error;
 }

@@ -13,7 +13,12 @@ import {
   CartesianGrid,
   ReferenceLine,
   Label,
+  TooltipProps,
 } from "recharts";
+import {
+  ValueType,
+  NameType,
+} from "recharts/types/component/DefaultTooltipContent";
 import { CurrencyCode } from "@/types/currency";
 import {
   Info,
@@ -147,7 +152,7 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
         hide: isMobile,
       },
       tooltip: {
-        content: (props: any) => (
+        content: (props: TooltipProps<ValueType, NameType>) => (
           <ChartTooltip
             {...props}
             selectedRange={timeRange}

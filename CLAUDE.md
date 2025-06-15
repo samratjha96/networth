@@ -247,3 +247,9 @@ function LoginComponent() {
   // Handle authentication
 }
 ```
+
+## Development Best Practices
+
+### Linting
+
+- Run `npm run lint` after major changes and fix outstanding issues if they exist

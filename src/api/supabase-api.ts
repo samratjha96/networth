@@ -8,14 +8,21 @@ import { SignInWithOAuthCredentials, User } from "@supabase/supabase-js";
 /**
  * Helper functions for common operations
  */
-const handleError = (error: any, context: string): never => {
+type SupabaseError = {
+  message?: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+};
+
+const handleError = (error: SupabaseError, context: string): never => {
   console.error(`API Error in ${context}:`, error);
   throw new Error(`${context}: ${error.message || "Unknown error"}`);
 };
 
 // Generic function to handle Supabase queries with improved error context
 const executeQuery = async <T>(
-  queryFn: () => Promise<{ data: T | null; error: any }>,
+  queryFn: () => Promise<{ data: T | null; error: SupabaseError | null }>,
   context: string,
 ) => {
   const { data, error } = await queryFn();
@@ -69,12 +76,15 @@ export const supabaseApi = {
   accounts: {
     getAccounts: async (userId: string) => {
       // Get accounts
-      const accountsData = await executeQuery<any[]>(async () => {
-        return await supabase
-          .from("accounts")
-          .select("*")
-          .eq("user_id", userId);
-      }, "getAccounts");
+      const accountsData = await executeQuery<Record<string, unknown>[]>(
+        async () => {
+          return await supabase
+            .from("accounts")
+            .select("*")
+            .eq("user_id", userId);
+        },
+        "getAccounts",
+      );
 
       if (!accountsData?.length) return [];
 
@@ -82,13 +92,16 @@ export const supabaseApi = {
       const accountIds = accountsData.map((account) => account.id);
 
       // This query gets the latest hourly value for each account
-      const valuesData = await executeQuery<any[]>(async () => {
-        return await supabase
-          .from("hourly_account_values")
-          .select("account_id, value, hour_start")
-          .in("account_id", accountIds)
-          .order("hour_start", { ascending: false });
-      }, "getAccountValues");
+      const valuesData = await executeQuery<Record<string, unknown>[]>(
+        async () => {
+          return await supabase
+            .from("hourly_account_values")
+            .select("account_id, value, hour_start")
+            .in("account_id", accountIds)
+            .order("hour_start", { ascending: false });
+        },
+        "getAccountValues",
+      );
 
       // Create a map of latest values
       const latestValues: Record<string, number> = {};
@@ -122,7 +135,7 @@ export const supabaseApi = {
       accountData: Omit<AccountWithValue, "id">,
     ) => {
       // Create account in Supabase
-      const data = await executeQuery<any>(async () => {
+      const data = await executeQuery<{ id: string }>(async () => {
         return await supabase
           .from("accounts")
           .insert({
@@ -180,17 +193,20 @@ export const supabaseApi = {
       const hourStart = getHourStart();
 
       // Check if we already have a value for this hour
-      const existingValues = await executeQuery<any[]>(async () => {
-        return await supabase
-          .from("hourly_account_values")
-          .select("*")
-          .eq("account_id", accountData.id)
-          .gte("hour_start", hourStart.toISOString())
-          .lt(
-            "hour_start",
-            new Date(hourStart.getTime() + 3600000).toISOString(),
-          );
-      }, "checkExistingValues");
+      const existingValues = await executeQuery<Record<string, unknown>[]>(
+        async () => {
+          return await supabase
+            .from("hourly_account_values")
+            .select("*")
+            .eq("account_id", accountData.id)
+            .gte("hour_start", hourStart.toISOString())
+            .lt(
+              "hour_start",
+              new Date(hourStart.getTime() + 3600000).toISOString(),
+            );
+        },
+        "checkExistingValues",
+      );
 
       if (existingValues && existingValues.length > 0) {
         // Update existing value
@@ -273,7 +289,9 @@ export const supabaseApi = {
       const startDate = getStartDateForTimeRange(timeRange);
 
       // Get latest net worth value
-      const latestData = await executeQuery<any[]>(async () => {
+      const latestData = await executeQuery<
+        Array<{ value: number; date: string }>
+      >(async () => {
         return await supabase
           .from("networth_history")
           .select("value, date")
@@ -283,7 +301,9 @@ export const supabaseApi = {
       }, "getLatestNetWorth");
 
       // Get previous net worth value based on time range
-      const previousData = await executeQuery<any[]>(async () => {
+      const previousData = await executeQuery<
+        Array<{ value: number; date: string }>
+      >(async () => {
         return await supabase
           .from("networth_history")
           .select("value, date")
@@ -314,7 +334,9 @@ export const supabaseApi = {
       const hourStart = getHourStart();
 
       // Check if an entry for this hour already exists
-      const existingEntries = await executeQuery<any[]>(async () => {
+      const existingEntries = await executeQuery<
+        Array<{ id: string; value: number; date: string }>
+      >(async () => {
         return await supabase
           .from("networth_history")
           .select("id, value, date")

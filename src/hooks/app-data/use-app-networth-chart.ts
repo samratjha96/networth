@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAppData } from "@/contexts/AppDataContext";
+import { useAppData } from "@/hooks/app-context";
 import { TimeRange } from "@/types/networth";
 
 /**

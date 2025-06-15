@@ -1,19 +1,12 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth-store";
+import {
+  DataSourceContext,
+  DataSourceContextType,
+} from "./data-source-context";
 
-type DataSource = "local" | "remote";
-
-interface DataSourceContextType {
-  dataSource: DataSource;
-  userId: string | null;
-}
-
-const DataSourceContext = createContext<DataSourceContextType>({
-  dataSource: "local",
-  userId: null,
-});
-
-export const useDataSource = () => useContext(DataSourceContext);
+// Hook moved to separate file to avoid React Fast Refresh warning:
+// src/hooks/app-context/use-data-source.ts
 
 export const DataSourceProvider = ({
   children,

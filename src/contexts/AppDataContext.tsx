@@ -135,11 +135,5 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
   );
 }
 
-// Hook for using the context
-export function useAppData() {
-  const context = useContext(AppDataContext);
-  if (!context) {
-    throw new Error("useAppData must be used within an AppDataProvider");
-  }
-  return context;
-}
+// Hook moved to separate file to avoid React Fast Refresh warning:
+// src/hooks/app-context/use-app-data.ts

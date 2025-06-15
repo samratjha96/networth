@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAppData } from "@/contexts/AppDataContext";
+import { useAppData } from "@/hooks/app-context";
 import { AccountWithValue } from "@/types/accounts";
 
 /**

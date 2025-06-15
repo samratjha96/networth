@@ -51,9 +51,9 @@ export function configureOptimisticUpdates(queryClient: QueryClient) {
       // Update account performance queries
       queryClient.setQueriesData(
         { queryKey: ["account-performance"] },
-        (old: any) => {
-          if (!old) return old;
-          return old.map((account: any) => {
+        (old: unknown) => {
+          if (!old || !Array.isArray(old)) return old;
+          return old.map((account: Record<string, unknown>) => {
             if (account.accountId === accountId) {
               return {
                 ...account,
@@ -78,16 +78,18 @@ export function configureOptimisticUpdates(queryClient: QueryClient) {
       // Update net worth history queries
       queryClient.setQueriesData(
         { queryKey: ["networth-history"] },
-        (old: any) => {
-          if (!old) return old;
+        (old: unknown) => {
+          if (!old || typeof old !== "object") return old;
+          // Cast to appropriate type with the fields we need
+          const typedOld = old as { previousValue: number };
           return {
             ...old,
             currentValue: newNetWorth,
-            change: newNetWorth - old.previousValue,
+            change: newNetWorth - typedOld.previousValue,
             percentageChange:
-              old.previousValue !== 0
-                ? ((newNetWorth - old.previousValue) /
-                    Math.abs(old.previousValue)) *
+              typedOld.previousValue !== 0
+                ? ((newNetWorth - typedOld.previousValue) /
+                    Math.abs(typedOld.previousValue)) *
                   100
                 : 0,
           };
