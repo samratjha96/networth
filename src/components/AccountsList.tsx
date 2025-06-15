@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { Button } from "@/components/ui/button";
-import { useAccountsStore } from "@/store/accounts-store";
 import {
   AccountType,
   AccountViewType,
@@ -33,16 +32,42 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useAccounts } from "@/hooks/use-accounts";
+import { useAppAccounts } from "@/hooks/app-data";
 
 export function AccountsList() {
   const [view, setView] = useState<AccountViewType>("assets");
-  const { openAddDialog } = useAccountsStore();
-  const { accounts, isLoading } = useAccounts();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [accountToEdit, setAccountToEdit] = useState<AccountWithValue | null>(
+    null,
+  );
+
+  // Use our centralized data hook
+  const { accounts, isLoading, addAccount, updateAccount, deleteAccount } =
+    useAppAccounts();
 
   // Filter accounts
   const assetAccounts = accounts.filter((a) => !a.isDebt);
   const liabilityAccounts = accounts.filter((a) => a.isDebt);
+
+  // Dialog handlers
+  const openAddDialog = (options?: { isDebt?: boolean }) => {
+    setAccountToEdit(null);
+    if (options?.isDebt) {
+      // Set a default for the new account if it's a liability
+      // This will be handled in the dialog component
+    }
+    setIsAddDialogOpen(true);
+  };
+
+  const openEditDialog = (account: AccountWithValue) => {
+    setAccountToEdit(account);
+    setIsAddDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setIsAddDialogOpen(false);
+    setAccountToEdit(null);
+  };
 
   return (
     <>
@@ -54,20 +79,16 @@ export function AccountsList() {
               <span className="text-sm text-muted-foreground px-1.5 py-0.5 bg-muted/50 rounded-full">
                 {accounts.length} total
               </span>
-              <AddAccountDialog
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() =>
-                      openAddDialog({ isDebt: view === "liabilities" })
-                    }
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() =>
+                  openAddDialog({ isDebt: view === "liabilities" })
                 }
-              />
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
 
             <ToggleGroup
@@ -109,10 +130,27 @@ export function AccountsList() {
               <p className="text-muted-foreground">Loading accounts...</p>
             </div>
           ) : (
-            <SplitAccountsLayout type={view} accounts={accounts} />
+            <SplitAccountsLayout
+              type={view}
+              accounts={accounts}
+              onEditAccount={openEditDialog}
+              onDeleteAccount={deleteAccount}
+              onAddAccount={openAddDialog}
+            />
           )}
         </CardContent>
       </Card>
+
+      {isAddDialogOpen && (
+        <AddAccountDialog
+          isOpen={isAddDialogOpen}
+          onClose={closeDialog}
+          onAddAccount={addAccount}
+          onUpdateAccount={updateAccount}
+          accountToEdit={accountToEdit}
+          defaultIsDebt={view === "liabilities"}
+        />
+      )}
     </>
   );
 }
@@ -158,14 +196,21 @@ function useCollapsibleSections(panelType: AccountViewType) {
   return { collapsedSections, toggleSection };
 }
 
+interface SplitAccountsLayoutProps {
+  accounts: AccountWithValue[];
+  type: AccountViewType;
+  onEditAccount: (account: AccountWithValue) => void;
+  onDeleteAccount: (id: string) => void;
+  onAddAccount: (options?: { isDebt?: boolean }) => void;
+}
+
 function SplitAccountsLayout({
   accounts,
   type,
-}: {
-  accounts: AccountWithValue[];
-  type: AccountViewType;
-}) {
-  const { openAddDialog } = useAccountsStore();
+  onEditAccount,
+  onDeleteAccount,
+  onAddAccount,
+}: SplitAccountsLayoutProps) {
   const filteredAccounts = accounts.filter((account) =>
     type === "assets" ? !account.isDebt : account.isDebt,
   );
@@ -179,17 +224,13 @@ function SplitAccountsLayout({
             Add your first {type === "assets" ? "asset" : "liability"} account
             to start tracking
           </span>
-          <AddAccountDialog
-            trigger={
-              <Badge
-                variant="outline"
-                className="cursor-pointer hover:bg-primary/10"
-                onClick={() => openAddDialog()}
-              >
-                Add {type === "assets" ? "Asset" : "Liability"}
-              </Badge>
-            }
-          />
+          <Badge
+            variant="outline"
+            className="cursor-pointer hover:bg-primary/10"
+            onClick={() => onAddAccount({ isDebt: type === "liabilities" })}
+          >
+            Add {type === "assets" ? "Asset" : "Liability"}
+          </Badge>
         </AlertDescription>
       </Alert>
     );
@@ -224,6 +265,8 @@ function SplitAccountsLayout({
             type={type}
             accountType={accType}
             accounts={groupedAccounts[accType]}
+            onEditAccount={onEditAccount}
+            onDeleteAccount={onDeleteAccount}
           />
         ))}
       </div>
@@ -237,6 +280,8 @@ function SplitAccountsLayout({
               type={type}
               accountType={accType}
               accounts={groupedAccounts[accType]}
+              onEditAccount={onEditAccount}
+              onDeleteAccount={onDeleteAccount}
             />
           ))}
         </div>
@@ -248,6 +293,8 @@ function SplitAccountsLayout({
               type={type}
               accountType={accType}
               accounts={groupedAccounts[accType]}
+              onEditAccount={onEditAccount}
+              onDeleteAccount={onDeleteAccount}
             />
           ))}
         </div>
@@ -256,18 +303,23 @@ function SplitAccountsLayout({
   );
 }
 
+interface AccountTypeSectionProps {
+  type: AccountViewType;
+  accountType: AccountType;
+  accounts: AccountWithValue[];
+  onEditAccount: (account: AccountWithValue) => void;
+  onDeleteAccount: (id: string) => void;
+}
+
 function AccountTypeSection({
   type,
   accountType,
   accounts,
-}: {
-  type: AccountViewType;
-  accountType: AccountType;
-  accounts: AccountWithValue[];
-}) {
+  onEditAccount,
+  onDeleteAccount,
+}: AccountTypeSectionProps) {
   const { collapsedSections, toggleSection } = useCollapsibleSections(type);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const { openEditDialog, deleteAccount } = useAccountsStore();
 
   const formatAccountBalance = (account: AccountWithValue) => {
     const symbol = CURRENCY_SYMBOLS[account.currency];
@@ -368,7 +420,7 @@ function AccountTypeSection({
                             e.stopPropagation();
                             setOpenMenuId(null);
                             setTimeout(() => {
-                              openEditDialog(account);
+                              onEditAccount(account);
                             }, 100);
                           }}
                         >
@@ -378,7 +430,7 @@ function AccountTypeSection({
                           className="cursor-pointer text-destructive focus:text-destructive"
                           onClick={() => {
                             setOpenMenuId(null);
-                            deleteAccount(account.id);
+                            onDeleteAccount(account.id);
                           }}
                         >
                           Delete

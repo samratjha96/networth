@@ -3,10 +3,7 @@ import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
 import { TimeRange } from "@/types/networth";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
-import { useAccountPerformance } from "@/hooks/use-account-performance";
-import { useNetWorthHistory } from "@/hooks/use-networth-history";
-import { useEffect, useState } from "react";
-import { useAccounts } from "@/hooks/use-accounts";
+import { useAppAccounts, useAppPerformance } from "@/hooks/app-data";
 
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
@@ -26,24 +23,15 @@ const getPeriodLabel = (days: TimeRange) => {
 };
 
 export function NetWorthSummary() {
-  const [currentNetWorth, setCurrentNetWorth] = useState(0);
-  const { accounts, isLoading } = useAccounts();
+  const { netWorth } = useAppAccounts();
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const { formatWithCurrency } = useCurrencyFormatter("USD");
 
-  // Use our hooks to get data
-  const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
-  const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
+  // Get performance data from our centralized hook
+  const { netWorthData, bestPerformingAccount } = useAppPerformance(timeRange);
 
-  // Update networth history when current net worth changes
-  useEffect(() => {
-    setCurrentNetWorth(
-      accounts.reduce((total, account) => total + account.balance, 0),
-    );
-  }, [accounts]);
-
-  const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
-  const isPositiveChange = (netWorthData?.change ?? 0) > 0;
+  const isPositiveNetWorth = netWorth >= 0;
+  const isPositiveChange = (netWorthData?.percentageChange ?? 0) > 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -60,7 +48,7 @@ export function NetWorthSummary() {
             ) : (
               <ArrowDownRight className="h-4 w-4 mr-1" />
             )}
-            {Math.abs(netWorthData?.percentageChange ?? 0).toFixed(2)}%
+            {Math.abs(netWorthData.percentageChange).toFixed(2)}%
           </span>
         </CardHeader>
         <CardContent>
@@ -69,14 +57,14 @@ export function NetWorthSummary() {
               !isPositiveNetWorth ? "text-destructive" : ""
             }`}
           >
-            {formatWithCurrency(currentNetWorth ?? 0)}
+            {formatWithCurrency(netWorth)}
           </div>
           <p className="text-xs text-muted-foreground flex items-center">
             <span
               className={isPositiveChange ? "text-primary" : "text-destructive"}
             >
               {isPositiveChange ? "+" : ""}
-              {formatWithCurrency(Math.abs(netWorthData?.change ?? 0))}
+              {formatWithCurrency(Math.abs(netWorthData.change))}
             </span>
             <span className="ml-1">
               over the last {getPeriodLabel(timeRange)}

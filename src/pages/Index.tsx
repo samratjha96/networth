@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { NetWorthSummaryUpdated } from "@/components/NetWorthSummaryUpdated";
-import { NetWorthChartUpdated } from "@/components/chart/NetWorthChartUpdated";
-import { AccountsListUpdated } from "@/components/AccountsListUpdated";
+import { NetWorthSummary } from "@/components/NetWorthSummary";
+import { NetWorthChart } from "@/components/chart/NetWorthChart";
+import { AccountsList } from "@/components/AccountsList";
 import { CurrencyCode } from "@/types/currency";
 import { Header } from "@/components/Header";
 
@@ -21,14 +21,14 @@ const Index = () => {
         <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 xl:gap-12">
           {/* Left side: Accounts list (at least 1/3 of the screen) */}
           <div className="md:col-span-5 lg:col-span-4 xl:col-span-4">
-            <AccountsListUpdated />
+            <AccountsList />
           </div>
 
           {/* Right side: NetWorth components */}
           <div className="md:col-span-7 lg:col-span-8 xl:col-span-8 space-y-6">
-            <NetWorthSummaryUpdated />
+            <NetWorthSummary />
 
-            <NetWorthChartUpdated currency={DEFAULT_CURRENCY} />
+            <NetWorthChart currency={DEFAULT_CURRENCY} />
           </div>
         </div>
       </div>

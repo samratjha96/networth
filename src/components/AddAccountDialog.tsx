@@ -6,7 +6,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,9 +17,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { AccountType, assetTypes, debtTypes } from "@/types/accounts";
+import {
+  AccountType,
+  AccountWithValue,
+  assetTypes,
+  debtTypes,
+} from "@/types/accounts";
 import { CURRENCIES, CurrencyCode } from "@/types/currency";
-import { useAccountsStore } from "@/store/accounts-store";
 import {
   isValidNumber,
   sanitizeNumber,
@@ -28,24 +31,22 @@ import {
 } from "@/utils/input-validation";
 
 interface AddAccountDialogProps {
-  trigger?: React.ReactNode;
-  className?: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onAddAccount: (account: Omit<AccountWithValue, "id">) => void;
+  onUpdateAccount: (account: AccountWithValue) => void;
+  accountToEdit: AccountWithValue | null;
+  defaultIsDebt?: boolean;
 }
 
 export function AddAccountDialog({
-  trigger,
-  className,
+  isOpen,
+  onClose,
+  onAddAccount,
+  onUpdateAccount,
+  accountToEdit,
+  defaultIsDebt = false,
 }: AddAccountDialogProps) {
-  // Get dialog state and actions from the unified store
-  const {
-    isDialogOpen: isOpen,
-    accountToEdit,
-    defaultIsDebt,
-    closeDialog,
-    addAccount,
-    updateAccount: editAccount,
-  } = useAccountsStore();
-
   const [name, setName] = React.useState("");
   const [type, setType] = React.useState<AccountType>("Checking");
   const [balance, setBalance] = React.useState("");
@@ -139,12 +140,13 @@ export function AddAccountDialog({
       };
 
       if (accountToEdit) {
-        await editAccount({ ...accountData, id: accountToEdit.id });
+        await onUpdateAccount({ ...accountData, id: accountToEdit.id });
       } else {
-        await addAccount(accountData);
+        await onAddAccount(accountData);
       }
 
-      // Dialog will now be automatically closed by the store
+      // Close dialog after successful submission
+      onClose();
     } catch (error) {
       console.error("Error submitting account:", error);
       setIsSubmitting(false);
@@ -165,16 +167,7 @@ export function AddAccountDialog({
   const availableTypes = isDebt ? debtTypes : assetTypes;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && closeDialog()}>
-      <DialogTrigger asChild>
-        <div>
-          {trigger ?? (
-            <Button variant="outline" className={className}>
-              Add Account
-            </Button>
-          )}
-        </div>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
@@ -282,7 +275,7 @@ export function AddAccountDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={closeDialog}
+              onClick={onClose}
               disabled={isSubmitting}
             >
               Cancel

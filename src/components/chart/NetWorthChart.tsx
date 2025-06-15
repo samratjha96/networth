@@ -45,21 +45,15 @@ import { ChartTooltip } from "./ChartTooltip";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/ui/use-mobile";
-import { useNetWorthChartData } from "@/hooks/use-networth-chart-data";
+import { useAppNetWorthChart } from "@/hooks/app-data";
 
 type ChartType = "area" | "line" | "bar";
 
 interface NetWorthChartProps {
   currency: CurrencyCode;
-  currentNetWorth: number;
-  isLoading?: boolean;
 }
 
-export function NetWorthChart({
-  currency,
-  currentNetWorth,
-  isLoading: parentIsLoading,
-}: NetWorthChartProps) {
+export function NetWorthChart({ currency }: NetWorthChartProps) {
   const [chartType, setChartType] = useState<ChartType>("area");
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
@@ -79,35 +73,25 @@ export function NetWorthChart({
               ? 365
               : 0;
 
-  const { networthHistory, isLoading: dataIsLoading } =
-    useNetWorthChartData(timeRangeNumber);
-  const isLoading = parentIsLoading || dataIsLoading;
-
-  // Filter data based on time range
-  const filteredData = (() => {
-    if (timeRangeNumber === 0) {
-      return networthHistory;
-    }
-
-    const cutoffIndex = Math.max(0, networthHistory.length - timeRangeNumber);
-    return networthHistory.slice(cutoffIndex);
-  })();
+  // Use our centralized data hook for chart data
+  const { networthHistory, isLoading, currentNetWorth } =
+    useAppNetWorthChart(timeRangeNumber);
 
   // Generate some event points (significant changes)
   const events =
-    filteredData.length > 5
+    networthHistory.length > 5
       ? [
-          filteredData[Math.floor(filteredData.length * 0.33)],
-          filteredData[Math.floor(filteredData.length * 0.66)],
+          networthHistory[Math.floor(networthHistory.length * 0.33)],
+          networthHistory[Math.floor(networthHistory.length * 0.66)],
         ]
       : [];
 
-  // Calculate average and trend line data
+  // Calculate average value for trend line
   const averageValue = React.useMemo(() => {
-    if (!filteredData.length) return 0;
-    const sum = filteredData.reduce((acc, item) => acc + item.value, 0);
-    return sum / filteredData.length;
-  }, [filteredData]);
+    if (!networthHistory.length) return 0;
+    const sum = networthHistory.reduce((acc, item) => acc + item.value, 0);
+    return sum / networthHistory.length;
+  }, [networthHistory]);
 
   // Chart color based on net worth
   const chartColor =
@@ -133,7 +117,7 @@ export function NetWorthChart({
   // Render the appropriate chart based on selected type
   const renderChart = () => {
     if (isLoading) return <ChartLoading />;
-    if (!filteredData || filteredData.length === 0) return <ChartEmpty />;
+    if (!networthHistory || networthHistory.length === 0) return <ChartEmpty />;
 
     const margin = {
       top: 10,
@@ -186,7 +170,7 @@ export function NetWorthChart({
       case "area":
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={filteredData} margin={margin}>
+            <AreaChart data={networthHistory} margin={margin}>
               {gradientDef}
               <XAxis {...commonAxisProps.xAxis} />
               <YAxis {...commonAxisProps.yAxis} />
@@ -216,7 +200,7 @@ export function NetWorthChart({
       case "line":
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={filteredData} margin={margin}>
+            <LineChart data={networthHistory} margin={margin}>
               {gradientDef}
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -251,7 +235,7 @@ export function NetWorthChart({
       case "bar":
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={filteredData} margin={margin}>
+            <AreaChart data={networthHistory} margin={margin}>
               {gradientDef}
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -292,7 +276,7 @@ export function NetWorthChart({
       default:
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={filteredData} margin={margin}>
+            <AreaChart data={networthHistory} margin={margin}>
               {gradientDef}
               <XAxis {...commonAxisProps.xAxis} />
               <YAxis {...commonAxisProps.yAxis} />

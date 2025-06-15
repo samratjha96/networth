@@ -71,20 +71,26 @@ Argos follows a modern frontend architecture with:
 
 ### Important Design Patterns
 
-1. **Database Factory Pattern**
+1. **Centralized Data Service Pattern**
 
-   - The application uses a factory pattern to switch between localStorage and Supabase backends
-   - Interface: `DatabaseProvider` provides a common API regardless of storage backend
-   - Implementation: `SupabaseDatabase` and `MockDatabase` classes
+   - The application uses an abstract `DataService` interface to define all data operations
+   - Concrete implementations: `MockDataService` (demo mode) and `SupabaseDataService` (authenticated mode)
+   - `AppDataContext` centralizes data access and switches between implementations based on authentication state
 
-2. **React Context for Authentication**
+2. **Specialized Data Hooks**
+
+   - Located in `/src/hooks/app-data/`
+   - `useAppAccounts`: For account management operations
+   - `useAppNetWorthChart`: For chart data access
+   - `useAppPerformance`: For performance metrics
+
+3. **React Context for Authentication**
 
    - `AuthProvider` manages user authentication state
    - Provides methods for sign-in/sign-out
    - Handles session persistence
 
-3. **Global State Stores**
-   - `accounts-store.ts`: Manages account data and operations
+4. **Global State Stores**
    - `auth-store.ts`: Manages authentication state
    - `time-range-store.ts`: Manages chart time range selection
 
@@ -111,8 +117,14 @@ This project uses Vite as its build tool, which requires environment variables t
   - `/src/components/chart/`: Chart-related components
   - `/src/components/ui/`: UI components based on shadcn/ui
 - `/src/hooks/`: Custom React hooks
+  - `/src/hooks/app-data/`: Centralized data access hooks
+- `/src/services/`: Core business logic and data services
+  - `DataService.ts`: Abstract interface for data operations
+  - `MockDataService.ts`: Implementation for demo mode
+  - `SupabaseDataService.ts`: Implementation for authenticated mode
 - `/src/store/`: Zustand stores
 - `/src/contexts/`: React contexts
+  - `AppDataContext.tsx`: Central data provider and mode switching
 - `/src/lib/`: Utility functions and libraries
 - `/src/types/`: TypeScript type definitions
 - `/src/api/`: API and query definitions
@@ -122,7 +134,8 @@ This project uses Vite as its build tool, which requires environment variables t
 
 - `src/App.tsx`: Main application component with providers
 - `src/pages/Index.tsx`: Main dashboard page
-- `src/api/supabase-api.ts`: Supabase API integration
+- `src/services/DataService.ts`: Interface defining all data operations
+- `src/contexts/AppDataContext.tsx`: Centralized data management
 - `src/components/AuthProvider.tsx`: Authentication provider
 - `src/lib/supabase.ts`: Supabase client configuration
 
@@ -180,17 +193,44 @@ When adding a new component:
 4. Implement TypeScript interfaces for props
 5. Use custom hooks for business logic
 
-### Working with the Database Layer
+### Working with the Data Layer
 
-To access the database:
+To access application data:
 
 ```tsx
-import { useAccounts } from "@/hooks/use-accounts";
+import { useAppAccounts } from "@/hooks/app-data";
 
 function MyComponent() {
-  const { accounts, isLoading, error } = useAccounts();
+  const { accounts, isLoading, addAccount, updateAccount, deleteAccount } =
+    useAppAccounts();
 
-  // Use accounts data
+  // Use accounts data and operations
+}
+```
+
+For chart data:
+
+```tsx
+import { useAppNetWorthChart } from "@/hooks/app-data";
+
+function ChartComponent() {
+  // timeRange can be 1, 7, 30, 365 or 0 (all time)
+  const { networthHistory, isLoading, currentNetWorth } =
+    useAppNetWorthChart(timeRange);
+
+  // Display chart with data
+}
+```
+
+For performance metrics:
+
+```tsx
+import { useAppPerformance } from "@/hooks/app-data";
+
+function PerformanceComponent() {
+  const { netWorthData, bestPerformingAccount } = useAppPerformance(timeRange);
+
+  // Show performance data
 }
 ```
 
