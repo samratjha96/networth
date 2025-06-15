@@ -7,7 +7,6 @@ import { useAccountPerformance } from "@/hooks/use-account-performance";
 import { useNetWorthHistory } from "@/hooks/use-networth-history";
 import { useEffect, useState } from "react";
 import { useAccounts } from "@/hooks/use-accounts";
-import { useDataSource } from "@/contexts/DataSourceContext";
 
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
@@ -31,18 +30,17 @@ export function NetWorthSummary() {
   const { accounts, isLoading } = useAccounts();
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const { formatWithCurrency } = useCurrencyFormatter("USD");
-  const { dataSource, userId } = useDataSource();
 
   // Use our hooks to get data
   const { bestPerformingAccount } = useAccountPerformance(accounts, timeRange);
   const netWorthData = useNetWorthHistory(currentNetWorth, timeRange);
 
-  // Update networth history when current net worth changes and we're using remote data
+  // Update networth history when current net worth changes
   useEffect(() => {
     setCurrentNetWorth(
       accounts.reduce((total, account) => total + account.balance, 0),
     );
-  }, [dataSource, userId, accounts]);
+  }, [accounts]);
 
   const isPositiveNetWorth = (netWorthData?.currentValue ?? 0) >= 0;
   const isPositiveChange = (netWorthData?.change ?? 0) > 0;

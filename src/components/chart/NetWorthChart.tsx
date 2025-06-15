@@ -43,7 +43,6 @@ import {
 } from "@/components/chart/NetWorthChartStates";
 import { ChartTooltip } from "./ChartTooltip";
 import { TimeRangeSelector } from "./TimeRangeSelector";
-import { getMockDataInstance } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/ui/use-mobile";
 import { useNetWorthChartData } from "@/hooks/use-networth-chart-data";
@@ -53,14 +52,12 @@ type ChartType = "area" | "line" | "bar";
 interface NetWorthChartProps {
   currency: CurrencyCode;
   currentNetWorth: number;
-  accounts: Array<{ id: string; balance: number }>;
   isLoading?: boolean;
 }
 
 export function NetWorthChart({
   currency,
   currentNetWorth,
-  accounts,
   isLoading: parentIsLoading,
 }: NetWorthChartProps) {
   const [chartType, setChartType] = useState<ChartType>("area");

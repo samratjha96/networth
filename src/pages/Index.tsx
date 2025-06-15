@@ -54,7 +54,6 @@ const Index = () => {
             <NetWorthChart
               currency={DEFAULT_CURRENCY}
               currentNetWorth={currentNetWorth}
-              accounts={accounts}
               isLoading={isLoading}
             />
           </div>
