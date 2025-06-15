@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { AppDataContext } from "@/contexts/AppDataContext";
+import { AppDataContext } from "@/contexts/app-data-context";
 
 // Hook for using the AppDataContext
 export function useAppData() {

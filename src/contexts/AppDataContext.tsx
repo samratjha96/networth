@@ -1,47 +1,9 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth-store";
-import { DataService } from "@/services/DataService";
 import { MockDataService } from "@/services/MockDataService";
 import { SupabaseDataService } from "@/services/SupabaseDataService";
-import { AccountWithValue } from "@/types/accounts";
-import { NetworthHistory, TimeRange } from "@/types/networth";
-
-// The app can be in one of these modes
-type AppMode = "demo" | "authenticated";
-
-// Context interface
-interface AppDataContextValue {
-  // Mode
-  mode: AppMode;
-  userId: string | null;
-
-  // Data service (abstracted for components)
-  dataService: DataService;
-
-  // Account operations
-  addAccount: (
-    account: Omit<AccountWithValue, "id">,
-  ) => Promise<AccountWithValue>;
-  updateAccount: (account: AccountWithValue) => Promise<void>;
-  deleteAccount: (id: string) => Promise<void>;
-
-  // Derived state calculated from mode changes
-  isDemo: boolean;
-  isAuthenticated: boolean;
-
-  // Utility
-  invalidateQueries: () => Promise<void>;
-}
-
-// Create the context
-const AppDataContext = createContext<AppDataContextValue | null>(null);
+import { AppDataContext } from "./app-data-context";
 
 // Provider props
 interface AppDataProviderProps {
