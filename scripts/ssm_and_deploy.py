@@ -16,7 +16,6 @@ from InquirerPy.validator import EmptyInputValidator
 from rich import print
 
 def get_region():
-    """Gets the AWS region from the environment or prompts the user."""
     region = os.environ.get('AWS_REGION')
     if not region:
         print("[yellow]AWS_REGION environment variable not set.[/yellow]")
@@ -24,7 +23,6 @@ def get_region():
     return region
 
 def list_ec2_instances(region):
-    """Retrieves a list of EC2 instances with SSM agent running and includes tags."""
     ec2 = boto3.client('ec2', region_name=region)
     try:
         response = ec2.describe_instances()
@@ -70,7 +68,7 @@ def select_instance(instances):
 def run_bash_command(instance_id, region):
     """Runs a bash command on the specified instance as the ubuntu user."""
     ssm = boto3.client('ssm', region_name=region)
-    command = "cd /home/ubuntu/Github/networth && bash scripts/deploy.sh" # Adjusted cd path.
+    command = "cd /home/ubuntu/Github/networth && sudo bash scripts/deploy.sh" # Adjusted cd path.
     try:
         response = ssm.send_command(
             InstanceIds=[instance_id],
