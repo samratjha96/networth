@@ -20,6 +20,7 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
 
   // Determine app mode based on auth status
   const mode: AppMode = useMemo(() => {
+    // Use demo mode if unauthenticated, error, or connection timeout
     return status === "authenticated" ? "authenticated" : "demo";
   }, [status]);
 

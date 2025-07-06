@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AppDataProvider } from "@/contexts/AppDataContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ConnectionStatusMonitor } from "@/components/ConnectionStatusMonitor";
 
 // Create the QueryClient instance
 const queryClient = new QueryClient({
@@ -27,6 +28,7 @@ function AppContent() {
     <div className="min-h-screen bg-background">
       <Toaster />
       <Sonner />
+      <ConnectionStatusMonitor />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />

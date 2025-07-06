@@ -16,7 +16,7 @@ export interface AppDataContextValue {
 
   // Account operations
   addAccount: (
-    account: Omit<AccountWithValue, "id">
+    account: Omit<AccountWithValue, "id">,
   ) => Promise<AccountWithValue>;
   updateAccount: (account: AccountWithValue) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
