@@ -60,6 +60,7 @@ interface NetWorthChartProps {
 
 export function NetWorthChart({ currency }: NetWorthChartProps) {
   const [chartType, setChartType] = useState<ChartType>("area");
+  const [showFilledIndicator, setShowFilledIndicator] = useState<boolean>(true);
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const { formatWithCurrency } = useCurrencyFormatter(currency);
@@ -79,8 +80,22 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
               : 0;
 
   // Use our centralized data hook for chart data
-  const { networthHistory, isLoading, currentNetWorth } =
-    useAppNetWorthChart(timeRangeNumber);
+  const {
+    networthHistory,
+    rawNetWorthHistory,
+    isLoading,
+    currentNetWorth,
+    dataStats,
+  } = useAppNetWorthChart(timeRangeNumber);
+
+  // Create a map of real data points for quick lookup
+  const realDataPointsMap = React.useMemo(() => {
+    const map = new Map<string, boolean>();
+    rawNetWorthHistory.forEach((point) => {
+      map.set(point.date, true);
+    });
+    return map;
+  }, [rawNetWorthHistory]);
 
   // Generate some event points (significant changes)
   const events =
@@ -186,6 +201,26 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
                 stroke={chartColor}
                 fillOpacity={1}
                 fill="url(#colorValue)"
+                // Add dot renderer to show only real data points
+                dot={(props) => {
+                  if (!showFilledIndicator) return null;
+                  // Only show dots for real data points
+                  const isRealDataPoint = realDataPointsMap.has(
+                    props.payload.date,
+                  );
+                  if (!isRealDataPoint) return null;
+
+                  return (
+                    <circle
+                      cx={props.cx}
+                      cy={props.cy}
+                      r={4}
+                      fill={chartColor}
+                      stroke="white"
+                      strokeWidth={1}
+                    />
+                  );
+                }}
               />
               {events?.length > 0 &&
                 events.map((event, index) => (
@@ -230,8 +265,35 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
                 dataKey="value"
                 stroke={chartColor}
                 strokeWidth={2}
-                dot={false}
+                dot={(props) => {
+                  if (!showFilledIndicator) return null;
+                  // Only show dots for real data points
+                  const isRealDataPoint = realDataPointsMap.has(
+                    props.payload.date,
+                  );
+                  if (!isRealDataPoint) return null;
+
+                  return (
+                    <circle
+                      cx={props.cx}
+                      cy={props.cy}
+                      r={4}
+                      fill={chartColor}
+                      stroke="white"
+                      strokeWidth={1}
+                    />
+                  );
+                }}
                 activeDot={{ r: 6, fill: chartColor, stroke: "white" }}
+                // Use dashed line for filled data points
+                strokeDasharray={(props) => {
+                  if (!showFilledIndicator) return "0";
+                  // If it's a filled data point, make the line dashed
+                  const isRealDataPoint = realDataPointsMap.has(
+                    props.payload.date,
+                  );
+                  return isRealDataPoint ? "0" : "3 3";
+                }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -345,6 +407,39 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
               </DropdownMenuContent>
             </DropdownMenu>
             <TimeRangeSelector />
+
+            {/* Toggle for showing/hiding data point indicators */}
+            {dataStats && dataStats.filled > 0 && (
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={showFilledIndicator ? "outline" : "ghost"}
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() =>
+                        setShowFilledIndicator(!showFilledIndicator)
+                      }
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent align="end" className="max-w-[300px]">
+                    <p className="mb-2">
+                      {showFilledIndicator ? "Showing" : "Hiding"} indicators
+                      for estimated data
+                    </p>
+                    <div className="text-xs">
+                      <p>Real data points: {dataStats.real}</p>
+                      <p>Filled data points: {dataStats.filled}</p>
+                      <p className="mt-2 text-muted-foreground italic">
+                        Filled points use last known value until next update
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -356,30 +451,65 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
           {renderChart()}
         </div>
 
-        {events?.length > 0 && (
-          <div className="mt-2 flex items-center text-xs text-muted-foreground">
-            <TooltipProvider>
-              <UITooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center cursor-help">
-                    <Info className="h-3 w-3 mr-1" />
-                    <span>
-                      {isMobile
-                        ? "Significant changes highlighted"
-                        : "Significant changes in net worth are highlighted"}
-                    </span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[300px]">
-                  <p>
-                    These points indicate significant changes in your net worth
-                    that might represent notable financial events.
-                  </p>
-                </TooltipContent>
-              </UITooltip>
-            </TooltipProvider>
-          </div>
-        )}
+        <div className="mt-2 flex flex-col space-y-1">
+          {events?.length > 0 && (
+            <div className="flex items-center text-xs text-muted-foreground">
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center cursor-help">
+                      <Info className="h-3 w-3 mr-1" />
+                      <span>
+                        {isMobile
+                          ? "Significant changes highlighted"
+                          : "Significant changes in net worth are highlighted"}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[300px]">
+                    <p>
+                      These points indicate significant changes in your net
+                      worth that might represent notable financial events.
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
+          )}
+
+          {dataStats && dataStats.filled > 0 && showFilledIndicator && (
+            <div className="flex items-center text-xs text-muted-foreground">
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center cursor-help">
+                      <Info className="h-3 w-3 mr-1" />
+                      <span>
+                        {isMobile
+                          ? `${dataStats.filled} filled data points`
+                          : `${dataStats.filled} data points are filled with estimated values`}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[300px]">
+                    <p>
+                      Filled data points represent days where no account updates
+                      were made. These points use the last known balance until
+                      the next update.
+                    </p>
+                    <p className="mt-2 text-xs">
+                      Real data points:{" "}
+                      <span className="font-semibold">{dataStats.real}</span>
+                      <br />
+                      Filled data points:{" "}
+                      <span className="font-semibold">{dataStats.filled}</span>
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

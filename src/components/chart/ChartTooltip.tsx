@@ -26,6 +26,7 @@ export function ChartTooltip({
   const value = payload[0].value as number;
   const date = new Date(payload[0].payload.date);
   const formattedDate = formatTooltipDate(date, selectedRange);
+  const isFilledDataPoint = payload[0].payload.isFilledDataPoint;
 
   return (
     <div className="rounded-lg border bg-background p-2 shadow-sm">
@@ -47,6 +48,14 @@ export function ChartTooltip({
           </span>
         </div>
       </div>
+
+      {isFilledDataPoint && (
+        <div className="mt-1 pt-1 border-t border-border">
+          <span className="text-[0.65rem] text-muted-foreground/70 italic">
+            Estimated value (no update on this date)
+          </span>
+        </div>
+      )}
     </div>
   );
 }
