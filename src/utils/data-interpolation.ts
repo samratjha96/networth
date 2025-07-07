@@ -109,7 +109,14 @@ export function generateTimestamps(
 }
 
 /**
- * Fills in missing data points in networth history using the last known value
+ * Fills in missing data points in networth history using historical values
+ *
+ * This implementation handles the case where we have sparse updates (e.g., a user
+ * only updates their accounts occasionally). For each date in the selected time range,
+ * it finds the most recent actual data point before that date and uses its value.
+ *
+ * For example, if a user updated their accounts on Jan 1 ($1000) and Jan 15 ($1200),
+ * all dates from Jan 2-14 will show $1000 (the last value before those dates).
  */
 export function fillMissingDataPoints(
   rawData: NetworthHistory[],
@@ -131,39 +138,65 @@ export function fillMissingDataPoints(
   const endDate = new Date();
   const expectedTimestamps = generateTimestamps(startDate, endDate, interval);
 
-  // Create filled data array using last known value for missing points
+  // If we don't have any data in the range, return the raw data
+  if (expectedTimestamps.length === 0) return rawData;
+
+  // Create filled data array
   const filledData: NetworthHistory[] = [];
-  let lastKnownValue = sortedData[0].value;
-  let dataIndex = 0;
 
+  // Process each expected timestamp
   expectedTimestamps.forEach((timestamp) => {
-    // Look for a real data point that matches this timestamp's interval
-    let foundMatch = false;
+    // Find the last known data point BEFORE this timestamp
+    let mostRecentDataPoint: NetworthHistory | null = null;
+    let foundExactMatch = false;
 
-    while (
-      dataIndex < sortedData.length &&
-      new Date(sortedData[dataIndex].date) <= timestamp
-    ) {
-      const dataDate = new Date(sortedData[dataIndex].date);
+    // First check for an exact match in this interval
+    for (const dataPoint of sortedData) {
+      const dataDate = new Date(dataPoint.date);
 
+      // Exact match for this interval?
       if (isSameInterval(timestamp, dataDate, interval)) {
-        lastKnownValue = sortedData[dataIndex].value;
-        foundMatch = true;
+        filledData.push({
+          ...dataPoint,
+          isRealDataPoint: true,
+        } as NetworthHistory);
+        foundExactMatch = true;
+        break;
       }
-
-      dataIndex++;
     }
 
-    // If we didn't find a match, use the last known value
-    filledData.push({
-      date: timestamp.toISOString(),
-      value: lastKnownValue,
-      // Add metadata that can be used to visually differentiate
-      ...(foundMatch ? { isRealDataPoint: true } : { isFilledDataPoint: true }),
-    } as NetworthHistory);
+    // If we didn't find an exact match, find the most recent point before this timestamp
+    if (!foundExactMatch) {
+      for (const dataPoint of sortedData) {
+        const dataDate = new Date(dataPoint.date);
+
+        // This point is before our timestamp?
+        if (dataDate < timestamp) {
+          // Either this is our first find, or it's more recent than our previous find
+          if (
+            !mostRecentDataPoint ||
+            dataDate > new Date(mostRecentDataPoint.date)
+          ) {
+            mostRecentDataPoint = dataPoint;
+          }
+        }
+      }
+
+      // If we found a previous data point, use its value
+      if (mostRecentDataPoint) {
+        filledData.push({
+          date: timestamp.toISOString(),
+          value: mostRecentDataPoint.value,
+          isFilledDataPoint: true,
+        } as NetworthHistory);
+      }
+    }
   });
 
-  return filledData;
+  // Sort the result by date to ensure proper sequence
+  return filledData.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
 }
 
 /**
