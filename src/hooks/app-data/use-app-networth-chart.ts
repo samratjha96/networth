@@ -20,6 +20,8 @@ export function useAppNetWorthChart(timeRange: TimeRange) {
   });
 
   // Process the raw data to fill gaps
+  // This memoization is valuable as fillMissingDataPoints is computationally expensive
+  // and depends only on rawNetWorthHistory and timeRange
   const networthHistory = useMemo(() => {
     // Only apply filling if we have at least one data point
     if (rawNetWorthHistory.length === 0) return [];

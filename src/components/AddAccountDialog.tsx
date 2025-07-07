@@ -63,6 +63,8 @@ export function AddAccountDialog({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Reset form when dialog opens and when account changes
+  // We depend on isOpen, accountToEdit, defaultIsDebt, and debtTypes
+  // since these all affect the form initialization logic
   useEffect(() => {
     if (isOpen) {
       if (accountToEdit) {
@@ -82,7 +84,7 @@ export function AddAccountDialog({
       setErrors({ name: "", balance: "" });
       setIsSubmitting(false);
     }
-  }, [isOpen, accountToEdit, defaultIsDebt]);
+  }, [isOpen, accountToEdit, defaultIsDebt, debtTypes]);
 
   const validateInputs = (): boolean => {
     const newErrors = {

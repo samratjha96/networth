@@ -37,6 +37,8 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
   const userId = user?.id || null;
 
   // Invalidate all queries when mode changes
+  // We intentionally only depend on mode and queryClient here since we want to
+  // invalidate all queries whenever the app mode changes (demo/authenticated)
   useEffect(() => {
     queryClient.invalidateQueries();
   }, [mode, queryClient]);

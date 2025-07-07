@@ -45,9 +45,16 @@ export function AccountsList() {
   const { accounts, isLoading, addAccount, updateAccount, deleteAccount } =
     useAppAccounts();
 
-  // Filter accounts
-  const assetAccounts = accounts.filter((a) => !a.isDebt);
-  const liabilityAccounts = accounts.filter((a) => a.isDebt);
+  // Filter accounts - these are good candidates for memoization to avoid recreating arrays on each render
+  // Only recompute when accounts changes
+  const assetAccounts = React.useMemo(
+    () => accounts.filter((a) => !a.isDebt),
+    [accounts],
+  );
+  const liabilityAccounts = React.useMemo(
+    () => accounts.filter((a) => a.isDebt),
+    [accounts],
+  );
 
   // Dialog handlers
   const openAddDialog = (options?: { isDebt?: boolean }) => {
@@ -175,6 +182,9 @@ function useCollapsibleSections(panelType: AccountViewType) {
     },
   );
 
+  // Effect to persist collapsed sections state to localStorage
+  // Dependencies are correctly specified: collapsedSections (the data we're saving)
+  // and storageKey (where we're saving it)
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(collapsedSections));
@@ -236,24 +246,36 @@ function SplitAccountsLayout({
     );
   }
 
-  // Group accounts by their type
-  const groupedAccounts = filteredAccounts.reduce(
-    (acc, account) => {
-      if (!acc[account.type]) {
-        acc[account.type] = [];
-      }
-      acc[account.type].push(account);
-      return acc;
-    },
-    {} as Record<AccountType, AccountWithValue[]>,
-  );
+  // Group accounts by their type - this is a good candidate for memoization
+  // as it's a potentially expensive operation that creates new objects
+  // This should only be recalculated when filteredAccounts changes
+  const groupedAccounts = React.useMemo(() => {
+    return filteredAccounts.reduce(
+      (acc, account) => {
+        if (!acc[account.type]) {
+          acc[account.type] = [];
+        }
+        acc[account.type].push(account);
+        return acc;
+      },
+      {} as Record<AccountType, AccountWithValue[]>,
+    );
+  }, [filteredAccounts]);
 
-  // Get all account types
-  const accountTypes = Object.keys(groupedAccounts) as AccountType[];
+  // Get all account types - derive these from the memoized groupedAccounts
+  const accountTypes = React.useMemo(() => {
+    return Object.keys(groupedAccounts) as AccountType[];
+  }, [groupedAccounts]);
 
   // Distribute account types between two columns (alternating)
-  const leftColumnTypes = accountTypes.filter((_, i) => i % 2 === 0);
-  const rightColumnTypes = accountTypes.filter((_, i) => i % 2 === 1);
+  // These are derived from accountTypes which is already memoized
+  const leftColumnTypes = React.useMemo(() => {
+    return accountTypes.filter((_, i) => i % 2 === 0);
+  }, [accountTypes]);
+
+  const rightColumnTypes = React.useMemo(() => {
+    return accountTypes.filter((_, i) => i % 2 === 1);
+  }, [accountTypes]);
 
   return (
     <div className="p-3">
@@ -311,6 +333,7 @@ interface AccountTypeSectionProps {
   onDeleteAccount: (id: string) => void;
 }
 
+// Properly using local state for component-specific UI state
 function AccountTypeSection({
   type,
   accountType,
@@ -318,7 +341,9 @@ function AccountTypeSection({
   onEditAccount,
   onDeleteAccount,
 }: AccountTypeSectionProps) {
+  // This state is correctly kept local to this component as it's UI-specific
   const { collapsedSections, toggleSection } = useCollapsibleSections(type);
+  // This state is also correctly kept local as it only affects UI within this component
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const formatAccountBalance = (account: AccountWithValue) => {

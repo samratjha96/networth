@@ -146,36 +146,41 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
       bottom: isMobile ? 20 : 10,
     };
 
-    const commonAxisProps = {
-      xAxis: {
-        dataKey: "date",
-        stroke: "hsl(var(--muted-foreground))",
-        fontSize: isMobile ? 10 : 12,
-        tickLine: false,
-        axisLine: false,
-        tickFormatter: formatDate,
-        minTickGap: isMobile ? 40 : 40,
-        height: isMobile ? 30 : 40,
-      },
-      yAxis: {
-        stroke: "hsl(var(--muted-foreground))",
-        fontSize: isMobile ? 10 : 12,
-        tickLine: false,
-        axisLine: false,
-        width: isMobile ? 45 : 80,
-        tickFormatter: formatCurrency,
-        hide: isMobile,
-      },
-      tooltip: {
-        content: (props: TooltipProps<ValueType, NameType>) => (
-          <ChartTooltip
-            {...props}
-            selectedRange={timeRange}
-            formatValue={formatWithCurrency}
-          />
-        ),
-      },
-    };
+    // Memoize axis props to prevent recreation on every render
+    // Only recompute when dependencies like isMobile, formatDate, formatCurrency change
+    const commonAxisProps = React.useMemo(
+      () => ({
+        xAxis: {
+          dataKey: "date",
+          stroke: "hsl(var(--muted-foreground))",
+          fontSize: isMobile ? 10 : 12,
+          tickLine: false,
+          axisLine: false,
+          tickFormatter: formatDate,
+          minTickGap: isMobile ? 40 : 40,
+          height: isMobile ? 30 : 40,
+        },
+        yAxis: {
+          stroke: "hsl(var(--muted-foreground))",
+          fontSize: isMobile ? 10 : 12,
+          tickLine: false,
+          axisLine: false,
+          width: isMobile ? 45 : 80,
+          tickFormatter: formatCurrency,
+          hide: isMobile,
+        },
+        tooltip: {
+          content: (props: TooltipProps<ValueType, NameType>) => (
+            <ChartTooltip
+              {...props}
+              selectedRange={timeRange}
+              formatValue={formatWithCurrency}
+            />
+          ),
+        },
+      }),
+      [isMobile, formatDate, formatCurrency, timeRange, formatWithCurrency],
+    );
 
     const gradientDef = (
       <defs>
