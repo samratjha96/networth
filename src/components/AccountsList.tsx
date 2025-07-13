@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import React from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -47,11 +48,11 @@ export function AccountsList() {
 
   // Filter accounts - these are good candidates for memoization to avoid recreating arrays on each render
   // Only recompute when accounts changes
-  const assetAccounts = React.useMemo(
+  const assetAccounts = useMemo(
     () => accounts.filter((a) => !a.isDebt),
     [accounts],
   );
-  const liabilityAccounts = React.useMemo(
+  const liabilityAccounts = useMemo(
     () => accounts.filter((a) => a.isDebt),
     [accounts],
   );
@@ -249,7 +250,7 @@ function SplitAccountsLayout({
   // Group accounts by their type - this is a good candidate for memoization
   // as it's a potentially expensive operation that creates new objects
   // This should only be recalculated when filteredAccounts changes
-  const groupedAccounts = React.useMemo(() => {
+  const groupedAccounts = useMemo(() => {
     return filteredAccounts.reduce(
       (acc, account) => {
         if (!acc[account.type]) {
@@ -263,17 +264,17 @@ function SplitAccountsLayout({
   }, [filteredAccounts]);
 
   // Get all account types - derive these from the memoized groupedAccounts
-  const accountTypes = React.useMemo(() => {
+  const accountTypes = useMemo(() => {
     return Object.keys(groupedAccounts) as AccountType[];
   }, [groupedAccounts]);
 
   // Distribute account types between two columns (alternating)
   // These are derived from accountTypes which is already memoized
-  const leftColumnTypes = React.useMemo(() => {
+  const leftColumnTypes = useMemo(() => {
     return accountTypes.filter((_, i) => i % 2 === 0);
   }, [accountTypes]);
 
-  const rightColumnTypes = React.useMemo(() => {
+  const rightColumnTypes = useMemo(() => {
     return accountTypes.filter((_, i) => i % 2 === 1);
   }, [accountTypes]);
 
