@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Area,
@@ -89,7 +89,7 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
   } = useAppNetWorthChart(timeRangeNumber);
 
   // Create a map of real data points for quick lookup
-  const realDataPointsMap = React.useMemo(() => {
+  const realDataPointsMap = useMemo(() => {
     const map = new Map<string, boolean>();
     rawNetWorthHistory.forEach((point) => {
       map.set(point.date, true);
@@ -107,7 +107,7 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
       : [];
 
   // Calculate average value for trend line
-  const averageValue = React.useMemo(() => {
+  const averageValue = useMemo(() => {
     if (!networthHistory.length) return 0;
     const sum = networthHistory.reduce((acc, item) => acc + item.value, 0);
     return sum / networthHistory.length;
@@ -134,6 +134,42 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
     return formatWithCurrency(value);
   };
 
+  // Memoize axis props to prevent recreation on every render
+  // Only recompute when dependencies like isMobile, formatDate, formatCurrency change
+  const commonAxisProps = useMemo(
+    () => ({
+      xAxis: {
+        dataKey: "date",
+        stroke: "hsl(var(--muted-foreground))",
+        fontSize: isMobile ? 10 : 12,
+        tickLine: false,
+        axisLine: false,
+        tickFormatter: formatDate,
+        minTickGap: isMobile ? 40 : 40,
+        height: isMobile ? 30 : 40,
+      },
+      yAxis: {
+        stroke: "hsl(var(--muted-foreground))",
+        fontSize: isMobile ? 10 : 12,
+        tickLine: false,
+        axisLine: false,
+        width: isMobile ? 45 : 80,
+        tickFormatter: formatCurrency,
+        hide: isMobile,
+      },
+      tooltip: {
+        content: (props: TooltipProps<ValueType, NameType>) => (
+          <ChartTooltip
+            {...props}
+            selectedRange={timeRange}
+            formatValue={formatWithCurrency}
+          />
+        ),
+      },
+    }),
+    [isMobile, formatDate, formatCurrency, timeRange, formatWithCurrency],
+  );
+
   // Render the appropriate chart based on selected type
   const renderChart = () => {
     if (isLoading) return <ChartLoading />;
@@ -145,42 +181,6 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
       left: isMobile ? 10 : 40,
       bottom: isMobile ? 20 : 10,
     };
-
-    // Memoize axis props to prevent recreation on every render
-    // Only recompute when dependencies like isMobile, formatDate, formatCurrency change
-    const commonAxisProps = React.useMemo(
-      () => ({
-        xAxis: {
-          dataKey: "date",
-          stroke: "hsl(var(--muted-foreground))",
-          fontSize: isMobile ? 10 : 12,
-          tickLine: false,
-          axisLine: false,
-          tickFormatter: formatDate,
-          minTickGap: isMobile ? 40 : 40,
-          height: isMobile ? 30 : 40,
-        },
-        yAxis: {
-          stroke: "hsl(var(--muted-foreground))",
-          fontSize: isMobile ? 10 : 12,
-          tickLine: false,
-          axisLine: false,
-          width: isMobile ? 45 : 80,
-          tickFormatter: formatCurrency,
-          hide: isMobile,
-        },
-        tooltip: {
-          content: (props: TooltipProps<ValueType, NameType>) => (
-            <ChartTooltip
-              {...props}
-              selectedRange={timeRange}
-              formatValue={formatWithCurrency}
-            />
-          ),
-        },
-      }),
-      [isMobile, formatDate, formatCurrency, timeRange, formatWithCurrency],
-    );
 
     const gradientDef = (
       <defs>
