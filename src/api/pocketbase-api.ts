@@ -144,7 +144,7 @@ export const pocketbaseApi = {
 
         // Get latest account values
         const accountValues = await pb
-          .collection("argos_account_values")
+          .collection("argos_hourly_account_values")
           .getFullList<PocketBaseAccountValue>({
             filter: accountIds.map((id) => `account_id="${id}"`).join(" || "),
             sort: "-hour_start",
@@ -197,7 +197,7 @@ export const pocketbaseApi = {
         // Insert initial account value
         const hourStart = getHourStart();
 
-        await pb.collection("argos_account_values").create({
+        await pb.collection("argos_hourly_account_values").create({
           account_id: account.id,
           user_id: userId,
           hour_start: hourStart.toISOString(),
@@ -236,19 +236,19 @@ export const pocketbaseApi = {
 
         // Check if we already have a value for this hour
         const existingValues = await pb
-          .collection("argos_account_values")
+          .collection("argos_hourly_account_values")
           .getFullList<PocketBaseAccountValue>({
             filter: `account_id="${accountData.id}" && hour_start>="${hourStart.toISOString()}" && hour_start<"${new Date(hourStart.getTime() + 3600000).toISOString()}"`,
           });
 
         if (existingValues && existingValues.length > 0) {
           // Update existing value
-          await pb.collection("argos_account_values").update(existingValues[0].id, {
+          await pb.collection("argos_hourly_account_values").update(existingValues[0].id, {
             value: accountData.balance,
           });
         } else {
           // Insert new value
-          await pb.collection("argos_account_values").create({
+          await pb.collection("argos_hourly_account_values").create({
             account_id: accountData.id,
             user_id: userId,
             hour_start: hourStart.toISOString(),
@@ -296,7 +296,7 @@ export const pocketbaseApi = {
           accounts.map(async (account) => {
             // Get start value (latest value before or at start_date)
             const startValues = await pb
-              .collection("argos_account_values")
+              .collection("argos_hourly_account_values")
               .getFullList<PocketBaseAccountValue>({
                 filter: `account_id="${account.id}" && hour_start<="${startDate.toISOString()}"`,
                 sort: "-hour_start",
@@ -305,7 +305,7 @@ export const pocketbaseApi = {
 
             // Get end value (latest value before or at end_date)
             const endValues = await pb
-              .collection("argos_account_values")
+              .collection("argos_hourly_account_values")
               .getFullList<PocketBaseAccountValue>({
                 filter: `account_id="${account.id}" && hour_start<="${endDate.toISOString()}"`,
                 sort: "-hour_start",
