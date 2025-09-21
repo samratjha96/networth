@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { AccountWithValue, AccountType } from "@/types/accounts";
 import { CurrencyCode } from "@/types/currency";
 import { getMockDataInstance } from "@/lib/mock-data";
-import { supabaseApi } from "@/api/supabase-api";
+import { pocketbaseApi } from "@/api/pocketbase-api";
 import { sanitizeAccountData } from "@/utils/api-helpers";
 
 // Define a store type to keep our implementation clean
@@ -53,7 +53,7 @@ const updateNetWorthIfRemote = async (
   if (dataSource === "remote" && userId) {
     const totalNetWorth = calculateNetWorth(accounts);
     try {
-      await supabaseApi.networth.updateNetWorthHistory(userId, totalNetWorth);
+      await pocketbaseApi.networth.updateNetWorthHistory(userId, totalNetWorth);
     } catch (err) {
       console.error("Failed to update networth history:", err);
     }
@@ -121,7 +121,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
 
         if (dataSource === "remote" && userId) {
           // Remote operation through API
-          newAccount = await supabaseApi.accounts.createAccount(
+          newAccount = await pocketbaseApi.accounts.createAccount(
             userId,
             sanitizedData,
           );
@@ -174,7 +174,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
 
         if (dataSource === "remote" && userId) {
           // Remote operation through API
-          await supabaseApi.accounts.updateAccount(userId, sanitizedAccount);
+          await pocketbaseApi.accounts.updateAccount(userId, sanitizedAccount);
         }
 
         // Update the account in state (optimistic update)
@@ -208,7 +208,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => {
 
         if (dataSource === "remote" && userId) {
           // Remote operation through API
-          await supabaseApi.accounts.deleteAccount(userId, id);
+          await pocketbaseApi.accounts.deleteAccount(userId, id);
         }
 
         // Remove the account from state (optimistic update)

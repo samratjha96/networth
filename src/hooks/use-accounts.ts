@@ -1,7 +1,7 @@
 import { useDataSource } from "@/contexts/DataSourceContext";
 import { useAccountsStore } from "@/store/accounts-store";
 import { useEffect } from "react";
-import { useAccounts as useTanstackAccounts } from "@/api/queries";
+import { usePocketBaseAccounts as useTanstackAccounts } from "@/api/pocketbase-queries";
 import { getMockDataInstance } from "@/lib/mock-data";
 
 export function useAccounts() {

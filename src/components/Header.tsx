@@ -8,19 +8,34 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSignOut } from "@/api/queries";
+import { usePocketBaseSignOut } from "@/api/pocketbase-queries";
+
 export const Header = () => {
   const { user } = useAuthStore();
-  const signOut = useSignOut();
 
-  // Get initials for avatar
+  // Determine which auth provider to use - default to PocketBase
+  const useSupabase = import.meta.env.VITE_USE_SUPABASE === "true";
+
+  // Use appropriate signOut hook based on provider (PocketBase is default)
+  const supabaseSignOut = useSignOut();
+  const pocketbaseSignOut = usePocketBaseSignOut();
+  const signOut = useSupabase ? supabaseSignOut : pocketbaseSignOut;
+
+  // Get initials for avatar - works with both Supabase and PocketBase
   const getInitials = () => {
-    if (!user?.user_metadata?.full_name) {
+    // For Supabase users
+    const supabaseFullName = (user as any)?.user_metadata?.full_name;
+    // For PocketBase users
+    const pocketbaseFullName = (user as any)?.name;
+
+    const fullName = supabaseFullName || pocketbaseFullName;
+
+    if (!fullName) {
       return user?.email?.charAt(0).toUpperCase() || "U";
     }
 
-    const fullName = user.user_metadata.full_name as string;
     const names = fullName.split(" ");
-    return names.map((name) => name.charAt(0).toUpperCase()).join("");
+    return names.map((name: string) => name.charAt(0).toUpperCase()).join("");
   };
 
   return (
@@ -86,7 +101,9 @@ export const Header = () => {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-muted transition-colors">
                 <span className="text-sm font-medium">
-                  {user.user_metadata?.full_name || user.email}
+                  {(user as any)?.user_metadata?.full_name ||
+                    (user as any)?.name ||
+                    user.email}
                 </span>
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary text-primary-foreground">

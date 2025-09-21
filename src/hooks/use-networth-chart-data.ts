@@ -1,7 +1,7 @@
 import { useDataSource } from "@/contexts/DataSourceContext";
 import { NetworthHistory, TimeRange } from "@/types/networth";
 import { getMockDataInstance } from "@/lib/mock-data";
-import { useNetWorthChartData as useTanstackNetWorthChartData } from "@/api/queries";
+import { usePocketBaseNetWorthChartData as useTanstackNetWorthChartData } from "@/api/pocketbase-queries";
 
 export function useNetWorthChartData(timeRange: TimeRange) {
   const { dataSource, userId } = useDataSource();

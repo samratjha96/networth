@@ -3,12 +3,25 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth-store";
 import { MockDataService } from "@/services/MockDataService";
 import { SupabaseDataService } from "@/services/SupabaseDataService";
-import { AppDataContext } from "./app-data-context";
+import { PocketbaseDataService } from "@/services/PocketbaseDataService";
+import { AppDataContext, AppMode, DataSource } from "./app-data-context";
+import { DataService } from "@/services/DataService";
+import { AccountWithValue } from "@/types/accounts";
 
 // Provider props
 interface AppDataProviderProps {
   children: React.ReactNode;
 }
+
+// Utility function to determine data source from environment variables
+const getDataSource = (): DataSource => {
+  const useMock = import.meta.env.VITE_USE_MOCK === "true";
+  const useSupabase = import.meta.env.VITE_USE_SUPABASE === "true";
+
+  if (useMock) return "mock";
+  if (useSupabase) return "supabase"; // Keep as fallback option
+  return "pocketbase"; // Default to PocketBase
+};
 
 // Provider component
 export function AppDataProvider({ children }: AppDataProviderProps) {
@@ -24,12 +37,23 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
     return status === "authenticated" ? "authenticated" : "demo";
   }, [status]);
 
+  // Determine data source from environment
+  const dataSource = useMemo(() => getDataSource(), []);
+
   // Create the appropriate data service
   const dataService: DataService = useMemo(() => {
-    return mode === "authenticated" && user?.id
-      ? new SupabaseDataService(user.id)
-      : new MockDataService();
-  }, [mode, user?.id]);
+    if (mode === "authenticated" && user?.id) {
+      switch (dataSource) {
+        case "pocketbase":
+          return new PocketbaseDataService(user.id);
+        case "supabase":
+          return new SupabaseDataService(user.id); // Keep as fallback option
+        default:
+          return new MockDataService();
+      }
+    }
+    return new MockDataService();
+  }, [mode, user?.id, dataSource]);
 
   // Helper derived values
   const isDemo = mode === "demo";

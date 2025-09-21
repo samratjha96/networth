@@ -2,12 +2,20 @@ import { useState, useEffect } from "react";
 import { TimeRange } from "@/types/networth";
 import { AccountWithValue } from "@/types/accounts";
 import { useDataSource } from "@/contexts/DataSourceContext";
-import { Database } from "@/types/supabase";
-import { useAccountPerformance as useTanstackAccountPerformance } from "@/api/queries";
+// import { Database } from "@/types/supabase"; // Keep as reference only
+import { usePocketBaseAccountPerformance as useTanstackAccountPerformance } from "@/api/pocketbase-queries";
 
-// Use the type from Supabase's auto-generated types
-export type AccountPerformance =
-  Database["public"]["Functions"]["calculate_account_performance"]["Returns"][0];
+// Define AccountPerformance type for PocketBase (equivalent to Supabase's auto-generated type)
+export type AccountPerformance = {
+  account_id: string;
+  account_name: string;
+  account_type: string;
+  is_debt: boolean;
+  start_value: number;
+  end_value: number;
+  absolute_change: number;
+  percent_change: number;
+};
 
 // Get a key for storing historical data based on time range
 const getTimeKey = (timeRange: TimeRange) => `history_${timeRange}`;

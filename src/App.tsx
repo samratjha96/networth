@@ -8,6 +8,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AppDataProvider } from "@/contexts/AppDataContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ConnectionStatusMonitor } from "@/components/ConnectionStatusMonitor";
+import { AuthDebugger } from "@/components/AuthDebugger";
 
 // Create the QueryClient instance
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ function AppContent() {
       <Toaster />
       <Sonner />
       <ConnectionStatusMonitor />
+      <AuthDebugger />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />

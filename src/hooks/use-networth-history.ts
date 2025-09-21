@@ -1,7 +1,7 @@
 import { TimeRange } from "@/types/networth";
 import { useDataSource } from "@/contexts/DataSourceContext";
 import { getStartDateForTimeRange } from "@/utils/time-range";
-import { useNetWorthHistory as useTanstackNetWorthHistory } from "@/api/queries";
+import { usePocketBaseNetWorthHistory as useTanstackNetWorthHistory } from "@/api/pocketbase-queries";
 
 // Interface for net worth data returned by the hook
 export interface NetWorthData {

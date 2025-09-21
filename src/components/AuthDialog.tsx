@@ -12,12 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
-import {
-  isValidEmail,
-  isValidPassword,
-  sanitizeString,
-} from "@/utils/input-validation";
+import { isValidEmail, isValidPassword } from "@/utils/input-validation";
 import { useSignIn, useSignInWithGoogle, useSignUp } from "@/api/queries";
+import {
+  usePocketBaseSignIn,
+  usePocketBaseSignUp,
+  usePocketBaseSignInWithGoogle,
+} from "@/api/pocketbase-queries";
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
@@ -36,9 +37,25 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
     name?: string;
   }>({});
   const { error } = useAuthStore();
-  const signIn = useSignIn();
-  const signUp = useSignUp();
-  const signInWithGoogle = useSignInWithGoogle();
+
+  // Determine which auth provider to use - default to PocketBase
+  const useSupabase = import.meta.env.VITE_USE_SUPABASE === "true";
+
+  // Use appropriate auth hooks based on provider
+  const supabaseSignIn = useSignIn();
+  const supabaseSignUp = useSignUp();
+  const supabaseSignInWithGoogle = useSignInWithGoogle();
+
+  const pocketbaseSignIn = usePocketBaseSignIn();
+  const pocketbaseSignUp = usePocketBaseSignUp();
+  const pocketbaseSignInWithGoogle = usePocketBaseSignInWithGoogle();
+
+  // Select the correct hooks based on the provider (PocketBase is default)
+  const signIn = useSupabase ? supabaseSignIn : pocketbaseSignIn;
+  const signUp = useSupabase ? supabaseSignUp : pocketbaseSignUp;
+  const signInWithGoogle = useSupabase
+    ? supabaseSignInWithGoogle
+    : pocketbaseSignInWithGoogle;
   const validateInputs = (): boolean => {
     const errors: {
       email?: string;
@@ -100,7 +117,7 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
     }
   };
 
-  const handleOAuthSignIn = async (provider: "google") => {
+  const handleOAuthSignIn = async () => {
     try {
       await signInWithGoogle.mutateAsync();
 
@@ -145,7 +162,7 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
               type="button"
               variant="outline"
               className="flex items-center justify-center gap-2 py-5 w-full"
-              onClick={() => handleOAuthSignIn("google")}
+              onClick={() => handleOAuthSignIn()}
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path

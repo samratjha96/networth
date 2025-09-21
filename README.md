@@ -17,9 +17,13 @@ This project uses Vite as its build tool, which requires environment variables t
 
 ### Required Variables
 
-- `VITE_SUPABASE_URL`: Your Supabase project URL
-- `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key for client-side operations
-- `VITE_USE_SUPABASE`: Set to "true" to use Supabase backend, or "false" to use local storage
+- `VITE_POCKETBASE_URL`: Your PocketBase server URL (e.g., http://localhost:8090)
+
+### Optional Variables
+
+- `VITE_POCKETBASE_TEST_USER_EMAIL`: Test user email for development
+- `VITE_POCKETBASE_TEST_USER_PASSWORD`: Test user password for development
+- `VITE_USE_MOCK`: Set to "true" to use demo data instead of PocketBase
 
 ### Getting Started
 

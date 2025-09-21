@@ -43,6 +43,8 @@ docker-compose up --build -d
 docker-compose down
 ```
 
+**Note**: This application connects to an external PocketBase instance. Ensure your `VITE_POCKETBASE_URL` environment variable is set to your hosted PocketBase server URL before deployment.
+
 ## Architecture
 
 ### High-Level Architecture
@@ -52,7 +54,7 @@ Argos follows a modern frontend architecture with:
 1. **React Components** - Functional UI components with hooks
 2. **Global State Management** - Zustand stores for application state
 3. **Data Layer** - Abstract database interface with multiple implementations
-4. **Authentication Layer** - Supabase Auth integration
+4. **Authentication Layer** - PocketBase OAuth2 authentication
 5. **Visualization Layer** - Recharts-based interactive charts
 
 ### Key Technology Stack
@@ -63,10 +65,10 @@ Argos follows a modern frontend architecture with:
 - Styling: Tailwind CSS
 - State Management: Zustand
 - Data Fetching: React Query
-- Authentication: Supabase Auth
+- Authentication: PocketBase OAuth2 (Google)
 - Data Storage:
   - Local: Browser localStorage
-  - Cloud: Supabase
+  - Cloud: PocketBase
 - Data Visualization: Recharts
 
 ### Important Design Patterns
@@ -100,14 +102,17 @@ This project uses Vite as its build tool, which requires environment variables t
 
 ### Required Variables
 
-- `VITE_SUPABASE_URL`: Your Supabase project URL
-- `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key for client-side operations
-- `VITE_USE_SUPABASE`: Set to "true" to use Supabase backend, or "false" to use local storage
+- `VITE_POCKETBASE_URL`: Your external PocketBase server URL (e.g., https://your-pocketbase-instance.com)
+- `VITE_USE_SUPABASE`: Set to "true" to use Supabase backend, or "false" to use PocketBase (default)
+- `VITE_SUPABASE_URL`: Your Supabase project URL (only required if using Supabase)
+- `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key (only required if using Supabase)
 
 ### Optional Test Variables
 
-- `VITE_SUPABASE_TEST_USER_EMAIL`: Test user email for development
-- `VITE_SUPABASE_TEST_USER_PASSWORD`: Test user password for development
+- `VITE_POCKETBASE_TEST_USER_EMAIL`: Test user email for PocketBase development
+- `VITE_POCKETBASE_TEST_USER_PASSWORD`: Test user password for PocketBase development
+- `VITE_SUPABASE_TEST_USER_EMAIL`: Test user email for Supabase development
+- `VITE_SUPABASE_TEST_USER_PASSWORD`: Test user password for Supabase development
 
 ## File Structure
 

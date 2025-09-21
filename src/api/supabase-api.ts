@@ -1,4 +1,14 @@
 import { supabase } from "@/lib/supabase";
+
+// Helper function to ensure Supabase is available
+const ensureSupabase = () => {
+  if (!supabase) {
+    throw new Error(
+      "Supabase client not available. Make sure VITE_USE_SUPABASE=true and required environment variables are set.",
+    );
+  }
+  return supabase;
+};
 import { AccountWithValue, AccountType } from "@/types/accounts";
 import { CurrencyCode } from "@/types/currency";
 import { TimeRange } from "@/types/networth";

@@ -1,0 +1,449 @@
+import { pb } from "@/lib/pocketbase";
+import { AccountWithValue, AccountType } from "@/types/accounts";
+import { CurrencyCode } from "@/types/currency";
+import { TimeRange } from "@/types/networth";
+import { getStartDateForTimeRange } from "@/utils/time-range";
+import {
+  PocketBaseAccount,
+  PocketBaseAccountValue,
+  PocketBaseNetworthHistory,
+} from "@/types/pocketbase";
+
+/**
+ * Helper functions for common operations
+ */
+type PocketBaseError = {
+  message?: string;
+  data?: unknown;
+  status?: number;
+};
+
+const handleError = (error: PocketBaseError, context: string): never => {
+  console.error(`PocketBase API Error in ${context}:`, error);
+  throw new Error(`${context}: ${error.message || "Unknown error"}`);
+};
+
+const getHourStart = () => {
+  const hourStart = new Date();
+  hourStart.setMinutes(0, 0, 0);
+  return hourStart;
+};
+
+/**
+ * PocketBase API service
+ * Abstracts all direct PocketBase calls into a clean API
+ */
+export const pocketbaseApi = {
+  // Auth methods
+  auth: {
+    getSession: async () => {
+      return pb.authStore.isValid ? pb.authStore.record : null;
+    },
+
+    getUser: async () => {
+      return pb.authStore.record;
+    },
+
+    signInWithPassword: async (params: { email: string; password: string }) => {
+      try {
+        const authData = await pb
+          .collection("users")
+          .authWithPassword(params.email, params.password);
+
+        if (pb.authStore.isValid && pb.authStore.record) {
+          console.log("Password authentication successful:", {
+            userId: pb.authStore.record.id,
+            email: pb.authStore.record.email,
+          });
+          return { data: authData, error: null };
+        } else {
+          throw new Error("Authentication completed but authStore is invalid");
+        }
+      } catch (error) {
+        console.error("Password authentication failed:", error);
+        pb.authStore.clear();
+        return { data: null, error: error as PocketBaseError };
+      }
+    },
+
+    signUp: async (params: {
+      email: string;
+      password: string;
+      passwordConfirm?: string;
+      name?: string;
+    }) => {
+      try {
+        const data = await pb.collection("users").create({
+          email: params.email,
+          password: params.password,
+          passwordConfirm: params.passwordConfirm || params.password,
+          name: params.name || "",
+        });
+        return { data, error: null };
+      } catch (error) {
+        return { data: null, error: error as PocketBaseError };
+      }
+    },
+
+    signOut: async () => {
+      pb.authStore.clear();
+      return { error: null };
+    },
+
+    signInWithOAuth: async (params: { provider: "google" }) => {
+      try {
+        // This method initializes a one-off realtime subscription and will
+        // open a popup window with the OAuth2 vendor page to authenticate.
+        // Once the external OAuth2 sign-in/sign-up flow is completed, the popup
+        // window will be automatically closed and the OAuth2 data sent back
+        // to the user through the previously established realtime connection.
+        //
+        // IMPORTANT: If the popup is being blocked on Safari, make sure that
+        // your click handler is not using async/await.
+        const authData = await pb.collection("users").authWithOAuth2({
+          provider: params.provider,
+        });
+
+        // After successful authentication, the auth data is available in pb.authStore
+        if (pb.authStore.isValid && pb.authStore.record) {
+          console.log("OAuth2 authentication successful:", {
+            isValid: pb.authStore.isValid,
+            userId: pb.authStore.record.id,
+            email: pb.authStore.record.email,
+            token: pb.authStore.token ? "present" : "missing",
+          });
+
+          return { data: authData, error: null };
+        } else {
+          throw new Error("Authentication completed but authStore is invalid");
+        }
+      } catch (error) {
+        console.error("OAuth2 authentication failed:", error);
+        // Clear any partial auth state
+        pb.authStore.clear();
+        return { data: null, error: error as PocketBaseError };
+      }
+    },
+  },
+
+  // Accounts methods
+  accounts: {
+    getAccounts: async (userId: string): Promise<AccountWithValue[]> => {
+      try {
+        // Get accounts
+        const accounts = await pb
+          .collection("argos_accounts")
+          .getFullList<PocketBaseAccount>({
+            filter: `user_id="${userId}"`,
+          });
+
+        if (!accounts?.length) return [];
+
+        // Get latest values for each account
+        const accountIds = accounts.map((account) => account.id);
+
+        // Get latest account values
+        const accountValues = await pb
+          .collection("argos_account_values")
+          .getFullList<PocketBaseAccountValue>({
+            filter: accountIds.map((id) => `account_id="${id}"`).join(" || "),
+            sort: "-hour_start",
+          });
+
+        // Create a map of latest values
+        const latestValues: Record<string, number> = {};
+
+        // Only take the latest value for each account
+        accountValues.forEach((value) => {
+          if (!latestValues[value.account_id]) {
+            latestValues[value.account_id] = value.value;
+          }
+        });
+
+        // Map accounts with values
+        const accountsWithValues: AccountWithValue[] = accounts.map(
+          (account) => ({
+            id: account.id,
+            name: account.name,
+            type: account.type as AccountType,
+            isDebt: account.is_debt || false,
+            currency: account.currency as CurrencyCode,
+            balance: latestValues[account.id] || 0,
+          }),
+        );
+
+        return accountsWithValues;
+      } catch (error) {
+        handleError(error as PocketBaseError, "getAccounts");
+      }
+    },
+
+    createAccount: async (
+      userId: string,
+      accountData: Omit<AccountWithValue, "id">,
+    ): Promise<AccountWithValue> => {
+      try {
+        // Create account in PocketBase
+        const account = await pb
+          .collection("argos_accounts")
+          .create<PocketBaseAccount>({
+            user_id: userId,
+            name: accountData.name,
+            type: accountData.type,
+            currency: accountData.currency,
+            is_debt: accountData.isDebt || false,
+          });
+
+        // Insert initial account value
+        const hourStart = getHourStart();
+
+        await pb.collection("argos_account_values").create({
+          account_id: account.id,
+          user_id: userId,
+          hour_start: hourStart.toISOString(),
+          value: accountData.balance,
+        });
+
+        // Return combined account data
+        return {
+          id: account.id,
+          name: account.name,
+          type: account.type as AccountType,
+          balance: accountData.balance,
+          isDebt: account.is_debt || false,
+          currency: account.currency as CurrencyCode,
+        };
+      } catch (error) {
+        handleError(error as PocketBaseError, "createAccount");
+      }
+    },
+
+    updateAccount: async (
+      userId: string,
+      accountData: AccountWithValue,
+    ): Promise<void> => {
+      try {
+        // Update account in PocketBase
+        await pb.collection("argos_accounts").update(accountData.id, {
+          name: accountData.name,
+          type: accountData.type,
+          currency: accountData.currency,
+          is_debt: accountData.isDebt || false,
+        });
+
+        // Update account value
+        const hourStart = getHourStart();
+
+        // Check if we already have a value for this hour
+        const existingValues = await pb
+          .collection("argos_account_values")
+          .getFullList<PocketBaseAccountValue>({
+            filter: `account_id="${accountData.id}" && hour_start>="${hourStart.toISOString()}" && hour_start<"${new Date(hourStart.getTime() + 3600000).toISOString()}"`,
+          });
+
+        if (existingValues && existingValues.length > 0) {
+          // Update existing value
+          await pb.collection("argos_account_values").update(existingValues[0].id, {
+            value: accountData.balance,
+          });
+        } else {
+          // Insert new value
+          await pb.collection("argos_account_values").create({
+            account_id: accountData.id,
+            user_id: userId,
+            hour_start: hourStart.toISOString(),
+            value: accountData.balance,
+          });
+        }
+      } catch (error) {
+        handleError(error as PocketBaseError, "updateAccount");
+      }
+    },
+
+    deleteAccount: async (
+      _userId: string,
+      accountId: string,
+    ): Promise<void> => {
+      try {
+        // Delete account - this should cascade delete related records
+        await pb.collection("argos_accounts").delete(accountId);
+      } catch (error) {
+        handleError(error as PocketBaseError, "deleteAccount");
+      }
+    },
+
+    getAccountPerformance: async (
+      userId: string,
+      timeRange: TimeRange,
+      accountIds: string[],
+    ) => {
+      if (accountIds.length === 0) return [];
+
+      try {
+        // Calculate date range based on timeRange
+        const endDate = new Date();
+        const startDate = getStartDateForTimeRange(timeRange);
+
+        // Get account data
+        const accounts = await pb
+          .collection("argos_accounts")
+          .getFullList<PocketBaseAccount>({
+            filter: `user_id="${userId}" && (${accountIds.map((id) => `id="${id}"`).join(" || ")})`,
+          });
+
+        // For each account, get the closest value to start_date and end_date
+        const performance = await Promise.all(
+          accounts.map(async (account) => {
+            // Get start value (latest value before or at start_date)
+            const startValues = await pb
+              .collection("argos_account_values")
+              .getFullList<PocketBaseAccountValue>({
+                filter: `account_id="${account.id}" && hour_start<="${startDate.toISOString()}"`,
+                sort: "-hour_start",
+                perPage: 1,
+              });
+
+            // Get end value (latest value before or at end_date)
+            const endValues = await pb
+              .collection("argos_account_values")
+              .getFullList<PocketBaseAccountValue>({
+                filter: `account_id="${account.id}" && hour_start<="${endDate.toISOString()}"`,
+                sort: "-hour_start",
+                perPage: 1,
+              });
+
+            const startValue = startValues[0]?.value || 0;
+            const endValue = endValues[0]?.value || 0;
+            const amountChange = endValue - startValue;
+
+            // Handle percentage calculation like the SQL function
+            let percentChange = 0;
+            if (Math.abs(startValue) === 0) {
+              if (endValue > 0) percentChange = 100.0;
+              else if (endValue < 0) percentChange = -100.0;
+              else percentChange = 0.0;
+            } else {
+              percentChange = (amountChange / Math.abs(startValue)) * 100.0;
+            }
+
+            return {
+              account_id: account.id,
+              account_name: account.name,
+              account_type: account.type,
+              is_debt: account.is_debt,
+              start_value: startValue,
+              end_value: endValue,
+              absolute_change: amountChange,
+              percent_change: percentChange,
+            };
+          })
+        );
+
+        return performance.sort((a, b) => b.percent_change - a.percent_change);
+      } catch (error) {
+        handleError(error as PocketBaseError, "getAccountPerformance");
+      }
+    },
+  },
+
+  // Networth methods
+  networth: {
+    getNetWorthHistory: async (userId: string, timeRange: TimeRange) => {
+      try {
+        const startDate = getStartDateForTimeRange(timeRange);
+        const endDate = new Date();
+
+        const data = await pb
+          .collection("argos_networth_history")
+          .getFullList<PocketBaseNetworthHistory>({
+            filter: `user_id="${userId}" && date>="${startDate.toISOString()}" && date<="${endDate.toISOString()}"`,
+            sort: "date",
+          });
+
+        return data.map((item) => ({
+          date: item.date,
+          value: item.value,
+        }));
+      } catch (error) {
+        handleError(error as PocketBaseError, "getNetWorthHistory");
+      }
+    },
+
+    getLatestNetWorth: async (userId: string, timeRange: TimeRange) => {
+      try {
+        const startDate = getStartDateForTimeRange(timeRange);
+
+        // Get latest net worth value
+        const latestData = await pb
+          .collection("argos_networth_history")
+          .getFullList<PocketBaseNetworthHistory>({
+            filter: `user_id="${userId}"`,
+            sort: "-date",
+            perPage: 1,
+          });
+
+        // Get previous net worth value based on time range
+        const previousData = await pb
+          .collection("argos_networth_history")
+          .getFullList<PocketBaseNetworthHistory>({
+            filter: `user_id="${userId}" && date>="${startDate.toISOString()}"`,
+            sort: "date",
+            perPage: 1,
+          });
+
+        if (!latestData?.length) return null;
+
+        const currentValue = latestData[0].value;
+        const previousValue = previousData?.[0]?.value ?? currentValue * 0.95;
+        const change = currentValue - previousValue;
+        const percentageChange =
+          previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
+
+        return {
+          currentValue,
+          previousValue,
+          change,
+          percentageChange,
+        };
+      } catch (error) {
+        handleError(error as PocketBaseError, "getLatestNetWorth");
+      }
+    },
+
+    updateNetWorthHistory: async (
+      userId: string,
+      currentNetWorth: number,
+    ): Promise<void> => {
+      try {
+        const now = new Date();
+        const hourStart = getHourStart();
+
+        // Check if an entry for this hour already exists
+        const existingEntries = await pb
+          .collection("argos_networth_history")
+          .getFullList<PocketBaseNetworthHistory>({
+            filter: `user_id="${userId}" && date>="${hourStart.toISOString()}" && date<"${new Date(hourStart.getTime() + 3600000).toISOString()}"`,
+            sort: "-date",
+          });
+
+        if (existingEntries && existingEntries.length > 0) {
+          // Update the existing entry for this hour
+          const latestEntry = existingEntries[0];
+
+          await pb.collection("argos_networth_history").update(latestEntry.id, {
+            value: currentNetWorth,
+          });
+        } else {
+          // Create a new entry for this hour
+          await pb.collection("argos_networth_history").create({
+            user_id: userId,
+            value: currentNetWorth,
+            date: now.toISOString(), // Use the exact current time
+          });
+        }
+      } catch (error) {
+        handleError(error as PocketBaseError, "updateNetWorthHistory");
+      }
+    },
+  },
+};
