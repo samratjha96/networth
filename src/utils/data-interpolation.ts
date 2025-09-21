@@ -154,6 +154,12 @@ export function fillMissingDataPoints(
     for (const dataPoint of sortedData) {
       const dataDate = new Date(dataPoint.date);
 
+      // Skip anchor points when looking for exact matches within the time range
+      // (anchor points are outside the time range and shouldn't appear on the chart)
+      if ((dataPoint as any).isAnchorPoint && dataDate < startDate) {
+        continue;
+      }
+
       // Exact match for this interval?
       if (isSameInterval(timestamp, dataDate, interval)) {
         filledData.push({
@@ -194,9 +200,16 @@ export function fillMissingDataPoints(
   });
 
   // Sort the result by date to ensure proper sequence
-  return filledData.sort(
+  const result = filledData.sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
+
+  // Filter out any anchor points from the final result
+  // (they were used for interpolation but shouldn't appear on the chart)
+  return result.filter((point) => {
+    const pointDate = new Date(point.date);
+    return pointDate >= startDate && pointDate <= endDate;
+  });
 }
 
 /**

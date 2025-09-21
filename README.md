@@ -103,6 +103,60 @@ export default defineConfig(({ mode }) => {
 
 > **Important**: Do not use `process.env` as it's not available in Vite client-side code.
 
+## Database Administration
+
+This project includes a powerful database exploration and maintenance tool for debugging user data issues and managing the PocketBase database.
+
+### Database Explorer Script
+
+The `scripts/database.js` script provides comprehensive database analysis and maintenance capabilities:
+
+```bash
+# List all users in the database
+node scripts/database.js users
+
+# Complete data exploration for a specific user
+node scripts/database.js explore <userId>
+
+# Analyze account values and mappings
+node scripts/database.js accounts <userId>
+
+# Analyze net worth history
+node scripts/database.js networth <userId>
+
+# Clean up problematic data entries
+node scripts/database.js cleanup <userId>
+```
+
+### Required Environment Variables for Database Scripts
+
+For database administration scripts, set these environment variables:
+
+```bash
+POCKETBASE_URL=your-pocketbase-url
+POCKETBASE_ADMIN_EMAIL=admin@example.com
+POCKETBASE_ADMIN_PASSWORD=your-admin-password
+```
+
+### Example Usage
+
+```bash
+# Explore all data for a user (comprehensive analysis)
+node scripts/database.js explore abc123xyz
+
+# Output includes:
+# - Account analysis with values and data points
+# - Net worth history analysis
+# - Data issue identification
+# - Expected vs actual net worth comparison
+```
+
+The database explorer helps identify and resolve common issues like:
+- Accounts showing $0 values due to mapping problems
+- Net worth charts dropping to zero from problematic entries
+- Missing or corrupted historical data
+- Data synchronization issues between accounts and net worth history
+
 ## Technologies
 
 This project is built with:
@@ -112,4 +166,4 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
-- Supabase (optional backend)
+- PocketBase (backend database)

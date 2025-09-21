@@ -359,16 +359,38 @@ export const pocketbaseApi = {
         const startDate = getStartDateForTimeRange(timeRange);
         const endDate = new Date();
 
-        const data = await pb
+        // Get data within the time range
+        const dataInRange = await pb
           .collection("argos_networth_history")
           .getFullList<PocketBaseNetworthHistory>({
             filter: `user_id="${userId}" && date>="${startDate.toISOString()}" && date<="${endDate.toISOString()}"`,
             sort: "date",
           });
 
-        return data.map((item) => ({
+        // Get the most recent data point BEFORE the time range for interpolation
+        // We'll include this but mark it so the frontend can handle it appropriately
+        let dataBeforeRange: PocketBaseNetworthHistory[] = [];
+        try {
+          const beforeRangeData = await pb
+            .collection("argos_networth_history")
+            .getFullList<PocketBaseNetworthHistory>({
+              filter: `user_id="${userId}" && date<"${startDate.toISOString()}"`,
+              sort: "-date", // Most recent first
+              perPage: 1, // Only need the latest one
+            });
+          dataBeforeRange = beforeRangeData;
+        } catch (error) {
+          // No data before range, that's okay
+        }
+
+        // Combine the data: before range + in range
+        const allData = [...dataBeforeRange, ...dataInRange];
+
+        return allData.map((item, index) => ({
           date: item.date,
           value: item.value,
+          // Mark the first item as anchor if it's from before the range
+          isAnchorPoint: index === 0 && dataBeforeRange.length > 0,
         }));
       } catch (error) {
         handleError(error as PocketBaseError, "getNetWorthHistory");
