@@ -142,23 +142,29 @@ export const pocketbaseApi = {
         // Get latest values for each account
         const accountIds = accounts.map((account) => account.id);
 
-        // Get latest account values
-        const accountValues = await pb
-          .collection("argos_hourly_account_values")
-          .getFullList<PocketBaseAccountValue>({
-            filter: accountIds.map((id) => `account_id="${id}"`).join(" || "),
-            sort: "-hour_start",
-          });
-
         // Create a map of latest values
         const latestValues: Record<string, number> = {};
 
-        // Only take the latest value for each account
-        accountValues.forEach((value) => {
-          if (!latestValues[value.account_id]) {
-            latestValues[value.account_id] = value.value;
-          }
-        });
+        // Get the latest value for each account individually to ensure accuracy
+        await Promise.all(
+          accountIds.map(async (accountId) => {
+            try {
+              const latestValue = await pb
+                .collection("argos_hourly_account_values")
+                .getFirstListItem<PocketBaseAccountValue>(
+                  `account_id="${accountId}"`,
+                  {
+                    sort: "-hour_start",
+                  }
+                );
+              latestValues[accountId] = latestValue.value;
+            } catch (error) {
+              // If no value found for this account, default to 0
+              console.warn(`No hourly values found for account ${accountId}, defaulting to 0`);
+              latestValues[accountId] = 0;
+            }
+          })
+        );
 
         // Map accounts with values
         const accountsWithValues: AccountWithValue[] = accounts.map(

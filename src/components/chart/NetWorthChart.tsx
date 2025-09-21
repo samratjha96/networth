@@ -66,27 +66,15 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
   const { formatWithCurrency } = useCurrencyFormatter(currency);
   const isMobile = useIsMobile();
 
-  const timeRangeNumber =
-    typeof timeRange === "number"
-      ? timeRange
-      : timeRange === "day"
-        ? 1
-        : timeRange === "week"
-          ? 7
-          : timeRange === "month"
-            ? 30
-            : timeRange === "year"
-              ? 365
-              : 0;
-
   // Use our centralized data hook for chart data
+  // Pass the timeRange directly since the hook expects TimeRange type
   const {
     networthHistory,
     rawNetWorthHistory,
     isLoading,
     currentNetWorth,
     dataStats,
-  } = useAppNetWorthChart(timeRangeNumber);
+  } = useAppNetWorthChart(timeRange);
 
   // Create a map of real data points for quick lookup
   const realDataPointsMap = useMemo(() => {
