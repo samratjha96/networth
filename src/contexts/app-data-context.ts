@@ -6,7 +6,7 @@ import { AccountWithValue } from "@/types/accounts";
 export type AppMode = "demo" | "authenticated";
 
 // Data source types for different backends
-export type DataSource = "mock" | "supabase" | "pocketbase";
+export type DataSource = "mock" | "pocketbase";
 
 // Context interface
 export interface AppDataContextValue {

@@ -27,15 +27,10 @@ export const AuthDebugger = () => {
         <div>Status: {status}</div>
         <div>User ID: {user?.id || "none"}</div>
         <div>Email: {user?.email || "none"}</div>
-        <div>Name: {(user as any)?.name || "none"}</div>
+        <div>Name: {(user as { name?: string })?.name || "none"}</div>
         <div>PB Valid: {pb.authStore.isValid ? "yes" : "no"}</div>
         <div>PB Token: {pb.authStore.token ? "present" : "none"}</div>
-        <div>
-          Provider:{" "}
-          {import.meta.env.VITE_USE_SUPABASE === "true"
-            ? "supabase"
-            : "pocketbase (default)"}
-        </div>
+        <div>Provider: pocketbase</div>
         <div>PB URL: {import.meta.env.VITE_POCKETBASE_URL}</div>
         {error && <div className="text-red-300">Error: {error.message}</div>}
 

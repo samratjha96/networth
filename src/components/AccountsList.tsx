@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import React from "react";
 import {
   TrendingUp,
@@ -144,6 +144,7 @@ export function AccountsList() {
               onEditAccount={openEditDialog}
               onDeleteAccount={deleteAccount}
               onAddAccount={openAddDialog}
+              onUpdateAccount={updateAccount}
             />
           )}
         </CardContent>
@@ -213,6 +214,7 @@ interface SplitAccountsLayoutProps {
   onEditAccount: (account: AccountWithValue) => void;
   onDeleteAccount: (id: string) => void;
   onAddAccount: (options?: { isDebt?: boolean }) => void;
+  onUpdateAccount: (account: AccountWithValue) => void;
 }
 
 function SplitAccountsLayout({
@@ -221,31 +223,11 @@ function SplitAccountsLayout({
   onEditAccount,
   onDeleteAccount,
   onAddAccount,
+  onUpdateAccount,
 }: SplitAccountsLayoutProps) {
   const filteredAccounts = accounts.filter((account) =>
     type === "assets" ? !account.isDebt : account.isDebt,
   );
-
-  if (filteredAccounts.length === 0) {
-    return (
-      <Alert variant="default" className="m-4 bg-muted/50 border border-dashed">
-        <PlusCircle className="h-4 w-4 text-muted-foreground" />
-        <AlertDescription className="flex items-center justify-between w-full">
-          <span>
-            Add your first {type === "assets" ? "asset" : "liability"} account
-            to start tracking
-          </span>
-          <Badge
-            variant="outline"
-            className="cursor-pointer hover:bg-primary/10"
-            onClick={() => onAddAccount({ isDebt: type === "liabilities" })}
-          >
-            Add {type === "assets" ? "Asset" : "Liability"}
-          </Badge>
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   // Group accounts by their type - this is a good candidate for memoization
   // as it's a potentially expensive operation that creates new objects
@@ -278,6 +260,27 @@ function SplitAccountsLayout({
     return accountTypes.filter((_, i) => i % 2 === 1);
   }, [accountTypes]);
 
+  if (filteredAccounts.length === 0) {
+    return (
+      <Alert variant="default" className="m-4 bg-muted/50 border border-dashed">
+        <PlusCircle className="h-4 w-4 text-muted-foreground" />
+        <AlertDescription className="flex items-center justify-between w-full">
+          <span>
+            Add your first {type === "assets" ? "asset" : "liability"} account
+            to start tracking
+          </span>
+          <Badge
+            variant="outline"
+            className="cursor-pointer hover:bg-primary/10"
+            onClick={() => onAddAccount({ isDebt: type === "liabilities" })}
+          >
+            Add {type === "assets" ? "Asset" : "Liability"}
+          </Badge>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <div className="p-3">
       {/* Mobile view - single column */}
@@ -290,6 +293,7 @@ function SplitAccountsLayout({
             accounts={groupedAccounts[accType]}
             onEditAccount={onEditAccount}
             onDeleteAccount={onDeleteAccount}
+            onUpdateAccount={onUpdateAccount}
           />
         ))}
       </div>
@@ -305,6 +309,7 @@ function SplitAccountsLayout({
               accounts={groupedAccounts[accType]}
               onEditAccount={onEditAccount}
               onDeleteAccount={onDeleteAccount}
+              onUpdateAccount={onUpdateAccount}
             />
           ))}
         </div>
@@ -318,6 +323,7 @@ function SplitAccountsLayout({
               accounts={groupedAccounts[accType]}
               onEditAccount={onEditAccount}
               onDeleteAccount={onDeleteAccount}
+              onUpdateAccount={onUpdateAccount}
             />
           ))}
         </div>
@@ -332,20 +338,18 @@ interface AccountTypeSectionProps {
   accounts: AccountWithValue[];
   onEditAccount: (account: AccountWithValue) => void;
   onDeleteAccount: (id: string) => void;
+  onUpdateAccount: (account: AccountWithValue) => void;
 }
 
-// Properly using local state for component-specific UI state
-function AccountTypeSection({
-  type,
-  accountType,
-  accounts,
-  onEditAccount,
-  onDeleteAccount,
-}: AccountTypeSectionProps) {
-  // This state is correctly kept local to this component as it's UI-specific
-  const { collapsedSections, toggleSection } = useCollapsibleSections(type);
-  // This state is also correctly kept local as it only affects UI within this component
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+interface EditableBalanceProps {
+  account: AccountWithValue;
+  onUpdateBalance: (accountId: string, newBalance: number) => void;
+}
+
+function EditableBalance({ account, onUpdateBalance }: EditableBalanceProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const formatAccountBalance = (account: AccountWithValue) => {
     const symbol = CURRENCY_SYMBOLS[account.currency];
@@ -356,6 +360,105 @@ function AccountTypeSection({
     return account.balance < 0
       ? `-${symbol}${formatted}`
       : `${symbol}${formatted}`;
+  };
+
+  const handleClick = () => {
+    setIsEditing(true);
+    setEditValue(Math.abs(account.balance).toString());
+  };
+
+  const handleSave = () => {
+    const numValue = parseFloat(editValue);
+    if (!isNaN(numValue)) {
+      // For liability accounts, ensure the balance is negative (same logic as AddAccountDialog)
+      const finalValue = account.isDebt && numValue > 0 ? -numValue : numValue;
+      onUpdateBalance(account.id, finalValue);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditValue("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === "Escape") {
+      handleCancel();
+    }
+  };
+
+  const handleBlur = () => {
+    handleSave();
+  };
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  if (isEditing) {
+    return (
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="number"
+          step="0.01"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          className={cn(
+            "text-lg font-semibold bg-transparent border-b-2 border-primary outline-none w-full",
+            account.isDebt
+              ? "text-red-500"
+              : "text-green-600 dark:text-green-500",
+          )}
+          placeholder="Enter amount"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "text-lg font-semibold cursor-pointer hover:bg-muted/20 rounded px-1 py-0.5 transition-colors",
+        account.isDebt ? "text-red-500" : "text-green-600 dark:text-green-500",
+      )}
+      onClick={handleClick}
+      title="Click to edit balance"
+    >
+      {formatAccountBalance(account)}
+    </div>
+  );
+}
+
+// Properly using local state for component-specific UI state
+function AccountTypeSection({
+  type,
+  accountType,
+  accounts,
+  onEditAccount,
+  onDeleteAccount,
+  onUpdateAccount,
+}: AccountTypeSectionProps) {
+  // This state is correctly kept local to this component as it's UI-specific
+  const { collapsedSections, toggleSection } = useCollapsibleSections(type);
+  // This state is also correctly kept local as it only affects UI within this component
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  const handleUpdateBalance = (accountId: string, newBalance: number) => {
+    const account = accounts.find((a) => a.id === accountId);
+    if (account) {
+      const updatedAccount = { ...account, balance: newBalance };
+      onUpdateAccount(updatedAccount);
+    }
   };
 
   return (
@@ -464,16 +567,10 @@ function AccountTypeSection({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <div
-                    className={cn(
-                      "text-lg font-semibold",
-                      account.isDebt
-                        ? "text-red-500"
-                        : "text-green-600 dark:text-green-500",
-                    )}
-                  >
-                    {formatAccountBalance(account)}
-                  </div>
+                  <EditableBalance
+                    account={account}
+                    onUpdateBalance={handleUpdateBalance}
+                  />
                 </div>
               </div>
             );

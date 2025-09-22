@@ -137,7 +137,9 @@ export const pocketbaseApi = {
             filter: `user_id="${userId}"`,
           });
 
-        if (!accounts?.length) return [];
+        if (!accounts?.length) {
+          return [];
+        }
 
         // Get latest values for each account
         const accountIds = accounts.map((account) => account.id);
@@ -155,15 +157,14 @@ export const pocketbaseApi = {
                   `account_id="${accountId}"`,
                   {
                     sort: "-hour_start",
-                  }
+                  },
                 );
               latestValues[accountId] = latestValue.value;
             } catch (error) {
               // If no value found for this account, default to 0
-              console.warn(`No hourly values found for account ${accountId}, defaulting to 0`);
               latestValues[accountId] = 0;
             }
-          })
+          }),
         );
 
         // Map accounts with values
@@ -180,6 +181,7 @@ export const pocketbaseApi = {
 
         return accountsWithValues;
       } catch (error) {
+        console.error("❌ PocketBase: getAccounts error:", error);
         handleError(error as PocketBaseError, "getAccounts");
       }
     },
@@ -206,7 +208,7 @@ export const pocketbaseApi = {
         await pb.collection("argos_hourly_account_values").create({
           account_id: account.id,
           user_id: userId,
-          hour_start: hourStart.toISOString(),
+          hour_start: hourStart,
           value: accountData.balance,
         });
 
@@ -230,38 +232,48 @@ export const pocketbaseApi = {
     ): Promise<void> => {
       try {
         // Update account in PocketBase
-        await pb.collection("argos_accounts").update(accountData.id, {
-          name: accountData.name,
-          type: accountData.type,
-          currency: accountData.currency,
-          is_debt: accountData.isDebt || false,
-        });
+        const updatedAccount = await pb
+          .collection("argos_accounts")
+          .update(accountData.id, {
+            name: accountData.name,
+            type: accountData.type,
+            currency: accountData.currency,
+            is_debt: accountData.isDebt || false,
+          });
 
-        // Update account value
+        // Update account value - use upsert pattern (try to update, if not found then create)
         const hourStart = getHourStart();
+        // Try to find and update existing value for this hour
+        try {
+          const existingValue = await pb
+            .collection("argos_hourly_account_values")
+            .getFirstListItem<PocketBaseAccountValue>(
+              pb.filter(
+                "account_id = {:accountId} && hour_start = {:hourStart}",
+                {
+                  accountId: accountData.id,
+                  hourStart: hourStart,
+                },
+              ),
+            );
 
-        // Check if we already have a value for this hour
-        const existingValues = await pb
-          .collection("argos_hourly_account_values")
-          .getFullList<PocketBaseAccountValue>({
-            filter: `account_id="${accountData.id}" && hour_start>="${hourStart.toISOString()}" && hour_start<"${new Date(hourStart.getTime() + 3600000).toISOString()}"`,
-          });
-
-        if (existingValues && existingValues.length > 0) {
           // Update existing value
-          await pb.collection("argos_hourly_account_values").update(existingValues[0].id, {
-            value: accountData.balance,
-          });
-        } else {
-          // Insert new value
+          await pb
+            .collection("argos_hourly_account_values")
+            .update(existingValue.id, {
+              value: accountData.balance,
+            });
+        } catch (error) {
+          // No existing value found, create new one
           await pb.collection("argos_hourly_account_values").create({
             account_id: accountData.id,
             user_id: userId,
-            hour_start: hourStart.toISOString(),
+            hour_start: hourStart,
             value: accountData.balance,
           });
         }
       } catch (error) {
+        console.error("❌ PocketBase: updateAccount error:", error);
         handleError(error as PocketBaseError, "updateAccount");
       }
     },
@@ -304,7 +316,13 @@ export const pocketbaseApi = {
             const startValues = await pb
               .collection("argos_hourly_account_values")
               .getFullList<PocketBaseAccountValue>({
-                filter: `account_id="${account.id}" && hour_start<="${startDate.toISOString()}"`,
+                filter: pb.filter(
+                  "account_id = {:accountId} && hour_start <= {:startDate}",
+                  {
+                    accountId: account.id,
+                    startDate: startDate,
+                  },
+                ),
                 sort: "-hour_start",
                 perPage: 1,
               });
@@ -313,7 +331,13 @@ export const pocketbaseApi = {
             const endValues = await pb
               .collection("argos_hourly_account_values")
               .getFullList<PocketBaseAccountValue>({
-                filter: `account_id="${account.id}" && hour_start<="${endDate.toISOString()}"`,
+                filter: pb.filter(
+                  "account_id = {:accountId} && hour_start <= {:endDate}",
+                  {
+                    accountId: account.id,
+                    endDate: endDate,
+                  },
+                ),
                 sort: "-hour_start",
                 perPage: 1,
               });
@@ -342,7 +366,7 @@ export const pocketbaseApi = {
               absolute_change: amountChange,
               percent_change: percentChange,
             };
-          })
+          }),
         );
 
         return performance.sort((a, b) => b.percent_change - a.percent_change);
@@ -363,7 +387,14 @@ export const pocketbaseApi = {
         const dataInRange = await pb
           .collection("argos_networth_history")
           .getFullList<PocketBaseNetworthHistory>({
-            filter: `user_id="${userId}" && date>="${startDate.toISOString()}" && date<="${endDate.toISOString()}"`,
+            filter: pb.filter(
+              "user_id = {:userId} && date >= {:startDate} && date <= {:endDate}",
+              {
+                userId: userId,
+                startDate: startDate,
+                endDate: endDate,
+              },
+            ),
             sort: "date",
           });
 
@@ -374,7 +405,10 @@ export const pocketbaseApi = {
           const beforeRangeData = await pb
             .collection("argos_networth_history")
             .getFullList<PocketBaseNetworthHistory>({
-              filter: `user_id="${userId}" && date<"${startDate.toISOString()}"`,
+              filter: pb.filter("user_id = {:userId} && date < {:startDate}", {
+                userId: userId,
+                startDate: startDate,
+              }),
               sort: "-date", // Most recent first
               perPage: 1, // Only need the latest one
             });
@@ -414,7 +448,10 @@ export const pocketbaseApi = {
         const previousData = await pb
           .collection("argos_networth_history")
           .getFullList<PocketBaseNetworthHistory>({
-            filter: `user_id="${userId}" && date>="${startDate.toISOString()}"`,
+            filter: pb.filter("user_id = {:userId} && date >= {:startDate}", {
+              userId: userId,
+              startDate: startDate,
+            }),
             sort: "date",
             perPage: 1,
           });
@@ -450,7 +487,14 @@ export const pocketbaseApi = {
         const existingEntries = await pb
           .collection("argos_networth_history")
           .getFullList<PocketBaseNetworthHistory>({
-            filter: `user_id="${userId}" && date>="${hourStart.toISOString()}" && date<"${new Date(hourStart.getTime() + 3600000).toISOString()}"`,
+            filter: pb.filter(
+              "user_id = {:userId} && date >= {:hourStart} && date < {:hourEnd}",
+              {
+                userId: userId,
+                hourStart: hourStart,
+                hourEnd: new Date(hourStart.getTime() + 3600000),
+              },
+            ),
             sort: "-date",
           });
 
@@ -466,7 +510,7 @@ export const pocketbaseApi = {
           await pb.collection("argos_networth_history").create({
             user_id: userId,
             value: currentNetWorth,
-            date: now.toISOString(), // Use the exact current time
+            date: now, // Use the exact current time
           });
         }
       } catch (error) {

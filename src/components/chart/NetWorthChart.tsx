@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Area,
@@ -106,21 +106,27 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
     currentNetWorth < 0 ? "hsl(var(--destructive))" : "hsl(var(--primary))";
 
   // Format date for display
-  const formatDate = (dateStr: string) => formatDateByRange(dateStr, timeRange);
+  const formatDate = useCallback(
+    (dateStr: string) => formatDateByRange(dateStr, timeRange),
+    [timeRange],
+  );
 
   // Format currency for mobile
-  const formatCurrency = (value: number) => {
-    if (isMobile) {
-      const absValue = Math.abs(value);
-      if (absValue >= 1000000) {
-        return formatWithCurrency(value / 1000000).replace(/\.00$/, "") + "M";
+  const formatCurrency = useCallback(
+    (value: number) => {
+      if (isMobile) {
+        const absValue = Math.abs(value);
+        if (absValue >= 1000000) {
+          return formatWithCurrency(value / 1000000).replace(/\.00$/, "") + "M";
+        }
+        if (absValue >= 1000) {
+          return formatWithCurrency(value / 1000).replace(/\.00$/, "") + "K";
+        }
       }
-      if (absValue >= 1000) {
-        return formatWithCurrency(value / 1000).replace(/\.00$/, "") + "K";
-      }
-    }
-    return formatWithCurrency(value);
-  };
+      return formatWithCurrency(value);
+    },
+    [isMobile, formatWithCurrency],
+  );
 
   // Memoize axis props to prevent recreation on every render
   // Only recompute when dependencies like isMobile, formatDate, formatCurrency change

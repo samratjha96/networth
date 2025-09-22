@@ -152,6 +152,7 @@ node scripts/database.js explore abc123xyz
 ```
 
 The database explorer helps identify and resolve common issues like:
+
 - Accounts showing $0 values due to mapping problems
 - Net worth charts dropping to zero from problematic entries
 - Missing or corrupted historical data

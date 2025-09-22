@@ -50,21 +50,24 @@ export function isSameInterval(
         date1.getMonth() === date2.getMonth() &&
         date1.getDate() === date2.getDate()
       );
-    case TimeInterval.WEEKLY:
-      // Get week number
-      const d1 = new Date(date1);
-      const d2 = new Date(date2);
-      d1.setHours(0, 0, 0, 0);
-      d2.setHours(0, 0, 0, 0);
-      const weekStart1 = d1.getDate() - d1.getDay();
-      const weekStart2 = d2.getDate() - d2.getDay();
-      d1.setDate(weekStart1);
-      d2.setDate(weekStart2);
-      return (
-        d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate()
-      );
+    case TimeInterval.WEEKLY: {
+      {
+        // Get week number
+        const d1 = new Date(date1);
+        const d2 = new Date(date2);
+        d1.setHours(0, 0, 0, 0);
+        d2.setHours(0, 0, 0, 0);
+        const weekStart1 = d1.getDate() - d1.getDay();
+        const weekStart2 = d2.getDate() - d2.getDay();
+        d1.setDate(weekStart1);
+        d2.setDate(weekStart2);
+        return (
+          d1.getFullYear() === d2.getFullYear() &&
+          d1.getMonth() === d2.getMonth() &&
+          d1.getDate() === d2.getDate()
+        );
+      }
+    }
     case TimeInterval.MONTHLY:
       return (
         date1.getFullYear() === date2.getFullYear() &&
@@ -156,7 +159,10 @@ export function fillMissingDataPoints(
 
       // Skip anchor points when looking for exact matches within the time range
       // (anchor points are outside the time range and shouldn't appear on the chart)
-      if ((dataPoint as any).isAnchorPoint && dataDate < startDate) {
+      if (
+        (dataPoint as { isAnchorPoint?: boolean }).isAnchorPoint &&
+        dataDate < startDate
+      ) {
         continue;
       }
 

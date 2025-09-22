@@ -13,7 +13,6 @@ import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
 import { isValidEmail, isValidPassword } from "@/utils/input-validation";
-import { useSignIn, useSignInWithGoogle, useSignUp } from "@/api/queries";
 import {
   usePocketBaseSignIn,
   usePocketBaseSignUp,
@@ -38,24 +37,10 @@ export function AuthDialog({ trigger, className }: AuthDialogProps) {
   }>({});
   const { error } = useAuthStore();
 
-  // Determine which auth provider to use - default to PocketBase
-  const useSupabase = import.meta.env.VITE_USE_SUPABASE === "true";
-
-  // Use appropriate auth hooks based on provider
-  const supabaseSignIn = useSignIn();
-  const supabaseSignUp = useSignUp();
-  const supabaseSignInWithGoogle = useSignInWithGoogle();
-
-  const pocketbaseSignIn = usePocketBaseSignIn();
-  const pocketbaseSignUp = usePocketBaseSignUp();
-  const pocketbaseSignInWithGoogle = usePocketBaseSignInWithGoogle();
-
-  // Select the correct hooks based on the provider (PocketBase is default)
-  const signIn = useSupabase ? supabaseSignIn : pocketbaseSignIn;
-  const signUp = useSupabase ? supabaseSignUp : pocketbaseSignUp;
-  const signInWithGoogle = useSupabase
-    ? supabaseSignInWithGoogle
-    : pocketbaseSignInWithGoogle;
+  // Use PocketBase auth hooks
+  const signIn = usePocketBaseSignIn();
+  const signUp = usePocketBaseSignUp();
+  const signInWithGoogle = usePocketBaseSignInWithGoogle();
   const validateInputs = (): boolean => {
     const errors: {
       email?: string;

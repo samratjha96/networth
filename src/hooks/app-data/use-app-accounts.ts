@@ -22,7 +22,9 @@ export function useAppAccounts() {
     error,
   } = useQuery({
     queryKey: ["accounts", mode],
-    queryFn: () => dataService.getAccounts(),
+    queryFn: async () => {
+      return await dataService.getAccounts();
+    },
   });
 
   // Mutation for adding account (integrated with context)

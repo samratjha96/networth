@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { TimeRange } from "@/types/networth";
 import { AccountWithValue } from "@/types/accounts";
 import { useDataSource } from "@/contexts/DataSourceContext";
-// import { Database } from "@/types/supabase"; // Keep as reference only
 import { usePocketBaseAccountPerformance as useTanstackAccountPerformance } from "@/api/pocketbase-queries";
 
-// Define AccountPerformance type for PocketBase (equivalent to Supabase's auto-generated type)
+// Define AccountPerformance type for PocketBase
 export type AccountPerformance = {
   account_id: string;
   account_name: string;
