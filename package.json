@@ -9,8 +9,7 @@
     "preview": "vite preview",
     "lint": "prettier --write . && eslint --fix .",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit",
-    "migrate:supabase": "node scripts/migrate-supabase.js"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -41,7 +40,6 @@
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
-    "@supabase/supabase-js": "^2.49.1",
     "@tanstack/react-query": "^5.69.0",
     "@tanstack/react-query-devtools": "^5.69.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
@@ -92,7 +90,6 @@
     "globals": "^15.9.0",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.11",
-    "supabase": "^2.19.7",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1"
   }

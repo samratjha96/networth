@@ -76,7 +76,7 @@ Argos follows a modern frontend architecture with:
 1. **Centralized Data Service Pattern**
 
    - The application uses an abstract `DataService` interface to define all data operations
-   - Concrete implementations: `MockDataService` (demo mode) and `SupabaseDataService` (authenticated mode)
+   - Concrete implementations: `MockDataService` (demo mode) and `PocketbaseDataService` (authenticated mode)
    - `AppDataContext` centralizes data access and switches between implementations based on authentication state
 
 2. **Specialized Data Hooks**
@@ -103,16 +103,12 @@ This project uses Vite as its build tool, which requires environment variables t
 ### Required Variables
 
 - `VITE_POCKETBASE_URL`: Your external PocketBase server URL (e.g., https://your-pocketbase-instance.com)
-- `VITE_USE_SUPABASE`: Set to "true" to use Supabase backend, or "false" to use PocketBase (default)
-- `VITE_SUPABASE_URL`: Your Supabase project URL (only required if using Supabase)
-- `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key (only required if using Supabase)
 
-### Optional Test Variables
+### Optional Variables
 
+- `VITE_USE_MOCK`: Set to "true" to use mock data (demo mode), defaults to "false"
 - `VITE_POCKETBASE_TEST_USER_EMAIL`: Test user email for PocketBase development
 - `VITE_POCKETBASE_TEST_USER_PASSWORD`: Test user password for PocketBase development
-- `VITE_SUPABASE_TEST_USER_EMAIL`: Test user email for Supabase development
-- `VITE_SUPABASE_TEST_USER_PASSWORD`: Test user password for Supabase development
 
 ## File Structure
 
@@ -126,14 +122,13 @@ This project uses Vite as its build tool, which requires environment variables t
 - `/src/services/`: Core business logic and data services
   - `DataService.ts`: Abstract interface for data operations
   - `MockDataService.ts`: Implementation for demo mode
-  - `SupabaseDataService.ts`: Implementation for authenticated mode
+  - `PocketbaseDataService.ts`: Implementation for authenticated mode
 - `/src/store/`: Zustand stores
 - `/src/contexts/`: React contexts
   - `AppDataContext.tsx`: Central data provider and mode switching
 - `/src/lib/`: Utility functions and libraries
 - `/src/types/`: TypeScript type definitions
 - `/src/api/`: API and query definitions
-- `/sql/`: SQL migration scripts for Supabase
 
 ### Important Files
 
@@ -142,49 +137,78 @@ This project uses Vite as its build tool, which requires environment variables t
 - `src/services/DataService.ts`: Interface defining all data operations
 - `src/contexts/AppDataContext.tsx`: Centralized data management
 - `src/components/AuthProvider.tsx`: Authentication provider
-- `src/lib/supabase.ts`: Supabase client configuration
+- `src/services/PocketbaseDataService.ts`: PocketBase data service implementation
 
 ## Data Model
 
-The core entities in this application are:
+The application uses PocketBase with the following schema (based on production database):
 
-1. **Account**: Represents a financial account (asset or liability)
+### PocketBase Collections
 
-   ```typescript
-   interface Account {
-     id: string;
-     name: string;
-     type: AccountType; // Asset or Debt type
-     isDebt?: boolean;
-     currency: CurrencyCode;
-   }
+1. **argos_accounts** - Account master data
+   ```sql
+   CREATE TABLE argos_accounts (
+     id TEXT PRIMARY KEY DEFAULT ('r'||lower(hex(randomblob(7)))),
+     name TEXT DEFAULT '' NOT NULL,
+     type TEXT DEFAULT '' NOT NULL,
+     currency TEXT DEFAULT '' NOT NULL,
+     is_debt BOOLEAN DEFAULT FALSE NOT NULL,
+     user_id TEXT DEFAULT '' NOT NULL
+   );
    ```
 
-2. **AccountWithValue**: Account with current balance
-
-   ```typescript
-   interface AccountWithValue extends Account {
-     balance: number;
-   }
+2. **argos_hourly_account_values** - Historical account values
+   ```sql
+   CREATE TABLE argos_hourly_account_values (
+     id TEXT PRIMARY KEY DEFAULT ('r'||lower(hex(randomblob(7)))),
+     account_id TEXT DEFAULT '' NOT NULL,
+     hour_start TEXT DEFAULT '' NOT NULL,
+     value NUMERIC DEFAULT 0 NOT NULL,
+     user_id TEXT DEFAULT '' NOT NULL
+   );
    ```
 
-3. **AccountValue**: Historical account value
-
-   ```typescript
-   interface AccountValue {
-     accountId: string;
-     hourStart: Date;
-     value: number;
-   }
+3. **argos_networth_history** - Net worth snapshots over time
+   ```sql
+   CREATE TABLE argos_networth_history (
+     id TEXT PRIMARY KEY DEFAULT ('r'||lower(hex(randomblob(7)))),
+     date TEXT DEFAULT '' NOT NULL,
+     value NUMERIC DEFAULT 0 NOT NULL,
+     user_id TEXT DEFAULT '' NOT NULL
+   );
    ```
 
-4. **NetWorthSnapshot**: Historical net worth at a point in time
-   ```typescript
-   interface NetWorthSnapshot {
-     timestamp: Date;
-     value: number;
-   }
-   ```
+### TypeScript Interfaces
+
+These correspond to the frontend types:
+
+```typescript
+interface Account {
+  id: string;
+  name: string;
+  type: string; // Account type (Checking, Savings, Brokerage, 401K, etc.)
+  currency: string;
+  is_debt: boolean;
+  user_id: string;
+}
+
+interface AccountWithValue extends Account {
+  balance: number;
+}
+
+interface AccountHistoryPoint {
+  account_id: string;
+  hour_start: string; // ISO timestamp
+  value: number;
+  user_id: string;
+}
+
+interface NetWorthSnapshot {
+  date: string; // ISO timestamp
+  value: number;
+  user_id: string;
+}
+```
 
 ## Common Development Workflows
 
