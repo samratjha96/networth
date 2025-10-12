@@ -44,7 +44,7 @@ export const queryOptions = {
  * Create enabled option based on required dependencies
  */
 export const createEnabledOption = (...dependencies: unknown[]) => ({
-  enabled: dependencies.every(dep => dep != null && dep !== undefined),
+  enabled: dependencies.every((dep) => dep != null && dep !== undefined),
 });
 
 /**
@@ -54,19 +54,22 @@ export const retryConfig = {
   // For user actions (mutations)
   userAction: {
     retry: 2,
-    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex: number) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
   },
 
   // For background data fetching
   background: {
     retry: 3,
-    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex: number) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
   },
 
   // For critical data
   critical: {
     retry: 5,
-    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex: number) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
   },
 } as const;
 
@@ -75,7 +78,7 @@ export const retryConfig = {
  */
 export const createQueryOptions = <TData = unknown, TError = Error>(
   baseOptions: Partial<UseQueryOptions<TData, TError>> = {},
-  optionType: keyof typeof queryOptions = 'realtime'
+  optionType: keyof typeof queryOptions = "realtime",
 ): UseQueryOptions<TData, TError> => ({
   ...queryOptions[optionType],
   ...retryConfig.background,
@@ -85,8 +88,15 @@ export const createQueryOptions = <TData = unknown, TError = Error>(
 /**
  * Helper to create consistent mutation options
  */
-export const createMutationOptions = <TData = unknown, TError = Error, TVariables = void, TContext = unknown>(
-  baseOptions: Partial<UseMutationOptions<TData, TError, TVariables, TContext>> = {}
+export const createMutationOptions = <
+  TData = unknown,
+  TError = Error,
+  TVariables = void,
+  TContext = unknown,
+>(
+  baseOptions: Partial<
+    UseMutationOptions<TData, TError, TVariables, TContext>
+  > = {},
 ): UseMutationOptions<TData, TError, TVariables, TContext> => ({
   ...retryConfig.userAction,
   ...baseOptions,

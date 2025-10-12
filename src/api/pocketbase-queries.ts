@@ -142,6 +142,26 @@ export const usePocketBaseAccountPerformance = (
   });
 };
 
+export const usePocketBaseAccountHistory = (
+  userId: string | null,
+  accountId: string | null,
+  timeRange: TimeRange,
+) => {
+  return useQuery({
+    queryKey: ["account-history", userId, accountId, timeRange],
+    queryFn: () => {
+      if (!userId || !accountId) return Promise.resolve([]);
+      return pocketbaseApi.accounts.getAccountHistory(
+        userId,
+        accountId,
+        timeRange,
+      );
+    },
+    enabled: !!userId && !!accountId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
 // Account Mutations for PocketBase
 export const usePocketBaseAddAccount = (userId: string | null) => {
   const queryClient = useQueryClient();

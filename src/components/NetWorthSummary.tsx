@@ -4,7 +4,10 @@ import { TimeRange } from "@/types/networth";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { useAccountsStandard } from "@/hooks/accounts/use-accounts-standard";
-import { useNetworthPerformance, useAccountPerformance } from "@/hooks/networth/use-networth-standard";
+import {
+  useNetworthPerformance,
+  useAccountPerformance,
+} from "@/hooks/networth/use-networth-standard";
 import { useAppData } from "@/hooks/app-context";
 
 const getPeriodLabel = (days: TimeRange) => {
@@ -33,8 +36,16 @@ export function NetWorthSummary() {
 
   // Use standardized hooks
   const { netWorth } = useAccountsStandard({ userId, dataService });
-  const networthPerformance = useNetworthPerformance({ userId, dataService, timeRange });
-  const accountPerformance = useAccountPerformance({ userId, dataService, timeRange });
+  const networthPerformance = useNetworthPerformance({
+    userId,
+    dataService,
+    timeRange,
+  });
+  const accountPerformance = useAccountPerformance({
+    userId,
+    dataService,
+    timeRange,
+  });
 
   // Map to the same data structure the component expects
   const netWorthData = {

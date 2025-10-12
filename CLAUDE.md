@@ -146,6 +146,7 @@ The application uses PocketBase with the following schema (based on production d
 ### PocketBase Collections
 
 1. **argos_accounts** - Account master data
+
    ```sql
    CREATE TABLE argos_accounts (
      id TEXT PRIMARY KEY DEFAULT ('r'||lower(hex(randomblob(7)))),
@@ -158,6 +159,7 @@ The application uses PocketBase with the following schema (based on production d
    ```
 
 2. **argos_hourly_account_values** - Historical account values
+
    ```sql
    CREATE TABLE argos_hourly_account_values (
      id TEXT PRIMARY KEY DEFAULT ('r'||lower(hex(randomblob(7)))),

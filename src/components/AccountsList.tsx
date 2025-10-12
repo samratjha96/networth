@@ -9,8 +9,10 @@ import {
   ChevronDown,
   ChevronUp,
   MoreHorizontal,
+  LineChart,
 } from "lucide-react";
 import { AddAccountDialog } from "./AddAccountDialog";
+import { AccountHistoryDialog } from "./AccountHistoryDialog";
 import { Button } from "@/components/ui/button";
 import {
   AccountType,
@@ -42,6 +44,8 @@ export function AccountsList() {
   const [accountToEdit, setAccountToEdit] = useState<AccountWithValue | null>(
     null,
   );
+  const [accountHistoryToShow, setAccountHistoryToShow] =
+    useState<AccountWithValue | null>(null);
 
   // Get required dependencies
   const { dataService, userId } = useAppData();
@@ -54,7 +58,7 @@ export function AccountsList() {
     isLoading,
     addAccount,
     updateAccount,
-    deleteAccount
+    deleteAccount,
   } = useAccountsStandard({ userId, dataService });
 
   // Dialog handlers
@@ -145,6 +149,7 @@ export function AccountsList() {
               onDeleteAccount={deleteAccount}
               onAddAccount={openAddDialog}
               onUpdateAccount={updateAccount}
+              onViewHistory={setAccountHistoryToShow}
             />
           )}
         </CardContent>
@@ -160,6 +165,12 @@ export function AccountsList() {
           defaultIsDebt={view === "liabilities"}
         />
       )}
+
+      <AccountHistoryDialog
+        account={accountHistoryToShow}
+        isOpen={!!accountHistoryToShow}
+        onClose={() => setAccountHistoryToShow(null)}
+      />
     </>
   );
 }
@@ -215,6 +226,7 @@ interface SplitAccountsLayoutProps {
   onDeleteAccount: (id: string) => void;
   onAddAccount: (options?: { isDebt?: boolean }) => void;
   onUpdateAccount: (account: AccountWithValue) => void;
+  onViewHistory: (account: AccountWithValue) => void;
 }
 
 function SplitAccountsLayout({
@@ -224,6 +236,7 @@ function SplitAccountsLayout({
   onDeleteAccount,
   onAddAccount,
   onUpdateAccount,
+  onViewHistory,
 }: SplitAccountsLayoutProps) {
   const filteredAccounts = accounts.filter((account) =>
     type === "assets" ? !account.isDebt : account.isDebt,
@@ -294,6 +307,7 @@ function SplitAccountsLayout({
             onEditAccount={onEditAccount}
             onDeleteAccount={onDeleteAccount}
             onUpdateAccount={onUpdateAccount}
+            onViewHistory={onViewHistory}
           />
         ))}
       </div>
@@ -310,6 +324,7 @@ function SplitAccountsLayout({
               onEditAccount={onEditAccount}
               onDeleteAccount={onDeleteAccount}
               onUpdateAccount={onUpdateAccount}
+              onViewHistory={onViewHistory}
             />
           ))}
         </div>
@@ -324,6 +339,7 @@ function SplitAccountsLayout({
               onEditAccount={onEditAccount}
               onDeleteAccount={onDeleteAccount}
               onUpdateAccount={onUpdateAccount}
+              onViewHistory={onViewHistory}
             />
           ))}
         </div>
@@ -339,6 +355,7 @@ interface AccountTypeSectionProps {
   onEditAccount: (account: AccountWithValue) => void;
   onDeleteAccount: (id: string) => void;
   onUpdateAccount: (account: AccountWithValue) => void;
+  onViewHistory: (account: AccountWithValue) => void;
 }
 
 interface EditableBalanceProps {
@@ -447,6 +464,7 @@ function AccountTypeSection({
   onEditAccount,
   onDeleteAccount,
   onUpdateAccount,
+  onViewHistory,
 }: AccountTypeSectionProps) {
   // This state is correctly kept local to this component as it's UI-specific
   const { collapsedSections, toggleSection } = useCollapsibleSections(type);
@@ -542,6 +560,18 @@ function AccountTypeSection({
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                            onViewHistory(account);
+                          }}
+                        >
+                          <LineChart className="h-4 w-4 mr-2" />
+                          View History
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           className="cursor-pointer"
                           onClick={(e) => {

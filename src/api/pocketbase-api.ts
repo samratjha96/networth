@@ -294,12 +294,14 @@ export const pocketbaseApi = {
       userId: string,
       timeRange: TimeRange,
       accountIds: string[],
-    ): Promise<Array<{
-      account_id: string;
-      account_name: string;
-      percent_change: number;
-      amount_change: number;
-    }>> => {
+    ): Promise<
+      Array<{
+        account_id: string;
+        account_name: string;
+        percent_change: number;
+        amount_change: number;
+      }>
+    > => {
       if (accountIds.length === 0) return [];
 
       try {
@@ -378,6 +380,74 @@ export const pocketbaseApi = {
       } catch (error) {
         console.error("❌ PocketBase: getAccountPerformance error:", error);
         return [];
+      }
+    },
+
+    getAccountHistory: async (
+      userId: string,
+      accountId: string,
+      timeRange: TimeRange,
+    ): Promise<
+      Array<{
+        date: string;
+        value: number;
+        isAnchorPoint?: boolean;
+      }>
+    > => {
+      try {
+        const startDate = getStartDateForTimeRange(timeRange);
+        const endDate = new Date();
+
+        // Get data within the time range
+        const dataInRange = await pb
+          .collection("argos_hourly_account_values")
+          .getFullList<PocketBaseAccountValue>({
+            filter: pb.filter(
+              "user_id = {:userId} && account_id = {:accountId} && hour_start >= {:startDate} && hour_start <= {:endDate}",
+              {
+                userId: userId,
+                accountId: accountId,
+                startDate: startDate,
+                endDate: endDate,
+              },
+            ),
+            sort: "hour_start",
+          });
+
+        // Get the most recent data point BEFORE the time range for interpolation
+        let dataBeforeRange: PocketBaseAccountValue[] = [];
+        try {
+          const beforeRangeData = await pb
+            .collection("argos_hourly_account_values")
+            .getFullList<PocketBaseAccountValue>({
+              filter: pb.filter(
+                "user_id = {:userId} && account_id = {:accountId} && hour_start < {:startDate}",
+                {
+                  userId: userId,
+                  accountId: accountId,
+                  startDate: startDate,
+                },
+              ),
+              sort: "-hour_start", // Most recent first
+              perPage: 1, // Only need the latest one
+            });
+          dataBeforeRange = beforeRangeData;
+        } catch (error) {
+          // No data before range, that's okay
+        }
+
+        // Combine the data: before range + in range
+        const allData = [...dataBeforeRange, ...dataInRange];
+
+        return allData.map((item, index) => ({
+          date: item.hour_start,
+          value: item.value,
+          // Mark the first item as anchor if it's from before the range
+          isAnchorPoint: index === 0 && dataBeforeRange.length > 0,
+        }));
+      } catch (error) {
+        console.error("❌ PocketBase: getAccountHistory error:", error);
+        handleError(error as PocketBaseError, "getAccountHistory");
       }
     },
   },

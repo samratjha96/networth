@@ -29,7 +29,7 @@ export function useNetworthChart({
       queryFn: () => dataService.getNetWorthHistory(timeRange),
       ...createEnabledOption(userId),
     },
-    'background' // Background data for charts
+    "background", // Background data for charts
   );
 
   const {
@@ -50,10 +50,14 @@ export function useNetworthChart({
       };
     }
 
-    const networthHistory = fillMissingDataPoints(rawNetWorthHistory, timeRange);
-    const currentNetWorth = networthHistory.length > 0
-      ? networthHistory[networthHistory.length - 1].value
-      : 0;
+    const networthHistory = fillMissingDataPoints(
+      rawNetWorthHistory,
+      timeRange,
+    );
+    const currentNetWorth =
+      networthHistory.length > 0
+        ? networthHistory[networthHistory.length - 1].value
+        : 0;
 
     return {
       networthHistory,
@@ -102,7 +106,7 @@ export function useNetworthPerformance({
       queryFn: () => dataService.getLatestNetWorth(timeRange),
       ...createEnabledOption(userId),
     },
-    'realtime' // Real-time performance data
+    "realtime", // Real-time performance data
   );
 
   const {
@@ -129,12 +133,14 @@ export function useNetworthPerformance({
       // Additional calculated fields
       isPositive: performanceData.change >= 0,
       isSignificantChange: Math.abs(performanceData.percentageChange) >= 1, // 1% threshold
-      formattedChange: performanceData.change >= 0
-        ? `+${performanceData.change.toFixed(2)}`
-        : performanceData.change.toFixed(2),
-      formattedPercentage: performanceData.percentageChange >= 0
-        ? `+${performanceData.percentageChange.toFixed(2)}%`
-        : `${performanceData.percentageChange.toFixed(2)}%`,
+      formattedChange:
+        performanceData.change >= 0
+          ? `+${performanceData.change.toFixed(2)}`
+          : performanceData.change.toFixed(2),
+      formattedPercentage:
+        performanceData.percentageChange >= 0
+          ? `+${performanceData.percentageChange.toFixed(2)}%`
+          : `${performanceData.percentageChange.toFixed(2)}%`,
     };
   }, [performanceData]);
 
@@ -170,7 +176,7 @@ export function useAccountPerformance({
       queryFn: () => dataService.getAccountPerformance(timeRange),
       ...createEnabledOption(userId),
     },
-    'background' // Background analytical data
+    "background", // Background analytical data
   );
 
   const {
@@ -194,11 +200,15 @@ export function useAccountPerformance({
     }
 
     const sortedAccounts = [...accountPerformance].sort(
-      (a, b) => b.percent_change - a.percent_change
+      (a, b) => b.percent_change - a.percent_change,
     );
 
-    const positiveAccounts = accountPerformance.filter(acc => acc.percent_change > 0).length;
-    const negativeAccounts = accountPerformance.filter(acc => acc.percent_change < 0).length;
+    const positiveAccounts = accountPerformance.filter(
+      (acc) => acc.percent_change > 0,
+    ).length;
+    const negativeAccounts = accountPerformance.filter(
+      (acc) => acc.percent_change < 0,
+    ).length;
 
     return {
       accounts: sortedAccounts,
@@ -239,8 +249,16 @@ export function useNetworthData({
   timeRange,
 }: UseNetworthStandardOptions & { timeRange: TimeRange }) {
   const chartData = useNetworthChart({ userId, dataService, timeRange });
-  const performanceData = useNetworthPerformance({ userId, dataService, timeRange });
-  const accountPerformanceData = useAccountPerformance({ userId, dataService, timeRange });
+  const performanceData = useNetworthPerformance({
+    userId,
+    dataService,
+    timeRange,
+  });
+  const accountPerformanceData = useAccountPerformance({
+    userId,
+    dataService,
+    timeRange,
+  });
 
   return {
     chart: chartData,
@@ -248,10 +266,14 @@ export function useNetworthData({
     accountPerformance: accountPerformanceData,
 
     // Combined loading state
-    isLoading: chartData.isLoading || performanceData.isLoading || accountPerformanceData.isLoading,
+    isLoading:
+      chartData.isLoading ||
+      performanceData.isLoading ||
+      accountPerformanceData.isLoading,
 
     // Combined error state
-    error: chartData.error || performanceData.error || accountPerformanceData.error,
+    error:
+      chartData.error || performanceData.error || accountPerformanceData.error,
 
     // Combined refetch
     refetchAll: () => {
@@ -266,6 +288,10 @@ export function useNetworthData({
  * Types for all hook return values
  */
 export type UseNetworthChartReturn = ReturnType<typeof useNetworthChart>;
-export type UseNetworthPerformanceReturn = ReturnType<typeof useNetworthPerformance>;
-export type UseAccountPerformanceReturn = ReturnType<typeof useAccountPerformance>;
+export type UseNetworthPerformanceReturn = ReturnType<
+  typeof useNetworthPerformance
+>;
+export type UseAccountPerformanceReturn = ReturnType<
+  typeof useAccountPerformance
+>;
 export type UseNetworthDataReturn = ReturnType<typeof useNetworthData>;

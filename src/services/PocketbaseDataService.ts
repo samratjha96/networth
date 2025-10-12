@@ -72,12 +72,14 @@ export class PocketbaseDataService implements DataService {
     return pocketbaseApi.networth.getLatestNetWorth(this.userId, timeRange);
   }
 
-  async getAccountPerformance(timeRange: TimeRange): Promise<{
-    account_id: string;
-    account_name: string;
-    percent_change: number;
-    amount_change: number;
-  }[]> {
+  async getAccountPerformance(timeRange: TimeRange): Promise<
+    {
+      account_id: string;
+      account_name: string;
+      percent_change: number;
+      amount_change: number;
+    }[]
+  > {
     // Get all account IDs
     const accounts = await this.getAccounts();
     const accountIds = accounts.map((account) => account.id);

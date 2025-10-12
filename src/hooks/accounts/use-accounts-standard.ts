@@ -22,7 +22,10 @@ interface UseAccountsStandardOptions {
 /**
  * Standardized accounts hook following TanStack Query best practices
  */
-export function useAccountsStandard({ userId, dataService }: UseAccountsStandardOptions) {
+export function useAccountsStandard({
+  userId,
+  dataService,
+}: UseAccountsStandardOptions) {
   const queryClient = useQueryClient();
 
   // Create standardized query options
@@ -35,7 +38,7 @@ export function useAccountsStandard({ userId, dataService }: UseAccountsStandard
       },
       enabled: !!userId,
     },
-    'realtime' // Real-time data that changes frequently
+    "realtime", // Real-time data that changes frequently
   );
 
   // Fetch accounts with standardized options
@@ -65,7 +68,7 @@ export function useAccountsStandard({ userId, dataService }: UseAccountsStandard
       queryKey: accountsQueryKey,
       generateOptimisticItem: generateOptimisticAccount,
       updateRelatedQueries: updateAccountRelatedQueries,
-    }
+    },
   );
 
   const updateAccountMutation = createOptimisticUpdateMutation(
@@ -79,7 +82,7 @@ export function useAccountsStandard({ userId, dataService }: UseAccountsStandard
       userId,
       queryKey: accountsQueryKey,
       updateRelatedQueries: updateAccountRelatedQueries,
-    }
+    },
   );
 
   const deleteAccountMutation = createOptimisticDeleteMutation(
@@ -92,9 +95,13 @@ export function useAccountsStandard({ userId, dataService }: UseAccountsStandard
       userId,
       queryKey: accountsQueryKey,
       updateRelatedQueries: (queryClient, deletedId, remainingAccounts) => {
-        updateAccountRelatedQueries(queryClient, { id: deletedId } as AccountWithValue, remainingAccounts);
+        updateAccountRelatedQueries(
+          queryClient,
+          { id: deletedId } as AccountWithValue,
+          remainingAccounts,
+        );
       },
-    }
+    },
   );
 
   // Memoized calculations to avoid re-computing on every render
@@ -170,7 +177,9 @@ export function useAccountsStandard({ userId, dataService }: UseAccountsStandard
 
     // Query meta information
     queryKey: accountsQueryKey,
-    lastFetched: accountsQueryOptions.queryKey ? queryClient.getQueryState(accountsQueryOptions.queryKey)?.dataUpdatedAt : undefined,
+    lastFetched: accountsQueryOptions.queryKey
+      ? queryClient.getQueryState(accountsQueryOptions.queryKey)?.dataUpdatedAt
+      : undefined,
   };
 }
 

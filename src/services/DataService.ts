@@ -22,10 +22,12 @@ export interface DataService {
   } | null>;
 
   // Account performance operations
-  getAccountPerformance(timeRange: TimeRange): Promise<{
-    account_id: string;
-    account_name: string;
-    percent_change: number;
-    amount_change: number;
-  }[]>;
+  getAccountPerformance(timeRange: TimeRange): Promise<
+    {
+      account_id: string;
+      account_name: string;
+      percent_change: number;
+      amount_change: number;
+    }[]
+  >;
 }
