@@ -127,15 +127,12 @@ export class MockDataService implements DataService {
     };
   }
 
-  async getAccountPerformance(timeRange: TimeRange): Promise<
-    | {
-        account_id: string;
-        account_name: string;
-        percent_change: number;
-        amount_change: number;
-      }[]
-    | null
-  > {
+  async getAccountPerformance(timeRange: TimeRange): Promise<{
+    account_id: string;
+    account_name: string;
+    percent_change: number;
+    amount_change: number;
+  }[]> {
     // Generate mock performance data
     return this.accounts
       .map((account) => {

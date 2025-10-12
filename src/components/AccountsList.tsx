@@ -33,7 +33,8 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useAppAccounts } from "@/hooks/app-data";
+import { useAccountsStandard } from "@/hooks/accounts/use-accounts-standard";
+import { useAppData } from "@/hooks/app-context";
 
 export function AccountsList() {
   const [view, setView] = useState<AccountViewType>("assets");
@@ -42,20 +43,19 @@ export function AccountsList() {
     null,
   );
 
-  // Use our centralized data hook
-  const { accounts, isLoading, addAccount, updateAccount, deleteAccount } =
-    useAppAccounts();
+  // Get required dependencies
+  const { dataService, userId } = useAppData();
 
-  // Filter accounts - these are good candidates for memoization to avoid recreating arrays on each render
-  // Only recompute when accounts changes
-  const assetAccounts = useMemo(
-    () => accounts.filter((a) => !a.isDebt),
-    [accounts],
-  );
-  const liabilityAccounts = useMemo(
-    () => accounts.filter((a) => a.isDebt),
-    [accounts],
-  );
+  // Use standardized accounts hook
+  const {
+    accounts,
+    assets: assetAccounts,
+    liabilities: liabilityAccounts,
+    isLoading,
+    addAccount,
+    updateAccount,
+    deleteAccount
+  } = useAccountsStandard({ userId, dataService });
 
   // Dialog handlers
   const openAddDialog = (options?: { isDebt?: boolean }) => {

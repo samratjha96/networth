@@ -294,7 +294,12 @@ export const pocketbaseApi = {
       userId: string,
       timeRange: TimeRange,
       accountIds: string[],
-    ) => {
+    ): Promise<Array<{
+      account_id: string;
+      account_name: string;
+      percent_change: number;
+      amount_change: number;
+    }>> => {
       if (accountIds.length === 0) return [];
 
       try {
@@ -371,7 +376,8 @@ export const pocketbaseApi = {
 
         return performance.sort((a, b) => b.percent_change - a.percent_change);
       } catch (error) {
-        handleError(error as PocketBaseError, "getAccountPerformance");
+        console.error("❌ PocketBase: getAccountPerformance error:", error);
+        return [];
       }
     },
   },

@@ -50,7 +50,8 @@ import { ChartTooltip } from "./ChartTooltip";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/ui/use-mobile";
-import { useAppNetWorthChart } from "@/hooks/app-data";
+import { useNetworthChart } from "@/hooks/networth/use-networth-standard";
+import { useAppData } from "@/hooks/app-context";
 
 type ChartType = "area" | "line" | "bar";
 
@@ -66,15 +67,17 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
   const { formatWithCurrency } = useCurrencyFormatter(currency);
   const isMobile = useIsMobile();
 
-  // Use our centralized data hook for chart data
-  // Pass the timeRange directly since the hook expects TimeRange type
+  // Get required dependencies
+  const { dataService, userId } = useAppData();
+
+  // Use standardized networth chart hook
   const {
     networthHistory,
     rawNetWorthHistory,
     isLoading,
     currentNetWorth,
     dataStats,
-  } = useAppNetWorthChart(timeRange);
+  } = useNetworthChart({ userId, dataService, timeRange });
 
   // Create a map of real data points for quick lookup
   const realDataPointsMap = useMemo(() => {
@@ -211,6 +214,7 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
 
                   return (
                     <circle
+                      key={`area-dot-${props.payload.date}`}
                       cx={props.cx}
                       cy={props.cy}
                       r={4}
@@ -274,6 +278,7 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
 
                   return (
                     <circle
+                      key={`line-dot-${props.payload.date}`}
                       cx={props.cx}
                       cy={props.cy}
                       r={4}

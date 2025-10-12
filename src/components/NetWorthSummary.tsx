@@ -3,7 +3,9 @@ import { ArrowUpRight, ArrowDownRight, Trophy } from "lucide-react";
 import { TimeRange } from "@/types/networth";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
-import { useAppAccounts, useAppPerformance } from "@/hooks/app-data";
+import { useAccountsStandard } from "@/hooks/accounts/use-accounts-standard";
+import { useNetworthPerformance, useAccountPerformance } from "@/hooks/networth/use-networth-standard";
+import { useAppData } from "@/hooks/app-context";
 
 const getPeriodLabel = (days: TimeRange) => {
   switch (days) {
@@ -23,12 +25,25 @@ const getPeriodLabel = (days: TimeRange) => {
 };
 
 export function NetWorthSummary() {
-  const { netWorth } = useAppAccounts();
   const timeRange = useTimeRangeStore((state) => state.timeRange);
   const { formatWithCurrency } = useCurrencyFormatter("USD");
 
-  // Get performance data from our centralized hook
-  const { netWorthData, bestPerformingAccount } = useAppPerformance(timeRange);
+  // Get required dependencies
+  const { dataService, userId } = useAppData();
+
+  // Use standardized hooks
+  const { netWorth } = useAccountsStandard({ userId, dataService });
+  const networthPerformance = useNetworthPerformance({ userId, dataService, timeRange });
+  const accountPerformance = useAccountPerformance({ userId, dataService, timeRange });
+
+  // Map to the same data structure the component expects
+  const netWorthData = {
+    currentValue: networthPerformance.currentValue,
+    previousValue: networthPerformance.previousValue,
+    change: networthPerformance.change,
+    percentageChange: networthPerformance.percentageChange,
+  };
+  const bestPerformingAccount = accountPerformance.bestPerforming;
 
   const isPositiveNetWorth = netWorth >= 0;
   const isPositiveChange = (netWorthData?.percentageChange ?? 0) > 0;
