@@ -90,9 +90,13 @@ export function AccountHistoryDialog({
   }, [accountHistory]);
 
   // Chart color based on account type and debt status
-  const chartColor = account?.isDebt
-    ? "hsl(var(--destructive))"
-    : "hsl(var(--primary))";
+  const chartColor = useMemo(
+    () =>
+      account?.isDebt
+        ? "hsl(var(--destructive))"
+        : "hsl(var(--primary))",
+    [account?.isDebt],
+  );
 
   // Format date for display
   const formatDate = useCallback(
