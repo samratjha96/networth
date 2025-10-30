@@ -47,7 +47,7 @@ import { formatDateByRange } from "@/lib/date-formatters";
 import { ChartTooltip } from "./chart/ChartTooltip";
 import { TimeRangeSelector } from "./chart/TimeRangeSelector";
 import { useIsMobile } from "@/hooks/ui";
-import { usePocketBaseAccountHistory } from "@/api/pocketbase-queries";
+import { usePocketBaseAccountHistory, usePocketBaseAccountPerformance } from "@/api/pocketbase-queries";
 import { useAppData } from "@/hooks/app-context";
 import { AccountWithValue } from "@/types/accounts";
 import { accountTypeEmojis } from "@/lib/utils";
@@ -84,36 +84,45 @@ export function AccountHistoryDialog({
     timeRange,
   );
 
+  // Use account performance hook to get percentage change for this account
+  const { data: accountPerformanceData = [] } = usePocketBaseAccountPerformance(
+    userId,
+    timeRange,
+    account ? [account] : [],
+  );
+
+  // Get performance data for this specific account
+  const accountPerformance = useMemo(() => {
+    if (!account || accountPerformanceData.length === 0) {
+      return null;
+    }
+    return accountPerformanceData.find((perf) => perf.account_id === account.id) || null;
+  }, [account, accountPerformanceData]);
+
+  // Calculate gain/loss over the selected time range using performance data
+  const gainLossData = useMemo(() => {
+    if (!accountPerformance) {
+      return { gain: 0, loss: 0, percentage: 0, isPositive: true, change: 0 };
+    }
+
+    const change = accountPerformance.amount_change;
+    const percentage = accountPerformance.percent_change;
+
+    return {
+      gain: change > 0 ? change : 0,
+      loss: change < 0 ? Math.abs(change) : 0,
+      percentage: Math.abs(percentage),
+      isPositive: change >= 0,
+      change,
+    };
+  }, [accountPerformance, timeRange]);
+
   // Calculate average value for trend line
   const averageValue = useMemo(() => {
     if (!accountHistory.length) return 0;
     const sum = accountHistory.reduce((acc, item) => acc + item.value, 0);
     return sum / accountHistory.length;
   }, [accountHistory]);
-
-  // Calculate gain/loss over the selected time range
-  const gainLossData = useMemo(() => {
-    if (!accountHistory || accountHistory.length < 2) {
-      return { gain: 0, loss: 0, percentage: 0, isPositive: true, change: 0 };
-    }
-
-    const sortedHistory = [...accountHistory].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    
-    const startValue = sortedHistory[0].value;
-    const endValue = sortedHistory[sortedHistory.length - 1].value;
-    const change = endValue - startValue;
-    const percentage = startValue !== 0 ? (change / Math.abs(startValue)) * 100 : 0;
-    
-    return {
-      gain: change > 0 ? change : 0,
-      loss: change < 0 ? Math.abs(change) : 0,
-      percentage: Math.abs(percentage),
-      isPositive: change >= 0,
-      change
-    };
-  }, [accountHistory, timeRange]);
 
   // Chart color based on account type and debt status
   const chartColor = useMemo(
