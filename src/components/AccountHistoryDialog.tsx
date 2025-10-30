@@ -94,7 +94,7 @@ export function AccountHistoryDialog({
   // Calculate gain/loss over the selected time range
   const gainLossData = useMemo(() => {
     if (!accountHistory || accountHistory.length < 2) {
-      return { gain: 0, loss: 0, percentage: 0, isPositive: true };
+      return { gain: 0, loss: 0, percentage: 0, isPositive: true, change: 0 };
     }
 
     const sortedHistory = [...accountHistory].sort((a, b) => 
@@ -113,7 +113,7 @@ export function AccountHistoryDialog({
       isPositive: change >= 0,
       change
     };
-  }, [accountHistory]);
+  }, [accountHistory, timeRange]);
 
   // Chart color based on account type and debt status
   const chartColor = useMemo(
