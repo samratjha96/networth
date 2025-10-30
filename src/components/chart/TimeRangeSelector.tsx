@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "../ui/button";
 import { TimeRange } from "@/types/networth";
 import { useTimeRangeStore } from "@/store/time-range-store";
-import { useIsMobile } from "@/hooks/ui/use-mobile";
+import { useIsMobile } from "@/hooks/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,

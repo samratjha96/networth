@@ -30,6 +30,8 @@ import {
   LineChart as LineChartIcon,
   TrendingUp,
   ChevronDown,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,18 +40,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTimeRangeStore } from "@/store/time-range-store";
 import { useCurrencyFormatter } from "@/hooks/use-currency-formatter";
 import { formatDateByRange } from "@/lib/date-formatters";
 import { ChartTooltip } from "./chart/ChartTooltip";
 import { TimeRangeSelector } from "./chart/TimeRangeSelector";
-import { useIsMobile } from "@/hooks/ui/use-mobile";
+import { useIsMobile } from "@/hooks/ui";
 import { usePocketBaseAccountHistory } from "@/api/pocketbase-queries";
 import { useAppData } from "@/hooks/app-context";
 import { AccountWithValue } from "@/types/accounts";
 import { accountTypeEmojis } from "@/lib/utils";
+import { getPeriodLabel } from "@/utils/time-range";
 
 type ChartType = "area" | "line" | "bar";
 
@@ -87,6 +89,30 @@ export function AccountHistoryDialog({
     if (!accountHistory.length) return 0;
     const sum = accountHistory.reduce((acc, item) => acc + item.value, 0);
     return sum / accountHistory.length;
+  }, [accountHistory]);
+
+  // Calculate gain/loss over the selected time range
+  const gainLossData = useMemo(() => {
+    if (!accountHistory || accountHistory.length < 2) {
+      return { gain: 0, loss: 0, percentage: 0, isPositive: true };
+    }
+
+    const sortedHistory = [...accountHistory].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    const startValue = sortedHistory[0].value;
+    const endValue = sortedHistory[sortedHistory.length - 1].value;
+    const change = endValue - startValue;
+    const percentage = startValue !== 0 ? (change / Math.abs(startValue)) * 100 : 0;
+    
+    return {
+      gain: change > 0 ? change : 0,
+      loss: change < 0 ? Math.abs(change) : 0,
+      percentage: Math.abs(percentage),
+      isPositive: change >= 0,
+      change
+    };
   }, [accountHistory]);
 
   // Chart color based on account type and debt status
@@ -347,21 +373,35 @@ export function AccountHistoryDialog({
               <span className="font-semibold">{account.name} History</span>
             </div>
           </DialogTitle>
-          <DialogDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                {account.type}
-              </Badge>
-              <Badge
-                variant={account.isDebt ? "destructive" : "default"}
-                className="text-sm px-3 py-1"
-              >
-                {account.isDebt ? "Liability" : "Asset"}
-              </Badge>
+          <DialogDescription className="flex flex-col gap-3">
+            {/* Account Balance with Percentage Change */}
+            <div className="flex flex-col gap-2">
+              <div className={`${isMobile ? "text-xl" : "text-2xl"} font-bold`}>
+                {formatWithCurrency(account.balance)}
+              </div>
+              {accountHistory.length >= 2 && (
+                <p className="text-xs text-muted-foreground flex items-center">
+                  <span
+                    className={`flex items-center ${
+                      gainLossData.isPositive ? "text-primary" : "text-destructive"
+                    }`}
+                  >
+                    {gainLossData.isPositive ? (
+                      <ArrowUpRight className="h-3 w-3 mr-1" />
+                    ) : (
+                      <ArrowDownRight className="h-3 w-3 mr-1" />
+                    )}
+                    {gainLossData.isPositive ? "+" : ""}
+                    {formatWithCurrency(Math.abs(gainLossData.change))}
+                  </span>
+                  <span className="ml-1">
+                    ({gainLossData.isPositive ? "+" : ""}
+                    {gainLossData.percentage.toFixed(2)}%) over the last{" "}
+                    {getPeriodLabel(timeRange)}
+                  </span>
+                </p>
+              )}
             </div>
-            <span className="text-muted-foreground font-medium">
-              Current Balance: {formatWithCurrency(account.balance)}
-            </span>
           </DialogDescription>
         </DialogHeader>
 

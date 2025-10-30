@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { useToast } from "@/hooks/ui/use-toast";
+import { useToast } from "@/hooks/ui";
 
 export function ConnectionStatusMonitor() {
   const { status } = useAuthStore();

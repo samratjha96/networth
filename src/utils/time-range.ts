@@ -31,3 +31,20 @@ export const getStartDateForTimeRange = (timeRange: TimeRange): Date => {
   }
   return startDate;
 };
+
+export const getPeriodLabel = (days: TimeRange): string => {
+  switch (days) {
+    case 1:
+      return "24 hours";
+    case 7:
+      return "week";
+    case 30:
+      return "month";
+    case 365:
+      return "year";
+    case 0:
+      return "all time";
+    default:
+      return `${days} days`;
+  }
+};

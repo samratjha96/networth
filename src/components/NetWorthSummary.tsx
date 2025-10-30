@@ -9,23 +9,7 @@ import {
   useAccountPerformance,
 } from "@/hooks/networth/use-networth-standard";
 import { useAppData } from "@/hooks/app-context";
-
-const getPeriodLabel = (days: TimeRange) => {
-  switch (days) {
-    case 1:
-      return "24 hours";
-    case 7:
-      return "week";
-    case 30:
-      return "month";
-    case 365:
-      return "year";
-    case 0:
-      return "all time";
-    default:
-      return `${days} days`;
-  }
-};
+import { getPeriodLabel } from "@/utils/time-range";
 
 export function NetWorthSummary() {
   const timeRange = useTimeRangeStore((state) => state.timeRange);

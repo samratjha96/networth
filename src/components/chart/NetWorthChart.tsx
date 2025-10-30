@@ -49,7 +49,7 @@ import {
 import { ChartTooltip } from "./ChartTooltip";
 import { TimeRangeSelector } from "./TimeRangeSelector";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/ui/use-mobile";
+import { useIsMobile } from "@/hooks/ui";
 import { useNetworthChart } from "@/hooks/networth/use-networth-standard";
 import { useAppData } from "@/hooks/app-context";
 
@@ -289,15 +289,8 @@ export function NetWorthChart({ currency }: NetWorthChartProps) {
                   );
                 }}
                 activeDot={{ r: 6, fill: chartColor, stroke: "white" }}
-                // Use dashed line for filled data points
-                strokeDasharray={(props) => {
-                  if (!showFilledIndicator) return "0";
-                  // If it's a filled data point, make the line dashed
-                  const isRealDataPoint = realDataPointsMap.has(
-                    props.payload.date,
-                  );
-                  return isRealDataPoint ? "0" : "3 3";
-                }}
+                // Use solid line (dashed lines for filled data are handled differently in line charts)
+                strokeDasharray="0"
               />
             </LineChart>
           </ResponsiveContainer>
