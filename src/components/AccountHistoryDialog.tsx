@@ -47,7 +47,10 @@ import { formatDateByRange } from "@/lib/date-formatters";
 import { ChartTooltip } from "./chart/ChartTooltip";
 import { TimeRangeSelector } from "./chart/TimeRangeSelector";
 import { useIsMobile } from "@/hooks/ui";
-import { usePocketBaseAccountHistory, usePocketBaseAccountPerformance } from "@/api/pocketbase-queries";
+import {
+  usePocketBaseAccountHistory,
+  usePocketBaseAccountPerformance,
+} from "@/api/pocketbase-queries";
 import { useAppData } from "@/hooks/app-context";
 import { AccountWithValue } from "@/types/accounts";
 import { accountTypeEmojis } from "@/lib/utils";
@@ -85,28 +88,58 @@ export function AccountHistoryDialog({
   );
 
   // Use account performance hook to get percentage change for this account
+  // Memoize the accounts array to prevent unnecessary re-renders
+  const accountsArray = useMemo(() => {
+    return account ? [account] : [];
+  }, [account?.id]); // Only recreate if account ID changes (not balance)
+
   const { data: accountPerformanceData = [] } = usePocketBaseAccountPerformance(
     userId,
     timeRange,
-    account ? [account] : [],
+    accountsArray,
   );
 
-  // Get performance data for this specific account
   const accountPerformance = useMemo(() => {
     if (!account || accountPerformanceData.length === 0) {
       return null;
     }
-    return accountPerformanceData.find((perf) => perf.account_id === account.id) || null;
+    return (
+      accountPerformanceData.find((perf) => perf.account_id === account.id) ||
+      null
+    );
   }, [account, accountPerformanceData]);
 
   // Calculate gain/loss over the selected time range using performance data
+  // Fall back to calculating from accountHistory if performance data isn't available
   const gainLossData = useMemo(() => {
-    if (!accountPerformance) {
+    // Prefer performance data from API if available
+    if (accountPerformance) {
+      const change = accountPerformance.amount_change;
+      const percentage = accountPerformance.percent_change;
+
+      return {
+        gain: change > 0 ? change : 0,
+        loss: change < 0 ? Math.abs(change) : 0,
+        percentage: Math.abs(percentage),
+        isPositive: change >= 0,
+        change,
+      };
+    }
+
+    // Fall back to calculating from accountHistory
+    if (!accountHistory || accountHistory.length < 2) {
       return { gain: 0, loss: 0, percentage: 0, isPositive: true, change: 0 };
     }
 
-    const change = accountPerformance.amount_change;
-    const percentage = accountPerformance.percent_change;
+    const sortedHistory = [...accountHistory].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+
+    const startValue = sortedHistory[0].value;
+    const endValue = sortedHistory[sortedHistory.length - 1].value;
+    const change = endValue - startValue;
+    const percentage =
+      startValue !== 0 ? (change / Math.abs(startValue)) * 100 : 0;
 
     return {
       gain: change > 0 ? change : 0,
@@ -115,7 +148,7 @@ export function AccountHistoryDialog({
       isPositive: change >= 0,
       change,
     };
-  }, [accountPerformance, timeRange]);
+  }, [accountPerformance, accountHistory, timeRange]);
 
   // Calculate average value for trend line
   const averageValue = useMemo(() => {
@@ -126,10 +159,7 @@ export function AccountHistoryDialog({
 
   // Chart color based on account type and debt status
   const chartColor = useMemo(
-    () =>
-      account?.isDebt
-        ? "hsl(var(--destructive))"
-        : "hsl(var(--primary))",
+    () => (account?.isDebt ? "hsl(var(--destructive))" : "hsl(var(--primary))"),
     [account?.isDebt],
   );
 
@@ -388,11 +418,13 @@ export function AccountHistoryDialog({
               <div className={`${isMobile ? "text-xl" : "text-2xl"} font-bold`}>
                 {formatWithCurrency(account.balance)}
               </div>
-              {accountHistory.length >= 2 && (
+              {accountPerformance || accountHistory.length >= 2 ? (
                 <p className="text-xs text-muted-foreground flex items-center">
                   <span
                     className={`flex items-center ${
-                      gainLossData.isPositive ? "text-primary" : "text-destructive"
+                      gainLossData.isPositive
+                        ? "text-primary"
+                        : "text-destructive"
                     }`}
                   >
                     {gainLossData.isPositive ? (
@@ -409,7 +441,7 @@ export function AccountHistoryDialog({
                     {getPeriodLabel(timeRange)}
                   </span>
                 </p>
-              )}
+              ) : null}
             </div>
           </DialogDescription>
         </DialogHeader>

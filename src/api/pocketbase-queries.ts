@@ -125,19 +125,22 @@ export const usePocketBaseAccountPerformance = (
   accounts: AccountWithValue[],
 ) => {
   const accountIds = accounts.map((account) => account.id);
-  const accountsKey = accounts.map((a) => `${a.id}-${a.balance}`).join(",");
+  // Use account IDs only, not balance - performance is calculated from historical data
+  const accountsKey = accountIds.sort().join(",");
 
   return useQuery({
     queryKey: ["account-performance", userId, timeRange, accountsKey],
     queryFn: () => {
-      if (!userId) return Promise.resolve([]);
+      if (accounts.length === 0) return Promise.resolve([]);
+      // Use "demo" as userId in demo mode
+      const effectiveUserId = userId || "demo";
       return pocketbaseApi.accounts.getAccountPerformance(
-        userId,
+        effectiveUserId,
         timeRange,
         accountIds,
       );
     },
-    enabled: !!userId && accounts.length > 0,
+    enabled: accounts.length > 0, // Only require accounts, not userId
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -150,14 +153,16 @@ export const usePocketBaseAccountHistory = (
   return useQuery({
     queryKey: ["account-history", userId, accountId, timeRange],
     queryFn: () => {
-      if (!userId || !accountId) return Promise.resolve([]);
+      if (!accountId) return Promise.resolve([]);
+      // Use "demo" as userId in demo mode
+      const effectiveUserId = userId || "demo";
       return pocketbaseApi.accounts.getAccountHistory(
-        userId,
+        effectiveUserId,
         accountId,
         timeRange,
       );
     },
-    enabled: !!userId && !!accountId,
+    enabled: !!accountId, // Only require accountId, not userId
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

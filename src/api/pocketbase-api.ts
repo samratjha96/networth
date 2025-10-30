@@ -2,12 +2,24 @@ import { pb } from "@/lib/pocketbase";
 import { AccountWithValue, AccountType } from "@/types/accounts";
 import { CurrencyCode } from "@/types/currency";
 import { TimeRange } from "@/types/networth";
+import { AccountHistoryEntry } from "@/types/account-history";
 import { getStartDateForTimeRange } from "@/utils/time-range";
 import {
   PocketBaseAccount,
   PocketBaseAccountValue,
   PocketBaseNetworthHistory,
 } from "@/types/pocketbase";
+import { MockDataService } from "@/services/MockDataService";
+
+// Singleton MockDataService instance for demo mode
+let mockDataServiceInstance: MockDataService | null = null;
+
+const getMockDataService = (): MockDataService => {
+  if (!mockDataServiceInstance) {
+    mockDataServiceInstance = new MockDataService();
+  }
+  return mockDataServiceInstance;
+};
 
 /**
  * Helper functions for common operations
@@ -304,6 +316,10 @@ export const pocketbaseApi = {
     > => {
       if (accountIds.length === 0) return [];
 
+      if (!userId || userId === "demo") {
+        return await getMockDataService().getAccountPerformance(timeRange);
+      }
+
       try {
         // Calculate date range based on timeRange
         const endDate = new Date();
@@ -383,13 +399,16 @@ export const pocketbaseApi = {
       userId: string,
       accountId: string,
       timeRange: TimeRange,
-    ): Promise<
-      Array<{
-        date: string;
-        value: number;
-        isAnchorPoint?: boolean;
-      }>
-    > => {
+    ): Promise<AccountHistoryEntry[]> => {
+      if (!userId || userId === "demo") {
+        const mockService = getMockDataService();
+        return await mockService.getAccountHistory(
+          userId || "demo",
+          accountId,
+          timeRange,
+        );
+      }
+
       try {
         const startDate = getStartDateForTimeRange(timeRange);
         const endDate = new Date();

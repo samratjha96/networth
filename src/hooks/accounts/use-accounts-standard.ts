@@ -33,10 +33,10 @@ export function useAccountsStandard({
     {
       queryKey: queryKeys.accounts(userId),
       queryFn: async () => {
-        if (!userId) return [];
+        // In demo mode (userId is null), still fetch accounts from MockDataService
         return await dataService.getAccounts();
       },
-      enabled: !!userId,
+      enabled: true, // Always enabled - dataService handles demo vs authenticated mode
     },
     "realtime", // Real-time data that changes frequently
   );
@@ -60,7 +60,7 @@ export function useAccountsStandard({
   const addAccountMutation = createOptimisticAddMutation(
     queryClient,
     async (accountData: Omit<AccountWithValue, "id">) => {
-      if (!userId) throw new Error("User must be authenticated");
+      // Works in both demo and authenticated mode
       return await dataService.addAccount(accountData);
     },
     {
@@ -74,7 +74,7 @@ export function useAccountsStandard({
   const updateAccountMutation = createOptimisticUpdateMutation(
     queryClient,
     async (account: AccountWithValue) => {
-      if (!userId) throw new Error("User must be authenticated");
+      // Works in both demo and authenticated mode
       await dataService.updateAccount(account);
       return account;
     },
@@ -88,7 +88,7 @@ export function useAccountsStandard({
   const deleteAccountMutation = createOptimisticDeleteMutation(
     queryClient,
     async (accountId: string) => {
-      if (!userId) throw new Error("User must be authenticated");
+      // Works in both demo and authenticated mode
       await dataService.deleteAccount(accountId);
     },
     {
