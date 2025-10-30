@@ -366,12 +366,8 @@ export const pocketbaseApi = {
             return {
               account_id: account.id,
               account_name: account.name,
-              account_type: account.type,
-              is_debt: account.is_debt,
-              start_value: startValue,
-              end_value: endValue,
-              absolute_change: amountChange,
               percent_change: percentChange,
+              amount_change: amountChange,
             };
           }),
         );
