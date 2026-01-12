@@ -20,15 +20,6 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
-      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
-        env.VITE_SUPABASE_URL,
-      ),
-      "import.meta.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(
-        env.VITE_SUPABASE_ANON_KEY,
-      ),
-      "import.meta.env.VITE_USE_SUPABASE": JSON.stringify(
-        env.VITE_USE_SUPABASE,
-      ),
     },
     esbuild: {
       pure: isProd

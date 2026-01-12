@@ -60,45 +60,11 @@ npm run typecheck
 
 ### Environment Variable Access
 
-In the codebase, these variables are accessed using Vite's environment variable syntax:
+In the codebase, Vite environment variables are accessed like:
 
 ```javascript
-// Correct way to access Vite environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const useSupabase = import.meta.env.VITE_USE_SUPABASE === "true";
-```
-
-Key components using these environment variables:
-
-- `src/lib/supabase-database.ts` - Database connection
-- `src/lib/database-factory.ts` - Database backend selection
-- `src/components/AuthProvider.tsx` - Authentication setup
-
-### Configuration
-
-The Vite configuration (vite.config.ts) has been updated to properly load and expose these environment variables to the client-side code:
-
-```typescript
-export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current directory
-  const env = loadEnv(mode, process.cwd(), "");
-
-  return {
-    // ... other config
-    define: {
-      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
-        env.VITE_SUPABASE_URL,
-      ),
-      "import.meta.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(
-        env.VITE_SUPABASE_ANON_KEY,
-      ),
-      "import.meta.env.VITE_USE_SUPABASE": JSON.stringify(
-        env.VITE_USE_SUPABASE,
-      ),
-    },
-  };
-});
+const pocketBaseUrl = import.meta.env.VITE_POCKETBASE_URL;
+const useMock = import.meta.env.VITE_USE_MOCK === "true";
 ```
 
 > **Important**: Do not use `process.env` as it's not available in Vite client-side code.

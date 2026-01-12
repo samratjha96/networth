@@ -32,9 +32,8 @@
    - OAuth2 configuration (not actively used)
 
 5. **Environment Variables**:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_USE_SUPABASE` (boolean flag)
+   - `VITE_POCKETBASE_URL`
+   - `VITE_USE_MOCK` (optional)
 
 ## Migration Strategy
 
