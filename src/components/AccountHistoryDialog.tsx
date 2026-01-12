@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo, useCallback } from "react";
+import { useRef, useState, useMemo, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -91,7 +91,7 @@ export function AccountHistoryDialog({
   // Memoize the accounts array to prevent unnecessary re-renders
   const accountsArray = useMemo(() => {
     return account ? [account] : [];
-  }, [account?.id]); // Only recreate if account ID changes (not balance)
+  }, [account]);
 
   const { data: accountPerformanceData = [] } = usePocketBaseAccountPerformance(
     userId,
@@ -148,7 +148,7 @@ export function AccountHistoryDialog({
       isPositive: change >= 0,
       change,
     };
-  }, [accountPerformance, accountHistory, timeRange]);
+  }, [accountPerformance, accountHistory]);
 
   // Calculate average value for trend line
   const averageValue = useMemo(() => {

@@ -1,7 +1,6 @@
 import { AccountWithValue } from "@/types/accounts";
-import { NetworthHistory, TimeRange } from "@/types/networth";
+import { NetworthHistory } from "@/types/networth";
 import { subDays, subHours, formatISO, startOfHour } from "date-fns";
-import { getStartDateForTimeRange } from "@/utils/time-range";
 
 // Configuration for mock data generation
 export interface MockAccountConfig {
@@ -201,7 +200,7 @@ const generateNextHourValue = (
         Math.abs(currentValue) *
         (trend + (Math.random() * volatility - volatility / 2));
       break;
-    case "seasonal":
+    case "seasonal": {
       // Seasonal pattern with monthly variations
       const month = new Date(
         Date.now() - hourIndex * 60 * 60 * 1000,
@@ -213,6 +212,7 @@ const generateNextHourValue = (
           seasonalFactor +
           (Math.random() * volatility - volatility / 2));
       break;
+    }
     case "steady":
     default:
       newValue +=

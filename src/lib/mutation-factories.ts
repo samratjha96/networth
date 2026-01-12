@@ -1,11 +1,7 @@
 // ABOUTME: Reusable mutation factories with optimistic updates for TanStack Query
 // ABOUTME: Provides standardized patterns for CRUD operations with rollback support
 
-import {
-  QueryClient,
-  useMutation,
-  UseMutationOptions,
-} from "@tanstack/react-query";
+import { QueryClient, useMutation } from "@tanstack/react-query";
 import { AccountWithValue } from "@/types/accounts";
 import { queryKeys } from "./query-keys";
 import { createMutationOptions } from "./query-options";
@@ -36,17 +32,20 @@ export const updateNetworthQueries = (
   // Update only networth performance queries (not account performance)
   queryClient.setQueriesData(
     { queryKey: [...queryKeys.performance(userId), "networth"] },
-    (old: any) => {
+    (old: unknown) => {
       if (!old || typeof old !== "object") return old;
+
+      const record = old as Record<string, unknown>;
+      const previousValue =
+        typeof record.previousValue === "number" ? record.previousValue : 0;
+
       return {
-        ...old,
+        ...record,
         currentValue: newNetWorth,
-        change: newNetWorth - (old.previousValue || 0),
+        change: newNetWorth - previousValue,
         percentageChange:
-          old.previousValue && old.previousValue !== 0
-            ? ((newNetWorth - old.previousValue) /
-                Math.abs(old.previousValue)) *
-              100
+          previousValue !== 0
+            ? ((newNetWorth - previousValue) / Math.abs(previousValue)) * 100
             : 0,
       };
     },
@@ -56,7 +55,7 @@ export const updateNetworthQueries = (
 /**
  * Factory for creating optimistic add mutations
  */
-export const createOptimisticAddMutation = <
+export const useOptimisticAddMutation = <
   TData extends { id: string },
   TInput = Omit<TData, "id">,
 >(
@@ -100,7 +99,7 @@ export const createOptimisticAddMutation = <
 
         return { previous, optimistic };
       },
-      onSuccess: (realItem, variables, context) => {
+      onSuccess: (realItem, _variables, context) => {
         // Replace optimistic item with real item
         queryClient.setQueryData<TData[]>(options.queryKey, (old = []) =>
           old.map((item) =>
@@ -108,7 +107,7 @@ export const createOptimisticAddMutation = <
           ),
         );
       },
-      onError: (error, variables, context) => {
+      onError: (_error, _variables, context) => {
         // Rollback on error
         if (context?.previous) {
           queryClient.setQueryData(options.queryKey, context.previous);
@@ -130,7 +129,7 @@ export const createOptimisticAddMutation = <
 /**
  * Factory for creating optimistic update mutations
  */
-export const createOptimisticUpdateMutation = <TData extends { id: string }>(
+export const useOptimisticUpdateMutation = <TData extends { id: string }>(
   queryClient: QueryClient,
   mutationFn: (item: TData) => Promise<void | TData>,
   options: {
@@ -169,7 +168,7 @@ export const createOptimisticUpdateMutation = <TData extends { id: string }>(
 
         return { previous };
       },
-      onError: (error, variables, context) => {
+      onError: (_error, variables, context) => {
         // Rollback on error
         if (context?.previous) {
           queryClient.setQueryData(options.queryKey, context.previous);
@@ -191,7 +190,7 @@ export const createOptimisticUpdateMutation = <TData extends { id: string }>(
 /**
  * Factory for creating optimistic delete mutations
  */
-export const createOptimisticDeleteMutation = <TData extends { id: string }>(
+export const useOptimisticDeleteMutation = <TData extends { id: string }>(
   queryClient: QueryClient,
   mutationFn: (id: string) => Promise<void>,
   options: {
@@ -229,7 +228,7 @@ export const createOptimisticDeleteMutation = <TData extends { id: string }>(
 
         return { previous, deleted };
       },
-      onError: (error, variables, context) => {
+      onError: (_error, variables, context) => {
         // Rollback on error
         if (context?.previous) {
           queryClient.setQueryData(options.queryKey, context.previous);
@@ -253,7 +252,7 @@ export const createOptimisticDeleteMutation = <TData extends { id: string }>(
  */
 export const createAccountMutations = (
   userId: string | null,
-  queryClient: QueryClient,
+  _queryClient: QueryClient,
 ) => {
   const accountsQueryKey = queryKeys.accounts(userId);
 

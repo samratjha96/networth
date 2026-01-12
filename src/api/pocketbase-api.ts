@@ -336,37 +336,48 @@ export const pocketbaseApi = {
         const performance = await Promise.all(
           accounts.map(async (account) => {
             // Get start value (latest value before or at start_date)
-            const startValues = await pb
-              .collection("argos_hourly_account_values")
-              .getFullList<PocketBaseAccountValue>({
-                filter: pb.filter(
-                  "account_id = {:accountId} && hour_start <= {:startDate}",
+            let startValue = 0;
+            try {
+              const startValueRecord = await pb
+                .collection("argos_hourly_account_values")
+                .getFirstListItem<PocketBaseAccountValue>(
+                  pb.filter(
+                    "account_id = {:accountId} && hour_start <= {:startDate}",
+                    {
+                      accountId: account.id,
+                      startDate: startDate,
+                    },
+                  ),
                   {
-                    accountId: account.id,
-                    startDate: startDate,
+                    sort: "-hour_start",
                   },
-                ),
-                sort: "-hour_start",
-                perPage: 1,
-              });
+                );
+              startValue = startValueRecord?.value ?? 0;
+            } catch (error) {
+              startValue = 0;
+            }
 
             // Get end value (latest value before or at end_date)
-            const endValues = await pb
-              .collection("argos_hourly_account_values")
-              .getFullList<PocketBaseAccountValue>({
-                filter: pb.filter(
-                  "account_id = {:accountId} && hour_start <= {:endDate}",
+            let endValue = 0;
+            try {
+              const endValueRecord = await pb
+                .collection("argos_hourly_account_values")
+                .getFirstListItem<PocketBaseAccountValue>(
+                  pb.filter(
+                    "account_id = {:accountId} && hour_start <= {:endDate}",
+                    {
+                      accountId: account.id,
+                      endDate: endDate,
+                    },
+                  ),
                   {
-                    accountId: account.id,
-                    endDate: endDate,
+                    sort: "-hour_start",
                   },
-                ),
-                sort: "-hour_start",
-                perPage: 1,
-              });
-
-            const startValue = startValues[0]?.value || 0;
-            const endValue = endValues[0]?.value || 0;
+                );
+              endValue = endValueRecord?.value ?? 0;
+            } catch (error) {
+              endValue = 0;
+            }
             const amountChange = endValue - startValue;
 
             // Handle percentage calculation like the SQL function
@@ -432,10 +443,10 @@ export const pocketbaseApi = {
         // Get the most recent data point BEFORE the time range for interpolation
         let dataBeforeRange: PocketBaseAccountValue[] = [];
         try {
-          const beforeRangeData = await pb
+          const beforeRangeRecord = await pb
             .collection("argos_hourly_account_values")
-            .getFullList<PocketBaseAccountValue>({
-              filter: pb.filter(
+            .getFirstListItem<PocketBaseAccountValue>(
+              pb.filter(
                 "user_id = {:userId} && account_id = {:accountId} && hour_start < {:startDate}",
                 {
                   userId: userId,
@@ -443,10 +454,11 @@ export const pocketbaseApi = {
                   startDate: startDate,
                 },
               ),
-              sort: "-hour_start", // Most recent first
-              perPage: 1, // Only need the latest one
-            });
-          dataBeforeRange = beforeRangeData;
+              {
+                sort: "-hour_start", // Most recent first
+              },
+            );
+          dataBeforeRange = beforeRangeRecord ? [beforeRangeRecord] : [];
         } catch (error) {
           // No data before range, that's okay
         }
@@ -493,17 +505,18 @@ export const pocketbaseApi = {
         // We'll include this but mark it so the frontend can handle it appropriately
         let dataBeforeRange: PocketBaseNetworthHistory[] = [];
         try {
-          const beforeRangeData = await pb
+          const beforeRangeRecord = await pb
             .collection("argos_networth_history")
-            .getFullList<PocketBaseNetworthHistory>({
-              filter: pb.filter("user_id = {:userId} && date < {:startDate}", {
+            .getFirstListItem<PocketBaseNetworthHistory>(
+              pb.filter("user_id = {:userId} && date < {:startDate}", {
                 userId: userId,
                 startDate: startDate,
               }),
-              sort: "-date", // Most recent first
-              perPage: 1, // Only need the latest one
-            });
-          dataBeforeRange = beforeRangeData;
+              {
+                sort: "-date", // Most recent first
+              },
+            );
+          dataBeforeRange = beforeRangeRecord ? [beforeRangeRecord] : [];
         } catch (error) {
           // No data before range, that's okay
         }
@@ -527,30 +540,47 @@ export const pocketbaseApi = {
         const startDate = getStartDateForTimeRange(timeRange);
 
         // Get latest net worth value
-        const latestData = await pb
-          .collection("argos_networth_history")
-          .getFullList<PocketBaseNetworthHistory>({
-            filter: `user_id="${userId}"`,
-            sort: "-date",
-            perPage: 1,
-          });
+        let latestRecord: PocketBaseNetworthHistory | null = null;
+        try {
+          latestRecord = await pb
+            .collection("argos_networth_history")
+            .getFirstListItem<PocketBaseNetworthHistory>(
+              `user_id="${userId}"`,
+              {
+                sort: "-date",
+              },
+            );
+        } catch (error) {
+          const pbError = error as PocketBaseError;
+          if (pbError?.status === 404) {
+            return null;
+          }
+          throw error;
+        }
 
         // Get previous net worth value based on time range
-        const previousData = await pb
-          .collection("argos_networth_history")
-          .getFullList<PocketBaseNetworthHistory>({
-            filter: pb.filter("user_id = {:userId} && date >= {:startDate}", {
-              userId: userId,
-              startDate: startDate,
-            }),
-            sort: "date",
-            perPage: 1,
-          });
+        // We want the earliest value within the time range.
+        let previousRecord: PocketBaseNetworthHistory | null = null;
+        try {
+          previousRecord = await pb
+            .collection("argos_networth_history")
+            .getFirstListItem<PocketBaseNetworthHistory>(
+              pb.filter("user_id = {:userId} && date >= {:startDate}", {
+                userId: userId,
+                startDate: startDate,
+              }),
+              {
+                sort: "date",
+              },
+            );
+        } catch (error) {
+          previousRecord = null;
+        }
 
-        if (!latestData?.length) return null;
+        if (!latestRecord) return null;
 
-        const currentValue = latestData[0].value;
-        const previousValue = previousData?.[0]?.value ?? currentValue * 0.95;
+        const currentValue = latestRecord.value;
+        const previousValue = previousRecord?.value ?? currentValue * 0.95;
         const change = currentValue - previousValue;
         const percentageChange =
           previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;

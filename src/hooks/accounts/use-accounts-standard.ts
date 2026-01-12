@@ -7,9 +7,9 @@ import { DataService } from "@/services/DataService";
 import { queryKeys } from "@/lib/query-keys";
 import { createQueryOptions } from "@/lib/query-options";
 import {
-  createOptimisticAddMutation,
-  createOptimisticUpdateMutation,
-  createOptimisticDeleteMutation,
+  useOptimisticAddMutation,
+  useOptimisticUpdateMutation,
+  useOptimisticDeleteMutation,
   createAccountMutations,
 } from "@/lib/mutation-factories";
 import { useMemo } from "react";
@@ -57,7 +57,7 @@ export function useAccountsStandard({
   } = createAccountMutations(userId, queryClient);
 
   // Create standardized mutations with optimistic updates
-  const addAccountMutation = createOptimisticAddMutation(
+  const addAccountMutation = useOptimisticAddMutation(
     queryClient,
     async (accountData: Omit<AccountWithValue, "id">) => {
       // Works in both demo and authenticated mode
@@ -71,7 +71,7 @@ export function useAccountsStandard({
     },
   );
 
-  const updateAccountMutation = createOptimisticUpdateMutation(
+  const updateAccountMutation = useOptimisticUpdateMutation(
     queryClient,
     async (account: AccountWithValue) => {
       // Works in both demo and authenticated mode
@@ -85,7 +85,7 @@ export function useAccountsStandard({
     },
   );
 
-  const deleteAccountMutation = createOptimisticDeleteMutation(
+  const deleteAccountMutation = useOptimisticDeleteMutation<AccountWithValue>(
     queryClient,
     async (accountId: string) => {
       // Works in both demo and authenticated mode
@@ -94,7 +94,11 @@ export function useAccountsStandard({
     {
       userId,
       queryKey: accountsQueryKey,
-      updateRelatedQueries: (queryClient, deletedId, remainingAccounts) => {
+      updateRelatedQueries: (
+        queryClient,
+        deletedId: string,
+        remainingAccounts: AccountWithValue[],
+      ) => {
         updateAccountRelatedQueries(
           queryClient,
           { id: deletedId } as AccountWithValue,
