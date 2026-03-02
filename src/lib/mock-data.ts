@@ -163,7 +163,8 @@ export const DEFAULT_MOCK_ACCOUNTS_CONFIG: MockAccountConfig[] = [
 const randomFloat = (min: number, max: number) =>
   Math.round((Math.random() * (max - min) + min) * 100) / 100;
 
-// Generate hourly account value based on pattern
+// Generate hourly account value based on pattern.
+// Config trend/volatility values are daily rates; we scale them to hourly here.
 const generateNextHourValue = (
   currentValue: number,
   config: MockAccountConfig,
@@ -174,31 +175,34 @@ const generateNextHourValue = (
     volatility: 0.05,
   };
 
-  const volatility = pattern.volatility || 0.05;
-  const trend = pattern.trend || 0;
+  // Scale daily rates to per-hour equivalents
+  const hourlyVolatility = (pattern.volatility || 0.05) / Math.sqrt(24);
+  const hourlyTrend = (pattern.trend || 0) / 24;
   const minValue = pattern.minValue ?? (config.isDebt ? -Infinity : 0);
   const maxValue = pattern.maxValue ?? Infinity;
 
   let newValue = currentValue;
 
-  // Apply trend
-  newValue += Math.abs(currentValue) * trend;
+  // Apply trend once
+  newValue += Math.abs(currentValue) * hourlyTrend;
 
   // Apply volatility based on pattern type
   switch (pattern.type) {
     case "volatile":
       newValue +=
-        (Math.random() * 2 - 1) * Math.abs(currentValue) * volatility * 2;
+        (Math.random() * 2 - 1) * Math.abs(currentValue) * hourlyVolatility * 2;
       break;
     case "trending_up":
+      // trend already applied above; add volatility only
       newValue +=
         Math.abs(currentValue) *
-        (trend + (Math.random() * volatility - volatility / 2));
+        (Math.random() * hourlyVolatility - hourlyVolatility / 2);
       break;
     case "trending_down":
+      // trend already applied above; add volatility only
       newValue +=
         Math.abs(currentValue) *
-        (trend + (Math.random() * volatility - volatility / 2));
+        (Math.random() * hourlyVolatility - hourlyVolatility / 2);
       break;
     case "seasonal": {
       // Seasonal pattern with monthly variations
@@ -208,15 +212,14 @@ const generateNextHourValue = (
       const seasonalFactor = Math.sin((month / 12) * Math.PI * 2) * 0.02;
       newValue +=
         Math.abs(currentValue) *
-        (trend +
-          seasonalFactor +
-          (Math.random() * volatility - volatility / 2));
+        (seasonalFactor +
+          (Math.random() * hourlyVolatility - hourlyVolatility / 2));
       break;
     }
     case "steady":
     default:
       newValue +=
-        (Math.random() * 2 - 1) * Math.abs(currentValue) * volatility * 0.5;
+        (Math.random() * 2 - 1) * Math.abs(currentValue) * hourlyVolatility * 0.5;
       break;
   }
 
