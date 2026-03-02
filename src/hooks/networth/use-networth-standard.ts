@@ -200,7 +200,7 @@ export function useAccountPerformance({
     }
 
     const sortedAccounts = [...accountPerformance].sort(
-      (a, b) => b.percent_change - a.percent_change,
+      (a, b) => b.amount_change - a.amount_change,
     );
 
     const positiveAccounts = accountPerformance.filter(

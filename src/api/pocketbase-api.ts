@@ -355,7 +355,7 @@ export const pocketbaseApi = {
           }),
         );
 
-        return performance.sort((a, b) => b.percent_change - a.percent_change);
+        return performance.sort((a, b) => b.amount_change - a.amount_change);
       } catch (error) {
         console.error("❌ PocketBase: getAccountPerformance error:", error);
         return [];

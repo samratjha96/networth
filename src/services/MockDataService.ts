@@ -192,7 +192,7 @@ export class MockDataService implements DataService {
       };
     });
 
-    return performance.sort((a, b) => b.percent_change - a.percent_change);
+    return performance.sort((a, b) => b.amount_change - a.amount_change);
   }
 
   async getAccountHistory(

@@ -97,11 +97,17 @@ export function NetWorthSummary() {
                 {bestPerformingAccount.account_name}
               </div>
               <p className="text-xs text-muted-foreground flex items-center">
-                <span className="text-primary flex items-center mr-1">
-                  <ArrowUpRight className="h-3 w-3 mr-0.5" />
-                  {(bestPerformingAccount?.percent_change ?? 0).toFixed(1)}%
+                <span
+                  className={`flex items-center mr-1 ${bestPerformingAccount.amount_change >= 0 ? "text-primary" : "text-destructive"}`}
+                >
+                  {bestPerformingAccount.amount_change >= 0 ? (
+                    <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3 mr-0.5" />
+                  )}
+                  {formatWithCurrency(Math.abs(bestPerformingAccount.amount_change))}
                 </span>
-                growth over the last {getPeriodLabel(timeRange)}
+                over the last {getPeriodLabel(timeRange)}
               </p>
             </>
           ) : (
