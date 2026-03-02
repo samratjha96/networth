@@ -1,4 +1,5 @@
 import { AccountWithValue } from "@/types/accounts";
+import { AccountHistoryEntry } from "@/types/account-history";
 import { NetworthHistory, TimeRange } from "@/types/networth";
 import { DataService } from "./DataService";
 import { pocketbaseApi } from "@/api/pocketbase-api";
@@ -70,6 +71,17 @@ export class PocketbaseDataService implements DataService {
     percentageChange: number;
   } | null> {
     return pocketbaseApi.networth.getLatestNetWorth(this.userId, timeRange);
+  }
+
+  async getAccountHistory(
+    accountId: string,
+    timeRange: TimeRange,
+  ): Promise<AccountHistoryEntry[]> {
+    return pocketbaseApi.accounts.getAccountHistory(
+      this.userId,
+      accountId,
+      timeRange,
+    );
   }
 
   async getAccountPerformance(timeRange: TimeRange): Promise<

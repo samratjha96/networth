@@ -196,7 +196,6 @@ export class MockDataService implements DataService {
   }
 
   async getAccountHistory(
-    _userId: string,
     accountId: string,
     timeRange: TimeRange,
   ): Promise<AccountHistoryEntry[]> {

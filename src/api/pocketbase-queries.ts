@@ -131,11 +131,9 @@ export const usePocketBaseAccountPerformance = (
   return useQuery({
     queryKey: ["account-performance", userId, timeRange, accountsKey],
     queryFn: () => {
-      if (accounts.length === 0) return Promise.resolve([]);
-      // Use "demo" as userId in demo mode
-      const effectiveUserId = userId || "demo";
+      if (accounts.length === 0 || !userId) return Promise.resolve([]);
       return pocketbaseApi.accounts.getAccountPerformance(
-        effectiveUserId,
+        userId,
         timeRange,
         accountIds,
       );
@@ -153,11 +151,9 @@ export const usePocketBaseAccountHistory = (
   return useQuery({
     queryKey: ["account-history", userId, accountId, timeRange],
     queryFn: () => {
-      if (!accountId) return Promise.resolve([]);
-      // Use "demo" as userId in demo mode
-      const effectiveUserId = userId || "demo";
+      if (!accountId || !userId) return Promise.resolve([]);
       return pocketbaseApi.accounts.getAccountHistory(
-        effectiveUserId,
+        userId,
         accountId,
         timeRange,
       );

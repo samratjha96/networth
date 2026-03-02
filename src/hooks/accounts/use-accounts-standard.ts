@@ -4,6 +4,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AccountWithValue } from "@/types/accounts";
 import { DataService } from "@/services/DataService";
+import { TimeRange } from "@/types/networth";
 import { queryKeys } from "@/lib/query-keys";
 import { createQueryOptions } from "@/lib/query-options";
 import {
@@ -185,6 +186,34 @@ export function useAccountsStandard({
       ? queryClient.getQueryState(accountsQueryOptions.queryKey)?.dataUpdatedAt
       : undefined,
   };
+}
+
+/**
+ * Hook for a single account's balance history
+ */
+export function useAccountHistory({
+  userId,
+  dataService,
+  accountId,
+  timeRange,
+}: {
+  userId: string | null;
+  dataService: DataService;
+  accountId: string | null;
+  timeRange: TimeRange;
+}) {
+  const historyQueryOptions = createQueryOptions(
+    {
+      queryKey: queryKeys.accountHistory(userId, accountId, timeRange),
+      queryFn: () => dataService.getAccountHistory(accountId!, timeRange),
+      enabled: !!accountId, // Only run when an account is selected
+    },
+    "background",
+  );
+
+  const { data: accountHistory = [], isLoading, error } = useQuery(historyQueryOptions);
+
+  return { accountHistory, isLoading, error };
 }
 
 /**

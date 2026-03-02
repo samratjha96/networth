@@ -47,10 +47,8 @@ import { formatDateByRange } from "@/lib/date-formatters";
 import { ChartTooltip } from "./chart/ChartTooltip";
 import { TimeRangeSelector } from "./chart/TimeRangeSelector";
 import { useIsMobile } from "@/hooks/ui";
-import {
-  usePocketBaseAccountHistory,
-  usePocketBaseAccountPerformance,
-} from "@/api/pocketbase-queries";
+import { useAccountHistory } from "@/hooks/accounts/use-accounts-standard";
+import { useAccountPerformance } from "@/hooks/networth/use-networth-standard";
 import { useAppData } from "@/hooks/app-context";
 import { AccountWithValue } from "@/types/accounts";
 import { accountTypeEmojis } from "@/lib/utils";
@@ -78,36 +76,27 @@ export function AccountHistoryDialog({
   const isMobile = useIsMobile();
 
   // Get required dependencies
-  const { userId } = useAppData();
+  const { userId, dataService } = useAppData();
 
-  // Use account history hook
-  const { data: accountHistory = [], isLoading } = usePocketBaseAccountHistory(
+  // Use account history hook — routes through DataService (mock or real)
+  const { accountHistory, isLoading } = useAccountHistory({
     userId,
-    account?.id || null,
+    dataService,
+    accountId: account?.id || null,
     timeRange,
-  );
+  });
 
-  // Use account performance hook to get percentage change for this account
-  // Memoize the accounts array to prevent unnecessary re-renders
-  const accountsArray = useMemo(() => {
-    return account ? [account] : [];
-  }, [account]);
-
-  const { data: accountPerformanceData = [] } = usePocketBaseAccountPerformance(
+  // Use account performance hook — routes through DataService (mock or real)
+  const { accounts: allAccountPerformance } = useAccountPerformance({
     userId,
+    dataService,
     timeRange,
-    accountsArray,
-  );
+  });
 
   const accountPerformance = useMemo(() => {
-    if (!account || accountPerformanceData.length === 0) {
-      return null;
-    }
-    return (
-      accountPerformanceData.find((perf) => perf.account_id === account.id) ||
-      null
-    );
-  }, [account, accountPerformanceData]);
+    if (!account || allAccountPerformance.length === 0) return null;
+    return allAccountPerformance.find((perf) => perf.account_id === account.id) ?? null;
+  }, [account, allAccountPerformance]);
 
   // Calculate gain/loss over the selected time range using performance data
   // Fall back to calculating from accountHistory if performance data isn't available

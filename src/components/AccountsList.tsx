@@ -578,9 +578,7 @@ function AccountTypeSection({
                             e.preventDefault();
                             e.stopPropagation();
                             setOpenMenuId(null);
-                            setTimeout(() => {
-                              onEditAccount(account);
-                            }, 100);
+                            onEditAccount(account);
                           }}
                         >
                           Edit

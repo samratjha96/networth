@@ -71,13 +71,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Set up auth store listener for PocketBase
       const unsubscribe = pb.authStore.onChange(() => {
-        console.log("PocketBase auth store changed:", {
-          isValid: pb.authStore.isValid,
-          hasRecord: !!pb.authStore.record,
-          userId: pb.authStore.record?.id,
-          email: pb.authStore.record?.email,
-        });
-
         if (pb.authStore.isValid && pb.authStore.record) {
           set({
             user: pb.authStore.record as GenericUser,

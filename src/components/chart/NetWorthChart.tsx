@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo, useCallback } from "react";
+import { useRef, useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Area,

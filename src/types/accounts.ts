@@ -38,29 +38,7 @@ export interface Account {
   currency: CurrencyCode;
 }
 
-// Historical account value record
-export interface AccountValue {
-  accountId: string;
-  hourStart: Date;
-  value: number;
-}
-
 // Extended account with its current value
 export interface AccountWithValue extends Account {
   balance: number;
-}
-
-export interface AccountStorage {
-  getAccounts(): Promise<AccountWithValue[]>;
-  addAccount(account: Omit<AccountWithValue, "id">): Promise<AccountWithValue>;
-  updateAccount(account: AccountWithValue): Promise<void>;
-  deleteAccount(id: string): Promise<void>;
-
-  // New methods for historical data
-  getAccountValueHistory(
-    accountId: string,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<AccountValue[]>;
-  getAccountValue(accountId: string): Promise<number>;
 }

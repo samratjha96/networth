@@ -304,11 +304,6 @@ export const generateMockAccounts = (
   });
 };
 
-// Calculate total net worth from accounts
-export const calculateNetWorth = (accounts: AccountWithValue[]): number => {
-  return accounts.reduce((sum, account) => sum + account.balance, 0);
-};
-
 // Generate mock net worth history for specified days
 export const generateMockNetworthHistory = (
   accounts: AccountWithValue[],

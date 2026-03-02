@@ -1,4 +1,5 @@
 import { AccountWithValue } from "@/types/accounts";
+import { AccountHistoryEntry } from "@/types/account-history";
 import { NetworthHistory, TimeRange } from "@/types/networth";
 
 /**
@@ -20,6 +21,12 @@ export interface DataService {
     change: number;
     percentageChange: number;
   } | null>;
+
+  // Account history operations
+  getAccountHistory(
+    accountId: string,
+    timeRange: TimeRange,
+  ): Promise<AccountHistoryEntry[]>;
 
   // Account performance operations
   getAccountPerformance(timeRange: TimeRange): Promise<

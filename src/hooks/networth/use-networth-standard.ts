@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { DataService } from "@/services/DataService";
 import { TimeRange } from "@/types/networth";
 import { queryKeys } from "@/lib/query-keys";
-import { createQueryOptions, createEnabledOption } from "@/lib/query-options";
+import { createQueryOptions } from "@/lib/query-options";
 import { fillMissingDataPoints } from "@/utils/data-interpolation";
 
 interface UseNetworthStandardOptions {
@@ -27,7 +27,7 @@ export function useNetworthChart({
     {
       queryKey: queryKeys.networthChart(userId, timeRange),
       queryFn: () => dataService.getNetWorthHistory(timeRange),
-      ...createEnabledOption(userId),
+      enabled: true, // Always enabled — dataService handles demo vs authenticated mode
     },
     "background", // Background data for charts
   );
@@ -104,7 +104,7 @@ export function useNetworthPerformance({
     {
       queryKey: queryKeys.networthPerformance(userId, timeRange),
       queryFn: () => dataService.getLatestNetWorth(timeRange),
-      ...createEnabledOption(userId),
+      enabled: true, // Always enabled — dataService handles demo vs authenticated mode
     },
     "realtime", // Real-time performance data
   );
@@ -174,7 +174,7 @@ export function useAccountPerformance({
     {
       queryKey: queryKeys.accountPerformance(userId, timeRange),
       queryFn: () => dataService.getAccountPerformance(timeRange),
-      ...createEnabledOption(userId),
+      enabled: true, // Always enabled — dataService handles demo vs authenticated mode
     },
     "background", // Background analytical data
   );

@@ -9,18 +9,6 @@ import {
   PocketBaseAccountValue,
   PocketBaseNetworthHistory,
 } from "@/types/pocketbase";
-import { MockDataService } from "@/services/MockDataService";
-
-// Singleton MockDataService instance for demo mode
-let mockDataServiceInstance: MockDataService | null = null;
-
-const getMockDataService = (): MockDataService => {
-  if (!mockDataServiceInstance) {
-    mockDataServiceInstance = new MockDataService();
-  }
-  return mockDataServiceInstance;
-};
-
 /**
  * Helper functions for common operations
  */
@@ -63,16 +51,11 @@ export const pocketbaseApi = {
           .authWithPassword(params.email, params.password);
 
         if (pb.authStore.isValid && pb.authStore.record) {
-          console.log("Password authentication successful:", {
-            userId: pb.authStore.record.id,
-            email: pb.authStore.record.email,
-          });
           return { data: authData, error: null };
         } else {
           throw new Error("Authentication completed but authStore is invalid");
         }
       } catch (error) {
-        console.error("Password authentication failed:", error);
         pb.authStore.clear();
         return { data: null, error: error as PocketBaseError };
       }
@@ -116,22 +99,12 @@ export const pocketbaseApi = {
           provider: params.provider,
         });
 
-        // After successful authentication, the auth data is available in pb.authStore
         if (pb.authStore.isValid && pb.authStore.record) {
-          console.log("OAuth2 authentication successful:", {
-            isValid: pb.authStore.isValid,
-            userId: pb.authStore.record.id,
-            email: pb.authStore.record.email,
-            token: pb.authStore.token ? "present" : "missing",
-          });
-
           return { data: authData, error: null };
         } else {
           throw new Error("Authentication completed but authStore is invalid");
         }
       } catch (error) {
-        console.error("OAuth2 authentication failed:", error);
-        // Clear any partial auth state
         pb.authStore.clear();
         return { data: null, error: error as PocketBaseError };
       }
@@ -142,7 +115,6 @@ export const pocketbaseApi = {
   accounts: {
     getAccounts: async (userId: string): Promise<AccountWithValue[]> => {
       try {
-        // Get accounts
         const accounts = await pb
           .collection("argos_accounts")
           .getFullList<PocketBaseAccount>({
@@ -153,45 +125,33 @@ export const pocketbaseApi = {
           return [];
         }
 
-        // Get latest values for each account
-        const accountIds = accounts.map((account) => account.id);
+        const accountIds = accounts.map((a) => a.id);
 
-        // Create a map of latest values
+        // Fetch the most recent values for all accounts in one query.
+        // Sorted newest-first; we pick the first entry per account_id in memory.
+        const idFilter = accountIds.map((id) => `account_id="${id}"`).join(" || ");
+        const recentValues = await pb
+          .collection("argos_hourly_account_values")
+          .getList<PocketBaseAccountValue>(1, accountIds.length * 50, {
+            filter: `user_id="${userId}" && (${idFilter})`,
+            sort: "-hour_start",
+          });
+
         const latestValues: Record<string, number> = {};
+        for (const entry of recentValues.items) {
+          if (!(entry.account_id in latestValues)) {
+            latestValues[entry.account_id] = entry.value;
+          }
+        }
 
-        // Get the latest value for each account individually to ensure accuracy
-        await Promise.all(
-          accountIds.map(async (accountId) => {
-            try {
-              const latestValue = await pb
-                .collection("argos_hourly_account_values")
-                .getFirstListItem<PocketBaseAccountValue>(
-                  `account_id="${accountId}"`,
-                  {
-                    sort: "-hour_start",
-                  },
-                );
-              latestValues[accountId] = latestValue.value;
-            } catch (error) {
-              // If no value found for this account, default to 0
-              latestValues[accountId] = 0;
-            }
-          }),
-        );
-
-        // Map accounts with values
-        const accountsWithValues: AccountWithValue[] = accounts.map(
-          (account) => ({
-            id: account.id,
-            name: account.name,
-            type: account.type as AccountType,
-            isDebt: account.is_debt || false,
-            currency: account.currency as CurrencyCode,
-            balance: latestValues[account.id] || 0,
-          }),
-        );
-
-        return accountsWithValues;
+        return accounts.map((account) => ({
+          id: account.id,
+          name: account.name,
+          type: account.type as AccountType,
+          isDebt: account.is_debt || false,
+          currency: account.currency as CurrencyCode,
+          balance: latestValues[account.id] ?? 0,
+        }));
       } catch (error) {
         console.error("❌ PocketBase: getAccounts error:", error);
         handleError(error as PocketBaseError, "getAccounts");
@@ -316,10 +276,6 @@ export const pocketbaseApi = {
     > => {
       if (accountIds.length === 0) return [];
 
-      if (!userId || userId === "demo") {
-        return await getMockDataService().getAccountPerformance(timeRange);
-      }
-
       try {
         // Calculate date range based on timeRange
         const endDate = new Date();
@@ -411,15 +367,6 @@ export const pocketbaseApi = {
       accountId: string,
       timeRange: TimeRange,
     ): Promise<AccountHistoryEntry[]> => {
-      if (!userId || userId === "demo") {
-        const mockService = getMockDataService();
-        return await mockService.getAccountHistory(
-          userId || "demo",
-          accountId,
-          timeRange,
-        );
-      }
-
       try {
         const startDate = getStartDateForTimeRange(timeRange);
         const endDate = new Date();
