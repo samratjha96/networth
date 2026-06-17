@@ -22,7 +22,11 @@ services:
       - VITE_USE_MOCK=${VITE_USE_MOCK}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:8080').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
