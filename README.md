@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: https://networth.techbrohomelab.xyz
+**URL**: https://argos.bootloop.cc
 
 ## Environment Setup
 
