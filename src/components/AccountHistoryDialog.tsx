@@ -53,6 +53,7 @@ import { useAppData } from "@/hooks/app-context";
 import { AccountWithValue } from "@/types/accounts";
 import { accountTypeEmojis } from "@/lib/utils";
 import { getPeriodLabel } from "@/utils/time-range";
+import { calculatePercentageChange } from "@/utils/finance";
 
 type ChartType = "area" | "line" | "bar";
 
@@ -95,7 +96,10 @@ export function AccountHistoryDialog({
 
   const accountPerformance = useMemo(() => {
     if (!account || allAccountPerformance.length === 0) return null;
-    return allAccountPerformance.find((perf) => perf.account_id === account.id) ?? null;
+    return (
+      allAccountPerformance.find((perf) => perf.account_id === account.id) ??
+      null
+    );
   }, [account, allAccountPerformance]);
 
   // Calculate gain/loss over the selected time range using performance data
@@ -127,8 +131,7 @@ export function AccountHistoryDialog({
     const startValue = sortedHistory[0].value;
     const endValue = sortedHistory[sortedHistory.length - 1].value;
     const change = endValue - startValue;
-    const percentage =
-      startValue !== 0 ? (change / Math.abs(startValue)) * 100 : 0;
+    const percentage = calculatePercentageChange(endValue, startValue);
 
     return {
       gain: change > 0 ? change : 0,

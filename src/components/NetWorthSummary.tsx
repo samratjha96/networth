@@ -105,7 +105,9 @@ export function NetWorthSummary() {
                   ) : (
                     <ArrowDownRight className="h-3 w-3 mr-0.5" />
                   )}
-                  {formatWithCurrency(Math.abs(bestPerformingAccount.amount_change))}
+                  {formatWithCurrency(
+                    Math.abs(bestPerformingAccount.amount_change),
+                  )}
                 </span>
                 over the last {getPeriodLabel(timeRange)}
               </p>

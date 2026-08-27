@@ -1,14 +1,5 @@
-export type TimeRange =
-  | 1
-  | 7
-  | 30
-  | 365
-  | 0
-  | "day"
-  | "week"
-  | "month"
-  | "year"
-  | "all"; // 0 represents "ALL"
+// 0 represents "ALL"
+export type TimeRange = 1 | 7 | 30 | 365 | 0;
 
 export interface NetWorthDataPoint {
   date: string;

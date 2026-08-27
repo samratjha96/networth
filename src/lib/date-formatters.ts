@@ -1,4 +1,5 @@
 import { TimeRange } from "@/types/networth";
+import { convertTimeRangeToDays } from "@/utils/time-range";
 
 /**
  * Format a date string based on the selected time range
@@ -8,22 +9,7 @@ export function formatDateByRange(
   selectedRange: TimeRange,
 ): string {
   const date = new Date(dateStr);
-
-  // Convert string range to number for comparison
-  const rangeValue =
-    typeof selectedRange === "number"
-      ? selectedRange
-      : selectedRange === "day"
-        ? 1
-        : selectedRange === "week"
-          ? 7
-          : selectedRange === "month"
-            ? 30
-            : selectedRange === "year"
-              ? 365
-              : selectedRange === "all"
-                ? 0
-                : 30; // Default to month
+  const rangeValue = convertTimeRangeToDays(selectedRange);
 
   if (rangeValue >= 365 || rangeValue === 0) {
     return date.toLocaleDateString(undefined, {
@@ -52,13 +38,7 @@ export function formatTooltipDate(
   date: Date,
   selectedRange: TimeRange,
 ): string {
-  // Convert string range to number for comparison
-  const rangeValue =
-    typeof selectedRange === "number"
-      ? selectedRange
-      : selectedRange === "day"
-        ? 1
-        : 30; // For tooltip, only need to know if it's a day view
+  const rangeValue = convertTimeRangeToDays(selectedRange);
 
   return date.toLocaleDateString(undefined, {
     day: "numeric",

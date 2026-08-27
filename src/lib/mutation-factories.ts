@@ -5,21 +5,13 @@ import { QueryClient, useMutation } from "@tanstack/react-query";
 import { AccountWithValue } from "@/types/accounts";
 import { queryKeys } from "./query-keys";
 import { createMutationOptions } from "./query-options";
+import { calculateAccountTotals } from "@/utils/finance";
 
 /**
  * Helper to calculate net worth from accounts
  */
-export const calculateNetWorth = (accounts: AccountWithValue[]): number => {
-  const totalAssets = accounts
-    .filter((account) => !account.isDebt)
-    .reduce((sum, account) => sum + account.balance, 0);
-
-  const totalLiabilities = accounts
-    .filter((account) => account.isDebt)
-    .reduce((sum, account) => Math.abs(sum + account.balance), 0);
-
-  return totalAssets - totalLiabilities;
-};
+export const calculateNetWorth = (accounts: AccountWithValue[]): number =>
+  calculateAccountTotals(accounts).netWorth;
 
 /**
  * Update net worth queries optimistically

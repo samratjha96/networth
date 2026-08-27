@@ -219,7 +219,10 @@ const generateNextHourValue = (
     case "steady":
     default:
       newValue +=
-        (Math.random() * 2 - 1) * Math.abs(currentValue) * hourlyVolatility * 0.5;
+        (Math.random() * 2 - 1) *
+        Math.abs(currentValue) *
+        hourlyVolatility *
+        0.5;
       break;
   }
 

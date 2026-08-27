@@ -17,7 +17,10 @@ export enum TimeInterval {
 export function getIntervalForTimeRange(timeRange: TimeRange): TimeInterval {
   const days = convertTimeRangeToDays(timeRange);
 
-  if (days <= 1) {
+  if (days === 0) {
+    // "All time" spans years, not hours — bucket monthly.
+    return TimeInterval.MONTHLY;
+  } else if (days <= 1) {
     return TimeInterval.HOURLY;
   } else if (days <= 30) {
     return TimeInterval.DAILY;
@@ -215,38 +218,5 @@ export function fillMissingDataPoints(
   return result.filter((point) => {
     const pointDate = new Date(point.date);
     return pointDate >= startDate && pointDate <= endDate;
-  });
-}
-
-/**
- * Enriches the networth history with additional metadata
- */
-export function enrichNetWorthData(data: NetworthHistory[]): NetworthHistory[] {
-  if (data.length === 0) return data;
-
-  return data.map((point, index, array) => {
-    if (index === 0) {
-      return point;
-    }
-
-    const prevPoint = array[index - 1];
-    const changeAmount = point.value - prevPoint.value;
-    const percentageChange =
-      prevPoint.value !== 0
-        ? (changeAmount / Math.abs(prevPoint.value)) * 100
-        : 0;
-
-    // Mark significant changes (more than 5%)
-    const isSignificant = Math.abs(percentageChange) > 5;
-
-    return {
-      ...point,
-      metadata: {
-        ...point.metadata,
-        changeAmount,
-        percentageChange,
-        isSignificant,
-      },
-    };
   });
 }

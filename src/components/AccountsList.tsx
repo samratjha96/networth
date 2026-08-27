@@ -238,8 +238,12 @@ function SplitAccountsLayout({
   onUpdateAccount,
   onViewHistory,
 }: SplitAccountsLayoutProps) {
-  const filteredAccounts = accounts.filter((account) =>
-    type === "assets" ? !account.isDebt : account.isDebt,
+  const filteredAccounts = useMemo(
+    () =>
+      accounts.filter((account) =>
+        type === "assets" ? !account.isDebt : account.isDebt,
+      ),
+    [accounts, type],
   );
 
   // Group accounts by their type - this is a good candidate for memoization

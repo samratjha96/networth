@@ -9,6 +9,11 @@ import {
 } from "@/lib/mock-data";
 import { v4 as uuidv4 } from "uuid";
 import { getStartDateForTimeRange } from "@/utils/time-range";
+import {
+  calculatePercentageChange,
+  calculateAccountTotals,
+  findValueAsOf,
+} from "@/utils/finance";
 
 /**
  * MockDataService provides demo data implementation
@@ -112,25 +117,23 @@ export class MockDataService implements DataService {
     percentageChange: number;
   } | null> {
     // Calculate current net worth
-    const currentValue = this.accounts.reduce(
-      (sum, account) => sum + account.balance,
-      0,
-    );
+    const currentValue = calculateAccountTotals(this.accounts).netWorth;
 
     const startDate = getStartDateForTimeRange(timeRange);
 
-    // Calculate previous net worth from history
-    const previousNetWorth = this.networthHistory.find(
-      (item) => new Date(item.date) <= startDate,
-    );
+    // Calculate previous net worth: the most recent history entry on or
+    // before startDate, i.e. the value as of the start of the range.
+    const previousNetWorth = findValueAsOf(this.networthHistory, startDate);
 
     // If no previous value, use an estimate based on current value
     const previousValue = previousNetWorth?.value || currentValue * 0.95;
 
     // Calculate change metrics
     const change = currentValue - previousValue;
-    const percentageChange =
-      previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
+    const percentageChange = calculatePercentageChange(
+      currentValue,
+      previousValue,
+    );
 
     return {
       currentValue,
@@ -154,35 +157,13 @@ export class MockDataService implements DataService {
     const performance = this.accounts.map((account) => {
       const history = this.accountHistories.get(account.id) || [];
 
-      // Find start value (closest value before or at startDate)
-      let startValue = account.balance;
-      for (let i = history.length - 1; i >= 0; i--) {
-        if (new Date(history[i].date) <= startDate) {
-          startValue = history[i].value;
-          break;
-        }
-      }
-
-      // Find end value (closest value before or at endDate)
-      let endValue = account.balance;
-      for (let i = history.length - 1; i >= 0; i--) {
-        if (new Date(history[i].date) <= endDate) {
-          endValue = history[i].value;
-          break;
-        }
-      }
+      const startValue =
+        findValueAsOf(history, startDate)?.value ?? account.balance;
+      const endValue =
+        findValueAsOf(history, endDate)?.value ?? account.balance;
 
       const amountChange = endValue - startValue;
-
-      // Calculate percentage change (same logic as PocketBase)
-      let percentChange = 0;
-      if (Math.abs(startValue) === 0) {
-        if (endValue > 0) percentChange = 100.0;
-        else if (endValue < 0) percentChange = -100.0;
-        else percentChange = 0.0;
-      } else {
-        percentChange = (amountChange / Math.abs(startValue)) * 100.0;
-      }
+      const percentChange = calculatePercentageChange(endValue, startValue);
 
       return {
         account_id: account.id,
@@ -233,10 +214,7 @@ export class MockDataService implements DataService {
   // Helper method to update net worth history when accounts change
   private updateNetworthHistory(): void {
     // Calculate current net worth
-    const currentValue = this.accounts.reduce(
-      (sum, account) => sum + account.balance,
-      0,
-    );
+    const currentValue = calculateAccountTotals(this.accounts).netWorth;
 
     // Add a new entry to the history
     const now = new Date();

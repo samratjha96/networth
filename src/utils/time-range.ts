@@ -1,23 +1,7 @@
 import { TimeRange } from "@/types/networth";
 
-export const convertTimeRangeToDays = (timeRange: TimeRange): number => {
-  if (typeof timeRange === "number") {
-    return timeRange;
-  }
-
-  switch (timeRange) {
-    case "day":
-      return 1;
-    case "week":
-      return 7;
-    case "month":
-      return 30;
-    case "year":
-      return 365;
-    default:
-      return 0; // "all time"
-  }
-};
+export const convertTimeRangeToDays = (timeRange: TimeRange): number =>
+  timeRange;
 
 export const getStartDateForTimeRange = (timeRange: TimeRange): Date => {
   const startDate = new Date();

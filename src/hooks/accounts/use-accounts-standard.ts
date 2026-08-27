@@ -13,7 +13,9 @@ import {
   useOptimisticDeleteMutation,
   createAccountMutations,
 } from "@/lib/mutation-factories";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { calculateAccountTotals, hasMixedCurrencies } from "@/utils/finance";
+import { useToast } from "@/hooks/ui";
 
 interface UseAccountsStandardOptions {
   userId: string | null;
@@ -28,6 +30,7 @@ export function useAccountsStandard({
   dataService,
 }: UseAccountsStandardOptions) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Create standardized query options
   const accountsQueryOptions = createQueryOptions<AccountWithValue[]>(
@@ -110,19 +113,26 @@ export function useAccountsStandard({
   );
 
   // Memoized calculations to avoid re-computing on every render
-  const totals = useMemo(() => {
-    const totalAssets = accounts
-      .filter((account) => !account.isDebt)
-      .reduce((sum, account) => sum + account.balance, 0);
+  const totals = useMemo(() => calculateAccountTotals(accounts), [accounts]);
 
-    const totalLiabilities = accounts
-      .filter((account) => account.isDebt)
-      .reduce((sum, account) => Math.abs(sum + account.balance), 0);
+  // Totals never convert between currencies — warn once when accounts span
+  // more than one, since the displayed sums would otherwise silently mix units.
+  const mixedCurrencies = useMemo(
+    () => hasMixedCurrencies(accounts),
+    [accounts],
+  );
 
-    const netWorth = totalAssets - totalLiabilities;
-
-    return { totalAssets, totalLiabilities, netWorth };
-  }, [accounts]);
+  useEffect(() => {
+    if (mixedCurrencies) {
+      toast({
+        title: "Mixed currencies detected",
+        description:
+          "Your accounts use more than one currency. Totals do not convert between currencies and may be misleading.",
+        variant: "destructive",
+        duration: 7000,
+      });
+    }
+  }, [mixedCurrencies, toast]);
 
   // Memoized grouped accounts for performance
   const accountGroups = useMemo(() => {
@@ -211,7 +221,11 @@ export function useAccountHistory({
     "background",
   );
 
-  const { data: accountHistory = [], isLoading, error } = useQuery(historyQueryOptions);
+  const {
+    data: accountHistory = [],
+    isLoading,
+    error,
+  } = useQuery(historyQueryOptions);
 
   return { accountHistory, isLoading, error };
 }

@@ -5,6 +5,10 @@ import { TimeRange } from "@/types/networth";
 import { AccountHistoryEntry } from "@/types/account-history";
 import { getStartDateForTimeRange } from "@/utils/time-range";
 import {
+  calculatePercentageChange,
+  calculateAccountTotals,
+} from "@/utils/finance";
+import {
   PocketBaseAccount,
   PocketBaseAccountValue,
   PocketBaseNetworthHistory,
@@ -27,6 +31,44 @@ const getHourStart = () => {
   const hourStart = new Date();
   hourStart.setMinutes(0, 0, 0);
   return hourStart;
+};
+
+// A single account's value as of a given date, derived from its hourly
+// history rather than any separately-maintained snapshot. Falls back to the
+// account's earliest known value when it has no history before asOfDate
+// (e.g. the account was created after that date), so a young account
+// contributes its starting balance instead of an artificial $0.
+const getAccountValueAsOf = async (
+  accountId: string,
+  asOfDate: Date,
+): Promise<number> => {
+  try {
+    const record = await pb
+      .collection("argos_hourly_account_values")
+      .getFirstListItem<PocketBaseAccountValue>(
+        pb.filter("account_id = {:accountId} && hour_start <= {:asOfDate}", {
+          accountId,
+          asOfDate,
+        }),
+        { sort: "-hour_start" },
+      );
+    return record.value;
+  } catch (error) {
+    try {
+      const record = await pb
+        .collection("argos_hourly_account_values")
+        .getFirstListItem<PocketBaseAccountValue>(
+          pb.filter("account_id = {:accountId} && hour_start >= {:asOfDate}", {
+            accountId,
+            asOfDate,
+          }),
+          { sort: "hour_start" },
+        );
+      return record.value;
+    } catch (error) {
+      return 0;
+    }
+  }
 };
 
 /**
@@ -129,7 +171,9 @@ export const pocketbaseApi = {
 
         // Fetch the most recent values for all accounts in one query.
         // Sorted newest-first; we pick the first entry per account_id in memory.
-        const idFilter = accountIds.map((id) => `account_id="${id}"`).join(" || ");
+        const idFilter = accountIds
+          .map((id) => `account_id="${id}"`)
+          .join(" || ");
         const recentValues = await pb
           .collection("argos_hourly_account_values")
           .getList<PocketBaseAccountValue>(1, accountIds.length * 50, {
@@ -335,16 +379,10 @@ export const pocketbaseApi = {
               endValue = 0;
             }
             const amountChange = endValue - startValue;
-
-            // Handle percentage calculation like the SQL function
-            let percentChange = 0;
-            if (Math.abs(startValue) === 0) {
-              if (endValue > 0) percentChange = 100.0;
-              else if (endValue < 0) percentChange = -100.0;
-              else percentChange = 0.0;
-            } else {
-              percentChange = (amountChange / Math.abs(startValue)) * 100.0;
-            }
+            const percentChange = calculatePercentageChange(
+              endValue,
+              startValue,
+            );
 
             return {
               account_id: account.id,
@@ -484,53 +522,31 @@ export const pocketbaseApi = {
 
     getLatestNetWorth: async (userId: string, timeRange: TimeRange) => {
       try {
+        // Derive current net worth live from account balances rather than
+        // trusting the argos_networth_history snapshot, whose write path can
+        // silently fail and drift out of sync with actual account state.
+        const accounts = await pocketbaseApi.accounts.getAccounts(userId);
+        if (!accounts.length) return null;
+
+        const currentValue = calculateAccountTotals(accounts).netWorth;
+
+        // Previous value: each account's value as of the start of the
+        // range, summed — i.e. the portfolio projected forward from the
+        // last known value per account.
         const startDate = getStartDateForTimeRange(timeRange);
+        const previousValues = await Promise.all(
+          accounts.map((account) => getAccountValueAsOf(account.id, startDate)),
+        );
+        const previousValue = previousValues.reduce(
+          (sum, value) => sum + value,
+          0,
+        );
 
-        // Get latest net worth value
-        let latestRecord: PocketBaseNetworthHistory | null = null;
-        try {
-          latestRecord = await pb
-            .collection("argos_networth_history")
-            .getFirstListItem<PocketBaseNetworthHistory>(
-              `user_id="${userId}"`,
-              {
-                sort: "-date",
-              },
-            );
-        } catch (error) {
-          const pbError = error as PocketBaseError;
-          if (pbError?.status === 404) {
-            return null;
-          }
-          throw error;
-        }
-
-        // Get previous net worth value based on time range
-        // We want the earliest value within the time range.
-        let previousRecord: PocketBaseNetworthHistory | null = null;
-        try {
-          previousRecord = await pb
-            .collection("argos_networth_history")
-            .getFirstListItem<PocketBaseNetworthHistory>(
-              pb.filter("user_id = {:userId} && date >= {:startDate}", {
-                userId: userId,
-                startDate: startDate,
-              }),
-              {
-                sort: "date",
-              },
-            );
-        } catch (error) {
-          previousRecord = null;
-        }
-
-        if (!latestRecord) return null;
-
-        const currentValue = latestRecord.value;
-        const previousValue = previousRecord?.value ?? currentValue * 0.95;
         const change = currentValue - previousValue;
-        const percentageChange =
-          previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
+        const percentageChange = calculatePercentageChange(
+          currentValue,
+          previousValue,
+        );
 
         return {
           currentValue,

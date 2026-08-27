@@ -26,7 +26,12 @@ export const queryKeys = {
     userId: string | null,
     accountId: string | null,
     timeRange: TimeRange,
-  ) => [...queryKeys.account(userId, accountId ?? ""), "history", timeRange] as const,
+  ) =>
+    [
+      ...queryKeys.account(userId, accountId ?? ""),
+      "history",
+      timeRange,
+    ] as const,
 
   // Performance keys
   performance: (userId: string | null) =>

@@ -4,6 +4,7 @@ import { NetworthHistory, TimeRange } from "@/types/networth";
 import { DataService } from "./DataService";
 import { pocketbaseApi } from "@/api/pocketbase-api";
 import { sanitizeAccountData } from "@/utils/api-helpers";
+import { calculateAccountTotals } from "@/utils/finance";
 
 /**
  * PocketbaseDataService provides real API implementation using PocketBase
@@ -110,17 +111,11 @@ export class PocketbaseDataService implements DataService {
     const accounts = await this.getAccounts();
 
     // Calculate current net worth
-    const totalNetWorth = accounts.reduce(
-      (sum, account) => sum + account.balance,
-      0,
-    );
+    const { netWorth } = calculateAccountTotals(accounts);
 
     // Update net worth history in PocketBase
     try {
-      await pocketbaseApi.networth.updateNetWorthHistory(
-        this.userId,
-        totalNetWorth,
-      );
+      await pocketbaseApi.networth.updateNetWorthHistory(this.userId, netWorth);
     } catch (err) {
       console.error("Failed to update networth history:", err);
     }
